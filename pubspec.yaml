@@ -1,0 +1,55 @@
+name: VarXPro
+description: "A Flutter application for football VAR analysis."
+
+publish_to: 'none'
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  curved_navigation_bar: ^1.0.3
+  animated_text_kit: ^4.2.2
+  http: ^1.2.2
+  file_picker: ^8.1.2
+  video_player: ^2.9.1
+  provider: ^6.1.2
+  permission_handler: ^11.3.1
+  device_info_plus: ^9.1.2
+  path_provider: ^2.1.4
+  open_file: ^3.5.8
+  image_picker: ^1.1.2
+  dio: ^5.7.0
+  flutter_bloc: ^8.1.6
+  url_launcher: ^6.3.1 
+  intl: ^0.18.0
+  fl_chart: ^0.68.0
+  cached_network_image: ^3.3.1
+  chewie: ^1.7.0
+  csv: ^5.0.3
+  pdfx: ^2.9.2
+  syncfusion_flutter_datagrid: ^23.1.44
+  
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_launcher_icons: ^0.10.0
+
+  flutter_lints: ^5.0.0
+
+flutter:
+
+  uses-material-design: true
+
+  assets:
+  - assets/logo.jpg
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo.jpg"
