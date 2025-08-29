@@ -1,10 +1,22 @@
 import 'dart:io';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
 class PdfViewer extends StatefulWidget {
   final String pdfPath;
-  const PdfViewer({super.key, required this.pdfPath});
+  final int mode;
+  final Color seedColor;
+  final String currentLang;
+
+  const PdfViewer({
+    super.key,
+    required this.pdfPath,
+    required this.mode,
+    required this.seedColor,
+    required this.currentLang,
+  });
 
   @override
   State<PdfViewer> createState() => _PdfViewerState();
@@ -31,34 +43,20 @@ class _PdfViewerState extends State<PdfViewer> {
   Widget build(BuildContext context) {
     if (_pdfController == null) {
       return Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF071628),
-              Color(0xFF0D2B59),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: AppColors.getBodyGradient(widget.mode),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            "No PDF available",
-            style: TextStyle(color: Colors.white),
+            Translations.getFoulDetectionText('noPdfAvailable', widget.currentLang),
+            style: TextStyle(color: AppColors.getTextColor(widget.mode)),
           ),
         ),
       );
     }
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF071628),
-            Color(0xFF0D2B59),
-          ],
-        ),
+      decoration: BoxDecoration(
+        gradient: AppColors.getBodyGradient(widget.mode),
       ),
       child: PdfView(
         controller: _pdfController!,
@@ -69,12 +67,12 @@ class _PdfViewerState extends State<PdfViewer> {
           ),
           documentLoaderBuilder: (_) => Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Color(0xFF11FFB2)),
+              valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(widget.seedColor, widget.mode)),
             ),
           ),
           pageLoaderBuilder: (_) => Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Color(0xFF11FFB2)),
+              valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(widget.seedColor, widget.mode)),
             ),
           ),
         ),

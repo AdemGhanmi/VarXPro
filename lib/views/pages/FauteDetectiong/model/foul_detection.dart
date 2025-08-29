@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class AnalysisResult {
   final bool ok;

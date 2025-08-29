@@ -38,7 +38,7 @@ class OffsideFrameResponse {
       ok: json['ok'] as bool,
       offside: json['offside'] as bool,
       stats: Map<String, int>.from(json['stats']),
-      annotatedImageUrl: json['annotated_image_url'] as String?,
+      annotatedImageUrl: json['annotated_image_url'] ,
       linePoints: json['line_points'] != null
           ? {
               'start': List<int>.from(json['line_points']['start']),

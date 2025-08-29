@@ -33,6 +33,7 @@ dependencies:
   csv: ^5.0.3
   pdfx: ^2.9.2
   syncfusion_flutter_datagrid: ^23.1.44
+  lottie: ^3.1.2
   
 dev_dependencies:
   flutter_test:
@@ -48,6 +49,11 @@ flutter:
 
   assets:
   - assets/logo.jpg
+  - assets/lotties/FoulDetection.json
+  - assets/lotties/GoalAnalysis.json
+  - assets/lotties/offside.json
+  - assets/lotties/refere.json
+  - assets/lotties/terrain.json
 
 flutter_icons:
   android: true

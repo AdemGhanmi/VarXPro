@@ -1,8 +1,10 @@
-// lib/widgets/file_picker_widget.dart
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:VarXPro/model/appcolor.dart';
+import 'package:VarXPro/provider/modeprovider.dart';
+import 'package:provider/provider.dart';
 
 class FilePickerWidget extends StatelessWidget {
   final Function(File) onFilePicked;
@@ -17,36 +19,56 @@ class FilePickerWidget extends StatelessWidget {
   });
 
   Future<void> _pickFile(BuildContext context) async {
-    // Request permissions based on platform and file type
+    final modeProvider = Provider.of<ModeProvider>(context, listen: false);
     PermissionStatus status;
     if (Platform.isAndroid) {
-      // For Android 13+ (API 33+), use granular media permissions
       if (allowedExtensions.contains('mp4') || allowedExtensions.contains('video')) {
-        status = await Permission.videos.request(); // For videos
+        status = await Permission.videos.request();
       } else {
-        status = await Permission.photos.request(); // For images
+        status = await Permission.photos.request();
       }
-      // Fallback to storage permission for Android 12 and below if needed
       if (!status.isGranted) {
         status = await Permission.storage.request();
       }
     } else {
-      // iOS: Use photos permission for both images and videos
       status = await Permission.photos.request();
     }
 
     if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please grant file access to pick files')),
+        SnackBar(
+          content: Text(
+            'Please grant file access to pick files',
+            style: TextStyle(
+              color: AppColors.getTextColor(modeProvider.currentMode),
+            ),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
       return;
     }
     if (status.isPermanentlyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('File access denied. Enable in settings.'),
+          content: Text(
+            'File access denied. Enable in settings.',
+            style: TextStyle(
+              color: AppColors.getTextColor(modeProvider.currentMode),
+            ),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           action: SnackBarAction(
             label: 'Settings',
+            textColor: Colors.white,
             onPressed: () => openAppSettings(),
           ),
         ),
@@ -62,16 +84,41 @@ class FilePickerWidget extends StatelessWidget {
       onFilePicked(File(result.files.single.path!));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No file selected')),
+        SnackBar(
+          content: Text(
+            'No file selected',
+            style: TextStyle(
+              color: AppColors.getTextColor(modeProvider.currentMode),
+            ),
+          ),
+          backgroundColor: Colors.orangeAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final modeProvider = Provider.of<ModeProvider>(context);
+    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
     return ElevatedButton(
       onPressed: () => _pickFile(context),
-      child: Text(buttonText),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.getSecondaryColor(seedColor, modeProvider.currentMode),
+        foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      ),
+      child: Text(
+        buttonText,
+        style: const TextStyle(fontSize: 16),
+      ),
     );
   }
 }

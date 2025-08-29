@@ -1,13 +1,15 @@
-// lib/views/pages/FiledLinesPages/controller/perspective_controller.dart
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/model/perspective_model.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
 
+// Events
 abstract class PerspectiveEvent {}
 
 class CheckHealthEvent extends PerspectiveEvent {}
+
+class ResetCleanResponseEvent extends PerspectiveEvent {}
 
 class DetectLinesEvent extends PerspectiveEvent {
   final File image;
@@ -67,6 +69,7 @@ class InverseTransformPointEvent extends PerspectiveEvent {
 
 class CleanEvent extends PerspectiveEvent {}
 
+// State
 class PerspectiveState {
   final bool isLoading;
   final String? error;
@@ -77,6 +80,7 @@ class PerspectiveState {
   final TransformFrameResponse? transformFrameResponse;
   final TransformVideoResponse? transformVideoResponse;
   final TransformPointResponse? transformPointResponse;
+  final TransformPointResponse? inversePointResponse;
   final CleanResponse? cleanResponse;
 
   PerspectiveState({
@@ -89,6 +93,7 @@ class PerspectiveState {
     this.transformFrameResponse,
     this.transformVideoResponse,
     this.transformPointResponse,
+    this.inversePointResponse,
     this.cleanResponse,
   });
 
@@ -102,6 +107,7 @@ class PerspectiveState {
     TransformFrameResponse? transformFrameResponse,
     TransformVideoResponse? transformVideoResponse,
     TransformPointResponse? transformPointResponse,
+    TransformPointResponse? inversePointResponse,
     CleanResponse? cleanResponse,
   }) {
     return PerspectiveState(
@@ -110,14 +116,11 @@ class PerspectiveState {
       health: health ?? this.health,
       detectLinesResponse: detectLinesResponse ?? this.detectLinesResponse,
       calibrationResponse: calibrationResponse ?? this.calibrationResponse,
-      loadCalibrationResponse:
-          loadCalibrationResponse ?? this.loadCalibrationResponse,
-      transformFrameResponse:
-          transformFrameResponse ?? this.transformFrameResponse,
-      transformVideoResponse:
-          transformVideoResponse ?? this.transformVideoResponse,
-      transformPointResponse:
-          transformPointResponse ?? this.transformPointResponse,
+      loadCalibrationResponse: loadCalibrationResponse ?? this.loadCalibrationResponse,
+      transformFrameResponse: transformFrameResponse ?? this.transformFrameResponse,
+      transformVideoResponse: transformVideoResponse ?? this.transformVideoResponse,
+      transformPointResponse: transformPointResponse ?? this.transformPointResponse,
+      inversePointResponse: inversePointResponse ?? this.inversePointResponse,
       cleanResponse: cleanResponse ?? this.cleanResponse,
     );
   }
@@ -137,15 +140,18 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     on<TransformPointEvent>(_onTransformPoint);
     on<InverseTransformPointEvent>(_onInverseTransformPoint);
     on<CleanEvent>(_onClean);
+    on<ResetCleanResponseEvent>(_onResetCleanResponse);
   }
 
   Future<void> _onCheckHealth(
     CheckHealthEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    print('CheckHealthEvent triggered'); // Debug log
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final health = await service.checkHealth();
+      print('Health response: $health'); // Debug log
       emit(state.copyWith(isLoading: false, health: health));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: _handleError(e)));
@@ -156,7 +162,7 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     DetectLinesEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.detectLines(event.image);
       emit(state.copyWith(isLoading: false, detectLinesResponse: response));
@@ -169,7 +175,7 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     SetCalibrationEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.setCalibration(
         sourcePoints: event.sourcePoints,
@@ -187,7 +193,7 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     LoadCalibrationByNameEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.loadCalibrationByName(event.name);
       emit(state.copyWith(isLoading: false, loadCalibrationResponse: response));
@@ -200,11 +206,9 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     LoadCalibrationByFileEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
-      final response = await service.loadCalibrationByFile(
-        event.calibrationFile,
-      );
+      final response = await service.loadCalibrationByFile(event.calibrationFile);
       emit(state.copyWith(isLoading: false, loadCalibrationResponse: response));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: _handleError(e)));
@@ -215,7 +219,7 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     TransformFrameEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.transformFrame(event.image);
       emit(state.copyWith(isLoading: false, transformFrameResponse: response));
@@ -228,7 +232,7 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     TransformVideoEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.transformVideo(
         event.video,
@@ -245,7 +249,7 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     TransformPointEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.transformPoint(event.x, event.y);
       emit(state.copyWith(isLoading: false, transformPointResponse: response));
@@ -258,10 +262,10 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     InverseTransformPointEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.inverseTransformPoint(event.x, event.y);
-      emit(state.copyWith(isLoading: false, transformPointResponse: response));
+      emit(state.copyWith(isLoading: false, inversePointResponse: response));
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: _handleError(e)));
     }
@@ -271,25 +275,52 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     CleanEvent event,
     Emitter<PerspectiveState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true));
+    print('CleanEvent triggered'); // Debug log
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.clean();
-      emit(state.copyWith(isLoading: false, cleanResponse: response));
+      print('Clean response: $response'); // Debug log
+      // Reset to initial state, keeping only cleanResponse
+      emit(PerspectiveState(
+        isLoading: false,
+        cleanResponse: response,
+      ));
+      // Automatically trigger health check to refresh API status
+      add(CheckHealthEvent());
     } catch (e) {
       emit(state.copyWith(isLoading: false, error: _handleError(e)));
     }
   }
 
+  void _onResetCleanResponse(
+    ResetCleanResponseEvent event,
+    Emitter<PerspectiveState> emit,
+  ) {
+    print('ResetCleanResponseEvent triggered'); // Debug log
+    emit(state.copyWith(cleanResponse: null, error: null));
+  }
+
   String _handleError(dynamic e) {
+    print('Error occurred: $e'); // Debug log
     if (e is DioException) {
       if (e.type == DioExceptionType.connectionTimeout) {
         return 'Server connection timed out. Please try again.';
       } else if (e.response?.statusCode == 400) {
-        return 'Bad request: ${e.response?.data['error'] ?? 'Invalid input'}';
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('error')) {
+          return 'Bad request: ${data['error']}';
+        }
+        return 'Bad request: Invalid input';
       } else if (e.response?.statusCode == 500) {
-        return 'Server error: ${e.response?.data['error'] ?? 'Internal server error'}';
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('error')) {
+          return 'Server error: ${data['error']}';
+        }
+        return 'Server error: Internal server error';
+      } else if (e.type == DioExceptionType.connectionError) {
+        return 'Cannot connect to server. Please check your connection.';
       }
     }
-    return 'Error: $e';
+    return 'Error: ${e.toString()}';
   }
 }

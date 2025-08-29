@@ -1,39 +1,82 @@
 import 'dart:io';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
+import 'package:VarXPro/provider/langageprovider.dart';
+import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/pages/offsidePage/controller/offside_controller.dart';
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
+import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
+import 'package:VarXPro/views/pages/offsidePage/widgets/OffsideForm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:VarXPro/views/pages/offsidePage/widgets/image_picker_widget.dart';
-import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
+import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart'; // Added Lottie package
+import 'dart:async'; // Added for Timer
 
-class OffsidePage extends StatelessWidget {
+class OffsidePage extends StatefulWidget {
   const OffsidePage({super.key});
 
   @override
+  _OffsidePageState createState() => _OffsidePageState();
+}
+
+class _OffsidePageState extends State<OffsidePage> {
+  bool _showSplash = true; // State to control splash screen visibility
+
+  @override
+  void initState() {
+    super.initState();
+    // Start a timer to hide the splash screen after 3 seconds
+    Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showSplash = false;
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context);
+    final modeProvider = Provider.of<ModeProvider>(context);
+    final currentLang = langProvider.currentLanguage;
+    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+
+    // Show Lottie animation if splash screen is active
+    if (_showSplash) {
+      return Scaffold(
+        backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
+        body: Center(
+          child: Lottie.asset(
+            'assets/lotties/offside.json',
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.5,
+            fit: BoxFit.contain,
+          ),
+        ),
+      );
+    }
+
+    // Main content after splash screen
     return BlocProvider(
       create: (context) => OffsideBloc(context.read<OffsideService>())..add(PingEvent()),
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A1B33),
+        backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
         body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF071628),
-                Color(0xFF0D2B59),
-              ],
-            ),
+          decoration: BoxDecoration(
+            gradient: AppColors.getBodyGradient(modeProvider.currentMode),
           ),
           child: BlocBuilder<OffsideBloc, OffsideState>(
             builder: (context, state) {
               if (state.isLoading) {
-                return const Center(
+                return Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(Color(0xFF11FFB2)),
+                    valueColor: AlwaysStoppedAnimation(
+                      AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                    ),
                   ),
                 );
               }
@@ -41,7 +84,12 @@ class OffsidePage extends StatelessWidget {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Error: ${state.error}'),
+                      content: Text(
+                        '${Translations.getOffsideText('error', currentLang)}: ${state.error}',
+                        style: TextStyle(
+                          color: AppColors.getTextColor(modeProvider.currentMode),
+                        ),
+                      ),
                       backgroundColor: Colors.redAccent,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
@@ -59,7 +107,7 @@ class OffsidePage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Card(
-                          color: const Color(0xFF0D2B59).withOpacity(0.8),
+                          color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
                           elevation: 4,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
@@ -69,12 +117,12 @@ class OffsidePage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'API Status',
+                                Text(
+                                  Translations.getOffsideText('apiStatus', currentLang),
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: AppColors.getTextColor(modeProvider.currentMode),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -85,7 +133,7 @@ class OffsidePage extends StatelessWidget {
                                       height: 12,
                                       decoration: BoxDecoration(
                                         color: state.pingResponse != null && state.pingResponse!.ok
-                                            ? const Color(0xFF11FFB2)
+                                            ? AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
                                             : Colors.red,
                                         shape: BoxShape.circle,
                                       ),
@@ -93,12 +141,12 @@ class OffsidePage extends StatelessWidget {
                                     const SizedBox(width: 8),
                                     Text(
                                       state.pingResponse != null && state.pingResponse!.ok
-                                          ? "Connected"
-                                          : "Disconnected",
+                                          ? Translations.getOffsideText('connected', currentLang)
+                                          : Translations.getOffsideText('disconnected', currentLang),
                                       style: TextStyle(
                                         fontSize: 16,
                                         color: state.pingResponse != null && state.pingResponse!.ok
-                                            ? const Color(0xFF11FFB2)
+                                            ? AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
                                             : Colors.redAccent,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -107,21 +155,40 @@ class OffsidePage extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 8),
                                 if (state.pingResponse != null) ...[
-                                  _buildStatusItem('Model', state.pingResponse!.model ?? "Unknown"),
-                                  _buildStatusItem('OpenCV', state.pingResponse!.opencv ?? "Unknown"),
+                                  _buildStatusItem(
+                                    Translations.getOffsideText('model', currentLang),
+                                    state.pingResponse!.model ?? "Unknown",
+                                    modeProvider.currentMode,
+                                    seedColor,
+                                  ),
+                                  _buildStatusItem(
+                                    Translations.getOffsideText('opencv', currentLang),
+                                    state.pingResponse!.opencv ?? "Unknown",
+                                    modeProvider.currentMode,
+                                    seedColor,
+                                  ),
                                 ],
                               ],
                             ),
                           ),
                         ),
                         SizedBox(height: constraints.maxWidth * 0.05),
-                        _buildSectionHeader('Single Frame Offside Detection'),
+                        _buildSectionHeader(
+                          Translations.getOffsideText('singleFrameDetection', currentLang),
+                          modeProvider.currentMode,
+                          seedColor,
+                        ),
                         SizedBox(height: constraints.maxWidth * 0.03),
-                        OffsideForm(constraints: constraints),
+                        OffsideForm(
+                          constraints: constraints,
+                          currentLang: currentLang,
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                        ),
                         if (state.offsideFrameResponse != null) ...[
                           SizedBox(height: constraints.maxWidth * 0.05),
                           Card(
-                            color: const Color(0xFF0D2B59).withOpacity(0.8),
+                            color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
                             elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -132,37 +199,47 @@ class OffsidePage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildResultItem(
-                                    'Offside Detection',
-                                    state.offsideFrameResponse!.offside ? 'YES' : 'NO',
+                                    Translations.getOffsideText('offside', currentLang),
+                                    state.offsideFrameResponse!.offside
+                                        ? Translations.getOffsideText('offside', currentLang).toUpperCase()
+                                        : 'NO',
                                     state.offsideFrameResponse!.offside,
+                                    modeProvider.currentMode,
+                                    seedColor,
                                   ),
                                   if (state.offsideFrameResponse!.stats.isNotEmpty)
                                     _buildResultItem(
-                                      'Stats',
+                                      Translations.getOffsideText('stats', currentLang),
                                       state.offsideFrameResponse!.stats.entries
                                           .map((e) => '${e.key}: ${e.value}')
                                           .join(', '),
                                       false,
+                                      modeProvider.currentMode,
+                                      seedColor,
                                     ),
                                   if (state.offsideFrameResponse!.attackDirection != null)
                                     _buildResultItem(
-                                      'Attack Direction',
+                                      Translations.getOffsideText('attackDirection', currentLang),
                                       state.offsideFrameResponse!.attackDirection!,
                                       false,
+                                      modeProvider.currentMode,
+                                      seedColor,
                                     ),
                                   if (state.offsideFrameResponse!.linePoints != null)
                                     _buildResultItem(
-                                      'Line Points',
+                                      Translations.getOffsideText('linePoints', currentLang),
                                       'Start: ${state.offsideFrameResponse!.linePoints!['start']}, End: ${state.offsideFrameResponse!.linePoints!['end']}',
                                       false,
+                                      modeProvider.currentMode,
+                                      seedColor,
                                     ),
                                   if (state.pickedImage != null) ...[
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'Picked Image:',
+                                    Text(
+                                      Translations.getOffsideText('pickedImage', currentLang),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        color: AppColors.getTextColor(modeProvider.currentMode),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -174,7 +251,7 @@ class OffsidePage extends StatelessWidget {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: const Color(0xFF11FFB2).withOpacity(0.3),
+                                          color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
                                           width: 1,
                                         ),
                                       ),
@@ -184,8 +261,8 @@ class OffsidePage extends StatelessWidget {
                                           state.pickedImage!,
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) => Container(
-                                            color: Colors.grey[800],
-                                            child: const Center(
+                                            color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                                            child: Center(
                                               child: Icon(
                                                 Icons.error_outline,
                                                 color: Colors.redAccent,
@@ -199,11 +276,11 @@ class OffsidePage extends StatelessWidget {
                                   ],
                                   if (state.offsideFrameResponse!.annotatedImageUrl != null) ...[
                                     const SizedBox(height: 12),
-                                    const Text(
-                                      'Annotated Image:',
+                                    Text(
+                                      Translations.getOffsideText('annotatedImage', currentLang),
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        color: AppColors.getTextColor(modeProvider.currentMode),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -215,7 +292,7 @@ class OffsidePage extends StatelessWidget {
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: const Color(0xFF11FFB2).withOpacity(0.3),
+                                          color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
                                           width: 1,
                                         ),
                                       ),
@@ -225,8 +302,8 @@ class OffsidePage extends StatelessWidget {
                                           state.offsideFrameResponse!.annotatedImageUrl!,
                                           fit: BoxFit.cover,
                                           errorBuilder: (context, error, stackTrace) => Container(
-                                            color: Colors.grey[800],
-                                            child: const Center(
+                                            color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                                            child: Center(
                                               child: Icon(
                                                 Icons.error_outline,
                                                 color: Colors.redAccent,
@@ -242,7 +319,9 @@ class OffsidePage extends StatelessWidget {
                                                     ? loadingProgress.cumulativeBytesLoaded /
                                                         loadingProgress.expectedTotalBytes!
                                                     : null,
-                                                valueColor: const AlwaysStoppedAnimation(Color(0xFF11FFB2)),
+                                                valueColor: AlwaysStoppedAnimation(
+                                                  AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                                                ),
                                               ),
                                             );
                                           },
@@ -256,7 +335,11 @@ class OffsidePage extends StatelessWidget {
                           ),
                         ],
                         SizedBox(height: constraints.maxWidth * 0.05),
-                        _buildSectionHeader('Batch Offside Detection'),
+                        _buildSectionHeader(
+                          Translations.getOffsideText('batchDetection', currentLang),
+                          modeProvider.currentMode,
+                          seedColor,
+                        ),
                         SizedBox(height: constraints.maxWidth * 0.03),
                         Row(
                           children: [
@@ -272,11 +355,14 @@ class OffsidePage extends StatelessWidget {
                                     context.read<OffsideBloc>().add(DetectOffsideBatchEvent(images: files));
                                   }
                                 },
-                                icon: const Icon(Icons.photo_library, size: 20),
-                                label: const Text('Pick Images'),
+                                icon: Icon(Icons.photo_library, size: 20, color: AppColors.getTextColor(modeProvider.currentMode)),
+                                label: Text(
+                                  Translations.getOffsideText('pickImages', currentLang),
+                                  style: TextStyle(color: AppColors.getTextColor(modeProvider.currentMode)),
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1263A0),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.getSecondaryColor(seedColor, modeProvider.currentMode),
+                                  foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -298,11 +384,14 @@ class OffsidePage extends StatelessWidget {
                                         );
                                   }
                                 },
-                                icon: const Icon(Icons.archive, size: 20),
-                                label: const Text('Pick ZIP'),
+                                icon: Icon(Icons.archive, size: 20, color: AppColors.getTextColor(modeProvider.currentMode)),
+                                label: Text(
+                                  Translations.getOffsideText('pickZip', currentLang),
+                                  style: TextStyle(color: AppColors.getTextColor(modeProvider.currentMode)),
+                                ),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1263A0),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.getSecondaryColor(seedColor, modeProvider.currentMode),
+                                  foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -315,7 +404,7 @@ class OffsidePage extends StatelessWidget {
                         if (state.offsideBatchResponse != null) ...[
                           SizedBox(height: constraints.maxWidth * 0.05),
                           Card(
-                            color: const Color(0xFF0D2B59).withOpacity(0.8),
+                            color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
                             elevation: 4,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -326,14 +415,28 @@ class OffsidePage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildResultItem(
-                                    'Processed Frames',
+                                    Translations.getOffsideText('processedFrames', currentLang),
                                     state.offsideBatchResponse!.count.toString(),
                                     false,
+                                    modeProvider.currentMode,
+                                    seedColor,
                                   ),
                                   if (state.offsideBatchResponse!.resultsJsonUrl != null)
-                                    _buildResultItem('Results JSON', 'Available', false),
+                                    _buildResultItem(
+                                      Translations.getOffsideText('resultsJson', currentLang),
+                                      'Available',
+                                      false,
+                                      modeProvider.currentMode,
+                                      seedColor,
+                                    ),
                                   if (state.offsideBatchResponse!.zipUrl != null)
-                                    _buildResultItem('Annotated ZIP', 'Available', false),
+                                    _buildResultItem(
+                                      Translations.getOffsideText('annotatedZip', currentLang),
+                                      'Available',
+                                      false,
+                                      modeProvider.currentMode,
+                                      seedColor,
+                                    ),
                                 ],
                               ),
                             ),
@@ -344,7 +447,11 @@ class OffsidePage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Flexible(
-                              child: _buildSectionHeader('Previous Analysis Runs'),
+                              child: _buildSectionHeader(
+                                Translations.getOffsideText('previousRuns', currentLang),
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
                             ),
                             Flexible(
                               child: Row(
@@ -354,11 +461,14 @@ class OffsidePage extends StatelessWidget {
                                     onPressed: () {
                                       context.read<OffsideBloc>().add(ListRunsEvent());
                                     },
-                                    icon: const Icon(Icons.refresh, size: 18),
-                                    label: const Text('Refresh'),
+                                    icon: Icon(Icons.refresh, size: 18, color: AppColors.getTextColor(modeProvider.currentMode)),
+                                    label: Text(
+                                      Translations.getOffsideText('refresh', currentLang),
+                                      style: TextStyle(color: AppColors.getTextColor(modeProvider.currentMode)),
+                                    ),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF11FFB2).withOpacity(0.2),
-                                      foregroundColor: const Color(0xFF11FFB2),
+                                      backgroundColor: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.2),
+                                      foregroundColor: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
@@ -367,22 +477,6 @@ class OffsidePage extends StatelessWidget {
                                     ),
                                   ),
                                   SizedBox(width: constraints.maxWidth * 0.02),
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      context.read<OffsideBloc>().add(ClearRunsEvent());
-                                    },
-                                    icon: const Icon(Icons.delete, size: 18),
-                                    label: const Text('Clean'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.redAccent.withOpacity(0.2),
-                                      foregroundColor: Colors.redAccent,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      minimumSize: Size(constraints.maxWidth * 0.2, 36),
-                                    ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -390,11 +484,11 @@ class OffsidePage extends StatelessWidget {
                         ),
                         SizedBox(height: constraints.maxWidth * 0.03),
                         if (state.runsResponse != null && state.runsResponse!.runs.isNotEmpty)
-                          _buildRunsList(state.runsResponse!.runs, constraints)
+                          _buildRunsList(state.runsResponse!.runs, constraints, currentLang, modeProvider.currentMode, seedColor)
                         else if (state.runsResponse != null)
-                          _buildEmptyState('No previous runs found')
+                          _buildEmptyState(Translations.getOffsideText('noRuns', currentLang), modeProvider.currentMode, seedColor)
                         else
-                          _buildEmptyState('Press refresh to load previous runs'),
+                          _buildEmptyState(Translations.getOffsideText('pressRefresh', currentLang), modeProvider.currentMode, seedColor),
                       ],
                     ),
                   );
@@ -407,7 +501,7 @@ class OffsidePage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusItem(String label, String value) {
+  Widget _buildStatusItem(String label, String value, int mode, Color seedColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -415,15 +509,15 @@ class OffsidePage extends StatelessWidget {
           Text(
             '$label: ',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: AppColors.getTextColor(mode).withOpacity(0.7),
               fontSize: 14,
             ),
           ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(mode),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -435,19 +529,19 @@ class OffsidePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(String title, int mode, Color seedColor) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w700,
-        color: Colors.white,
+        color: AppColors.getTextColor(mode),
         letterSpacing: 0.5,
       ),
     );
   }
 
-  Widget _buildResultItem(String label, String value, bool isOffside) {
+  Widget _buildResultItem(String label, String value, bool isOffside, int mode, Color seedColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -455,7 +549,7 @@ class OffsidePage extends StatelessWidget {
           Text(
             '$label: ',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: AppColors.getTextColor(mode).withOpacity(0.8),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -463,7 +557,9 @@ class OffsidePage extends StatelessWidget {
             child: Text(
               value,
               style: TextStyle(
-                color: isOffside ? const Color(0xFFFF6B6B) : const Color(0xFF11FFB2),
+                color: isOffside
+                    ? Colors.redAccent
+                    : AppColors.getTertiaryColor(seedColor, mode),
                 fontWeight: FontWeight.w700,
               ),
               overflow: TextOverflow.ellipsis,
@@ -474,7 +570,7 @@ class OffsidePage extends StatelessWidget {
     );
   }
 
-  Widget _buildRunsList(List<Run> runs, BoxConstraints constraints) {
+  Widget _buildRunsList(List<Run> runs, BoxConstraints constraints, String currentLang, int mode, Color seedColor) {
     final validRuns = runs.where((run) {
       final jsonContent = run.resultsJsonContent as Map<String, dynamic>?;
       return jsonContent != null &&
@@ -484,36 +580,36 @@ class OffsidePage extends StatelessWidget {
     }).toList();
 
     if (validRuns.isEmpty) {
-      return _buildEmptyState('No valid runs found');
+      return _buildEmptyState(Translations.getOffsideText('noValidRuns', currentLang), mode, seedColor);
     }
 
     return Column(
       children: validRuns.map((run) {
         final date = _parseRunDate(run.run);
-        final jsonContent = run?.resultsJsonContent as Map<String, dynamic>;
+        final jsonContent = run.resultsJsonContent as Map<String, dynamic>;
         final baseUrl = run.resultsJson != null
             ? run.resultsJson!.substring(0, run.resultsJson!.lastIndexOf('/') + 1)
             : '';
         return Card(
-          color: const Color(0xFF0D2B59).withOpacity(0.8),
+          color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
           margin: EdgeInsets.symmetric(vertical: constraints.maxWidth * 0.02),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           child: ExpansionTile(
-            leading: const Icon(Icons.analytics, color: Color(0xFF11FFB2)),
+            leading: Icon(Icons.analytics, color: AppColors.getTertiaryColor(seedColor, mode)),
             title: Text(
               date ?? run.run,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: AppColors.getTextColor(mode),
               ),
             ),
             subtitle: date != null
                 ? Text(
                     run.run,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: AppColors.getTextColor(mode).withOpacity(0.6),
                       fontSize: 12,
                     ),
                   )
@@ -524,30 +620,34 @@ class OffsidePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Parameters:',
+                    Text(
+                      Translations.getOffsideText('parameters', currentLang),
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.getTextColor(mode),
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 8),
                     _buildResultItem(
-                      'Attack Direction',
+                      Translations.getOffsideText('attackDirection', currentLang),
                       jsonContent['attack_direction']?.toString() ?? 'Unknown',
                       false,
+                      mode,
+                      seedColor,
                     ),
                     _buildResultItem(
-                      'Line Mode',
+                      Translations.getOffsideText('lineMode', currentLang),
                       jsonContent['line_mode']?.toString() ?? 'Unknown',
                       false,
+                      mode,
+                      seedColor,
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Results:',
+                    Text(
+                      Translations.getOffsideText('resultsJson', currentLang),
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.getTextColor(mode),
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -562,34 +662,42 @@ class OffsidePage extends StatelessWidget {
                           Text(
                             '- $frame:',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
+                              color: AppColors.getTextColor(mode).withOpacity(0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 4),
                           _buildResultItem(
-                            'Offside',
-                            data['offside'] == true ? 'YES' : 'NO',
+                            Translations.getOffsideText('offside', currentLang),
+                            data['offside'] == true
+                                ? Translations.getOffsideText('offside', currentLang).toUpperCase()
+                                : 'NO',
                             data['offside'] == true,
+                            mode,
+                            seedColor,
                           ),
                           if (data['stats'] != null)
                             _buildResultItem(
-                              'Stats',
+                              Translations.getOffsideText('stats', currentLang),
                               (data['stats'] as Map).entries.map((e) => '${e.key}: ${e.value}').join(', '),
                               false,
+                              mode,
+                              seedColor,
                             ),
                           if (data['line_points'] != null)
                             _buildResultItem(
-                              'Line Points',
+                              Translations.getOffsideText('linePoints', currentLang),
                               'Start: ${data['line_points']['start']}, End: ${data['line_points']['end']}',
                               false,
+                              mode,
+                              seedColor,
                             ),
                           if (data['annotated_image'] != null) ...[
                             const SizedBox(height: 12),
-                            const Text(
-                              'Annotated Image:',
+                            Text(
+                              Translations.getOffsideText('annotatedImage', currentLang),
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.getTextColor(mode),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -602,18 +710,18 @@ class OffsidePage extends StatelessWidget {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFF11FFB2).withOpacity(0.3),
+                                  color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
                                   width: 1,
                                 ),
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: Image.network(
-                                  '$baseUrl${data['annotated_image']}',
+                                  '$baseUrl/annotated/${data['annotated_image']}',
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => Container(
-                                    color: Colors.grey[800],
-                                    child: const Center(
+                                    color: AppColors.getSurfaceColor(mode),
+                                    child: Center(
                                       child: Icon(
                                         Icons.error_outline,
                                         color: Colors.redAccent,
@@ -629,7 +737,9 @@ class OffsidePage extends StatelessWidget {
                                             ? loadingProgress.cumulativeBytesLoaded /
                                                 loadingProgress.expectedTotalBytes!
                                             : null,
-                                        valueColor: const AlwaysStoppedAnimation(Color(0xFF11FFB2)),
+                                        valueColor: AlwaysStoppedAnimation(
+                                          AppColors.getTertiaryColor(seedColor, mode),
+                                        ),
                                       ),
                                     );
                                   },
@@ -650,28 +760,28 @@ class OffsidePage extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(String message, int mode, Color seedColor) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D2B59).withOpacity(0.5),
+        color: AppColors.getSurfaceColor(mode).withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF11FFB2).withOpacity(0.1),
+          color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.1),
         ),
       ),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.history,
             size: 48,
-            color: Color(0xFF11FFB2),
+            color: AppColors.getTertiaryColor(seedColor, mode),
           ),
           const SizedBox(height: 12),
           Text(
             message,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: AppColors.getTextColor(mode).withOpacity(0.7),
               fontSize: 16,
             ),
             textAlign: TextAlign.center,
@@ -693,201 +803,5 @@ class OffsidePage extends StatelessWidget {
     } catch (e) {
       return null;
     }
-  }
-}
-
-class OffsideForm extends StatefulWidget {
-  final BoxConstraints constraints;
-
-  const OffsideForm({super.key, required this.constraints});
-
-  @override
-  _OffsideFormState createState() => _OffsideFormState();
-}
-
-class _OffsideFormState extends State<OffsideForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _lineStartXController = TextEditingController(text: '640');
-  final _lineStartYController = TextEditingController(text: '0');
-  final _lineEndXController = TextEditingController(text: '690');
-  final _lineEndYController = TextEditingController(text: '720');
-  String _attackDirection = 'right';
-  bool _useFixedLine = false;
-
-  @override
-  void dispose() {
-    _lineStartXController.dispose();
-    _lineStartYController.dispose();
-    _lineEndXController.dispose();
-    _lineEndYController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xFF0D2B59).withOpacity(0.8),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              ImagePickerWidget(
-                onImagePicked: (File image) {
-                  if (_formKey.currentState!.validate()) {
-                    context.read<OffsideBloc>().add(
-                          DetectOffsideSingleEvent(
-                            image: image,
-                            attackDirection: _attackDirection,
-                            lineStart: _useFixedLine
-                                ? [
-                                    int.parse(_lineStartXController.text),
-                                    int.parse(_lineStartYController.text)
-                                  ]
-                                : null,
-                            lineEnd: _useFixedLine
-                                ? [
-                                    int.parse(_lineEndXController.text),
-                                    int.parse(_lineEndYController.text)
-                                  ]
-                                : null,
-                          ),
-                        );
-                    context.read<OffsideBloc>().add(UpdatePickedImageEvent(image));
-                  }
-                },
-                buttonText: 'Pick and Analyze Image',
-              ),
-              SizedBox(height: widget.constraints.maxWidth * 0.04),
-              DropdownButtonFormField<String>(
-                value: _attackDirection,
-                decoration: InputDecoration(
-                  labelText: 'Attack Direction',
-                  labelStyle: const TextStyle(color: Color(0xFF11FFB2)),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: const Color(0xFF11FFB2).withOpacity(0.3),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: const Color(0xFF11FFB2).withOpacity(0.3),
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFF0D2B59).withOpacity(0.6),
-                ),
-                dropdownColor: const Color(0xFF0D2B59),
-                items: ['right', 'left', 'up', 'down']
-                    .map((dir) => DropdownMenuItem(
-                          value: dir,
-                          child: Text(
-                            dir.toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _attackDirection = value!;
-                  });
-                },
-              ),
-              SizedBox(height: widget.constraints.maxWidth * 0.04),
-              SwitchListTile(
-                title: const Text(
-                  'Use Fixed Line',
-                  style: TextStyle(color: Colors.white),
-                ),
-                value: _useFixedLine,
-                activeColor: const Color(0xFF11FFB2),
-                onChanged: (value) {
-                  setState(() {
-                    _useFixedLine = value;
-                  });
-                },
-              ),
-              if (_useFixedLine) ...[
-                SizedBox(height: widget.constraints.maxWidth * 0.04),
-                const Text(
-                  'Line Coordinates',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: widget.constraints.maxWidth * 0.03),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lineStartXController,
-                        decoration: const InputDecoration(
-                          labelText: 'Start X',
-                          labelStyle: TextStyle(color: Color(0xFF11FFB2)),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        validator: (value) => value!.isEmpty ? 'Enter X coordinate' : null,
-                      ),
-                    ),
-                    SizedBox(width: widget.constraints.maxWidth * 0.02),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lineStartYController,
-                        decoration: const InputDecoration(
-                          labelText: 'Start Y',
-                          labelStyle: TextStyle(color: Color(0xFF11FFB2)),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        validator: (value) => value!.isEmpty ? 'Enter Y coordinate' : null,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: widget.constraints.maxWidth * 0.03),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lineEndXController,
-                        decoration: const InputDecoration(
-                          labelText: 'End X',
-                          labelStyle: TextStyle(color: Color(0xFF11FFB2)),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        validator: (value) => value!.isEmpty ? 'Enter X coordinate' : null,
-                      ),
-                    ),
-                    SizedBox(width: widget.constraints.maxWidth * 0.02),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _lineEndYController,
-                        decoration: const InputDecoration(
-                          labelText: 'End Y',
-                          labelStyle: TextStyle(color: Color(0xFF11FFB2)),
-                        ),
-                        style: const TextStyle(color: Colors.white),
-                        keyboardType: TextInputType.number,
-                        validator: (value) => value!.isEmpty ? 'Enter Y coordinate' : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

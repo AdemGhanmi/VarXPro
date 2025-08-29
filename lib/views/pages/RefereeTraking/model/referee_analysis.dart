@@ -1,4 +1,3 @@
-// lib/models/referee_model.dart
 class HealthResponse {
   final String status;
   final bool modelLoaded;

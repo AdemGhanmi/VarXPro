@@ -1,14 +1,20 @@
-// lib/views/pages/FiledLinesPages/widgets/image_picker_widget.dart
 import 'dart:io';
+import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 
 class ImagePickerWidget extends StatelessWidget {
   final Function(File) onImagePicked;
   final String buttonText;
   final bool isVideo;
   final bool isCalibration;
+  final int mode;
+  final Color seedColor;
 
   const ImagePickerWidget({
     super.key,
@@ -16,9 +22,11 @@ class ImagePickerWidget extends StatelessWidget {
     this.buttonText = 'Pick Image',
     this.isVideo = false,
     this.isCalibration = false,
+    required this.mode,
+    required this.seedColor,
   });
 
-  Future<void> _pickImage(BuildContext context) async {
+  Future<void> _pickFile(BuildContext context) async {
     PermissionStatus status;
 
     if (Platform.isAndroid) {
@@ -28,16 +36,24 @@ class ImagePickerWidget extends StatelessWidget {
               ? await Permission.storage.request()
               : await Permission.photos.request();
     } else {
-      status = isVideo
-          ? await Permission.photos.request()
-          : await Permission.photos.request();
+      status = isVideo ? await Permission.photos.request() : await Permission.photos.request();
     }
 
     if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(
-                'Please grant ${isVideo ? "video" : isCalibration ? "storage" : "photo"} access')),
+          content: Text(
+            Translations.getOffsideText(
+                isVideo
+                    ? 'photoAccessDenied'
+                    : isCalibration
+                        ? 'fileAccessDenied'
+                        : 'photoAccessDenied',
+                context.read<LanguageProvider>().currentLanguage),
+            style: TextStyle(color: AppColors.getTextColor(mode)),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -45,51 +61,106 @@ class ImagePickerWidget extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              '${isVideo ? "Video" : isCalibration ? "Storage" : "Photo"} access denied. Enable in settings.'),
-          action: SnackBarAction(
-            label: 'Settings',
-            onPressed: () => openAppSettings(),
+            Translations.getOffsideText(
+                isVideo
+                    ? 'photoAccessPermanentlyDenied'
+                    : isCalibration
+                        ? 'fileAccessPermanentlyDenied'
+                        : 'photoAccessPermanentlyDenied',
+                context.read<LanguageProvider>().currentLanguage),
+            style: TextStyle(color: AppColors.getTextColor(mode)),
           ),
+          action: SnackBarAction(
+            label: Translations.getOffsideText('settings', context.read<LanguageProvider>().currentLanguage),
+            onPressed: () => openAppSettings(),
+            textColor: AppColors.getTextColor(mode),
+          ),
+          backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
-    final picker = ImagePicker();
     try {
-      final pickedFile = isVideo
-          ? await picker.pickVideo(source: ImageSource.gallery)
-          : await picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        final file = File(pickedFile.path);
-        if (isCalibration && !file.path.endsWith('.npz')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Calibration file must be .npz')),
-          );
-          return;
+      File? file;
+      if (isCalibration) {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['npz'],
+        );
+        if (result != null && result.files.single.path != null) {
+          file = File(result.files.single.path!);
+          if (!file.path.endsWith('.npz')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  Translations.getOffsideText('calibrationFileMustBeNpz', context.read<LanguageProvider>().currentLanguage),
+                  style: TextStyle(color: AppColors.getTextColor(mode)),
+                ),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            return;
+          }
         }
-        if (isVideo && !file.path.endsWith('.mp4')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Video must be .mp4')),
-          );
-          return;
+      } else {
+        final picker = ImagePicker();
+        final pickedFile = isVideo
+            ? await picker.pickVideo(source: ImageSource.gallery)
+            : await picker.pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          file = File(pickedFile.path);
+          if (isVideo && !file.path.endsWith('.mp4')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  Translations.getOffsideText('videoMustBeMp4', context.read<LanguageProvider>().currentLanguage),
+                  style: TextStyle(color: AppColors.getTextColor(mode)),
+                ),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            return;
+          }
+          if (!isVideo &&
+              !isCalibration &&
+              !file.path.endsWith('.jpg') &&
+              !file.path.endsWith('.png')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  Translations.getOffsideText('imageMustBeJpgOrPng', context.read<LanguageProvider>().currentLanguage),
+                  style: TextStyle(color: AppColors.getTextColor(mode)),
+                ),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            return;
+          }
         }
-        if (!isVideo && !isCalibration &&
-            !file.path.endsWith('.jpg') && !file.path.endsWith('.png')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image must be .jpg or .png')),
-          );
-          return;
-        }
+      }
+      if (file != null) {
         onImagePicked(file);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No file selected')),
+          SnackBar(
+            content: Text(
+              Translations.getOffsideText('noFileSelected', context.read<LanguageProvider>().currentLanguage),
+              style: TextStyle(color: AppColors.getTextColor(mode)),
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
+        SnackBar(
+          content: Text(
+            '${Translations.getOffsideText('errorPickingImage', context.read<LanguageProvider>().currentLanguage)}: $e',
+            style: TextStyle(color: AppColors.getTextColor(mode)),
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
       );
     }
   }
@@ -97,8 +168,22 @@ class ImagePickerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: () => _pickImage(context),
-      child: Text(buttonText),
+      onPressed: () => _pickFile(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.getTertiaryColor(seedColor, mode),
+        foregroundColor: AppColors.getTextColor(mode),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      child: Text(
+        buttonText,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: AppColors.getTextColor(mode),
+        ),
+      ),
     );
   }
 }

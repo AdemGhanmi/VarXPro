@@ -15,7 +15,7 @@ class HealthResponse {
       status: json['status'] as String,
       calibrated: json['calibrated'] as bool,
       dstSize: json['dst_size'] != null
-          ? Map<String, int>.from(json['dst_size'])
+          ? Map<String, int>.from(json['dst_size'] as Map)
           : null,
     );
   }
@@ -40,7 +40,7 @@ class DetectLinesResponse {
       uploadUrl: json['upload_url'] as String?,
       annotatedUrl: json['annotated_url'] as String?,
       lines: json['lines'] != null
-          ? (json['lines'] as List).map((l) => List<int>.from(l)).toList()
+          ? (json['lines'] as List).map((l) => List<int>.from(l as List)).toList()
           : null,
     );
   }
@@ -63,7 +63,7 @@ class CalibrationResponse {
     return CalibrationResponse(
       ok: json['ok'] as bool,
       dstSize: json['dst_size'] != null
-          ? Map<String, int>.from(json['dst_size'])
+          ? Map<String, int>.from(json['dst_size'] as Map)
           : null,
       saved: json['saved'] as bool?,
       calibrationUrl: json['calibration_url'] as String?,
@@ -86,7 +86,7 @@ class LoadCalibrationResponse {
     return LoadCalibrationResponse(
       ok: json['ok'] as bool,
       dstSize: json['dst_size'] != null
-          ? Map<String, int>.from(json['dst_size'])
+          ? Map<String, int>.from(json['dst_size'] as Map)
           : null,
       calibrationFile: json['calibration_file'] as String?,
     );
@@ -135,7 +135,7 @@ class TransformVideoResponse {
       outputUrl: json['output_url'] as String?,
       frames: json['frames'] as int?,
       dstSize: json['dst_size'] != null
-          ? Map<String, int>.from(json['dst_size'])
+          ? Map<String, int>.from(json['dst_size'] as Map)
           : null,
     );
   }
@@ -158,10 +158,10 @@ class TransformPointResponse {
     return TransformPointResponse(
       ok: json['ok'] as bool,
       input: json['input'] != null
-          ? List<double>.from(json['input'].map((x) => x.toDouble()))
+          ? List<double>.from((json['input'] as List).map((x) => x.toDouble()))
           : null,
       output: json['output'] != null
-          ? List<double>.from(json['output'].map((x) => x.toDouble()))
+          ? List<double>.from((json['output'] as List).map((x) => x.toDouble()))
           : null,
       error: json['error'] as String?,
     );

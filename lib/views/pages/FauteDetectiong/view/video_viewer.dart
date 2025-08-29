@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
@@ -6,8 +8,18 @@ import 'package:chewie/chewie.dart';
 class VideoViewer extends StatefulWidget {
   final String? videoUrl;
   final File? videoFile;
+  final int mode;
+  final Color seedColor;
+  final String currentLang;
 
-  const VideoViewer({super.key, this.videoUrl, this.videoFile});
+  const VideoViewer({
+    super.key,
+    this.videoUrl,
+    this.videoFile,
+    required this.mode,
+    required this.seedColor,
+    required this.currentLang,
+  });
 
   @override
   State<VideoViewer> createState() => _VideoViewerState();
@@ -32,7 +44,7 @@ class _VideoViewerState extends State<VideoViewer> {
       } else if (widget.videoUrl != null) {
         _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl!));
       } else {
-        setState(() => _error = 'No video source provided');
+        setState(() => _error = Translations.getFoulDetectionText('noVideoSource', widget.currentLang));
         return;
       }
 
@@ -46,17 +58,17 @@ class _VideoViewerState extends State<VideoViewer> {
         allowMuting: true,
         showControls: true,
         materialProgressColors: ChewieProgressColors(
-          playedColor: const Color(0xFF11FFB2),
-          handleColor: const Color(0xFF11FFB2),
-          backgroundColor: Colors.grey[700]!,
-          bufferedColor: Colors.grey[500]!,
+          playedColor: AppColors.getTertiaryColor(widget.seedColor, widget.mode),
+          handleColor: AppColors.getTertiaryColor(widget.seedColor, widget.mode),
+          backgroundColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.6),
+          bufferedColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.4),
         ),
       );
 
       setState(() => _isInitialized = true);
     } catch (e) {
       setState(() {
-        _error = 'Failed to load video: $e';
+        _error = '${Translations.getFoulDetectionText('failedToLoadVideo', widget.currentLang)}: $e';
         _isInitialized = false;
       });
     }
@@ -73,15 +85,8 @@ class _VideoViewerState extends State<VideoViewer> {
   Widget build(BuildContext context) {
     if (_error != null) {
       return Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF071628),
-              Color(0xFF0D2B59),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: AppColors.getBodyGradient(widget.mode),
         ),
         child: Center(
           child: Column(
@@ -90,7 +95,7 @@ class _VideoViewerState extends State<VideoViewer> {
               Text(
                 _error!,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
+                  color: Colors.redAccent,
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
@@ -99,16 +104,16 @@ class _VideoViewerState extends State<VideoViewer> {
               ElevatedButton(
                 onPressed: _initializeVideoPlayer,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF11FFB2),
-                  foregroundColor: const Color(0xFF0A1B33),
+                  backgroundColor: AppColors.getSecondaryColor(widget.seedColor, widget.mode),
+                  foregroundColor: AppColors.getTextColor(widget.mode),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Retry',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                child: Text(
+                  Translations.getFoulDetectionText('retry', widget.currentLang),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -118,33 +123,19 @@ class _VideoViewerState extends State<VideoViewer> {
     }
     if (!_isInitialized || _chewieController == null) {
       return Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF071628),
-              Color(0xFF0D2B59),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: AppColors.getBodyGradient(widget.mode),
         ),
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation(Color(0xFF11FFB2)),
+            valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(widget.seedColor, widget.mode)),
           ),
         ),
       );
     }
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF071628),
-            Color(0xFF0D2B59),
-          ],
-        ),
+      decoration: BoxDecoration(
+        gradient: AppColors.getBodyGradient(widget.mode),
       ),
       child: Chewie(controller: _chewieController!),
     );

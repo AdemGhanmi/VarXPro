@@ -1,12 +1,21 @@
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 
 class CsvDataGridSource extends DataGridSource {
   final List<String> _headers;
   final List<List<dynamic>> _rows;
+  final int mode;
+  final Color seedColor;
+  final String currentLang;
 
-  CsvDataGridSource({required List<List<dynamic>> csvData})
-      : _headers = csvData.isNotEmpty
+  CsvDataGridSource({
+    required List<List<dynamic>> csvData,
+    required this.mode,
+    required this.seedColor,
+    required this.currentLang,
+  })  : _headers = csvData.isNotEmpty
             ? csvData.first.map((e) => e.toString()).toList()
             : [],
         _rows = csvData.length > 1 ? csvData.sublist(1) : [] {
@@ -41,7 +50,7 @@ class CsvDataGridSource extends DataGridSource {
           alignment: Alignment.centerLeft,
           child: Text(
             cell.value.toString(),
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.getTextColor(mode)),
           ),
         );
       }).toList(),
@@ -57,9 +66,9 @@ class CsvDataGridSource extends DataGridSource {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   header,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF11FFB2),
+                    color: AppColors.getTertiaryColor(seedColor, mode),
                   ),
                 ),
               ),
@@ -70,42 +79,37 @@ class CsvDataGridSource extends DataGridSource {
 
 class CsvViewer extends StatelessWidget {
   final List<List<dynamic>> csvData;
+  final int mode;
+  final Color seedColor;
+  final String currentLang;
 
-  const CsvViewer({super.key, required this.csvData});
+  const CsvViewer({
+    super.key,
+    required this.csvData,
+    required this.mode,
+    required this.seedColor,
+    required this.currentLang,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (csvData.isEmpty) {
       return Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF071628),
-              Color(0xFF0D2B59),
-            ],
-          ),
+        decoration: BoxDecoration(
+          gradient: AppColors.getBodyGradient(mode),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
-            "No CSV data available",
-            style: TextStyle(color: Colors.white),
+            Translations.getFoulDetectionText('noCsvAvailable', currentLang),
+            style: TextStyle(color: AppColors.getTextColor(mode)),
           ),
         ),
       );
     }
-    final source = CsvDataGridSource(csvData: csvData);
+    final source = CsvDataGridSource(csvData: csvData, mode: mode, seedColor: seedColor, currentLang: currentLang);
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFF071628),
-            Color(0xFF0D2B59),
-          ],
-        ),
+      decoration: BoxDecoration(
+        gradient: AppColors.getBodyGradient(mode),
       ),
       child: SfDataGrid(
         source: source,

@@ -1,19 +1,29 @@
 import 'dart:io';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
+import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 class ImagePickerWidget extends StatelessWidget {
   final Function(File) onImagePicked;
   final String buttonText;
+  final int mode;
+  final Color seedColor;
 
   const ImagePickerWidget({
     super.key,
     required this.onImagePicked,
-    this.buttonText = 'Pick and Upload Image',
+    required this.buttonText,
+    required this.mode,
+    required this.seedColor,
   });
 
   Future<void> _pickImage(BuildContext context) async {
+    final currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLanguage;
+
     PermissionStatus status;
     if (Platform.isAndroid) {
       status = await Permission.photos.request();
@@ -23,16 +33,43 @@ class ImagePickerWidget extends StatelessWidget {
 
     if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please grant photo access to pick images')),
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.warning, color: AppColors.getTextColor(mode)),
+              const SizedBox(width: 8),
+              Text(
+                Translations.getOffsideText('photoAccessDenied', currentLang),
+                style: TextStyle(color: AppColors.getTextColor(mode)),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.getSurfaceColor(mode),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
       return;
     }
     if (status.isPermanentlyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Photo access denied. Enable in settings.'),
+          content: Row(
+            children: [
+              Icon(Icons.settings, color: AppColors.getTextColor(mode)),
+              const SizedBox(width: 8),
+              Text(
+                Translations.getOffsideText('photoAccessPermanentlyDenied', currentLang),
+                style: TextStyle(color: AppColors.getTextColor(mode)),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.getSurfaceColor(mode),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           action: SnackBarAction(
-            label: 'Settings',
+            label: Translations.getOffsideText('settings', currentLang),
+            textColor: AppColors.getTertiaryColor(seedColor, mode),
             onPressed: () => openAppSettings(),
           ),
         ),
@@ -47,21 +84,66 @@ class ImagePickerWidget extends StatelessWidget {
         onImagePicked(File(pickedFile.path));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No image selected')),
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.image_not_supported, color: AppColors.getTextColor(mode)),
+                const SizedBox(width: 8),
+                Text(
+                  Translations.getOffsideText('noImageSelected', currentLang),
+                  style: TextStyle(color: AppColors.getTextColor(mode)),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.getSurfaceColor(mode),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking image: $e')),
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.redAccent),
+              const SizedBox(width: 8),
+              Text(
+                '${Translations.getOffsideText('errorPickingImage', currentLang)}: $e',
+                style: TextStyle(color: AppColors.getTextColor(mode)),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.getSurfaceColor(mode),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    return ElevatedButton.icon(
       onPressed: () => _pickImage(context),
-      child: Text(buttonText),
+      icon: Icon(
+        Icons.photo_camera,
+        color: AppColors.getTextColor(mode),
+      ),
+      label: Text(
+        buttonText,
+        style: TextStyle(color: AppColors.getTextColor(mode)),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.getTertiaryColor(seedColor, mode),
+        foregroundColor: AppColors.getTextColor(mode),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 4,
+        shadowColor: AppColors.getShadowColor(seedColor, mode),
+      ),
     );
   }
 }

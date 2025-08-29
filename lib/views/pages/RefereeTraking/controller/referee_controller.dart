@@ -1,4 +1,3 @@
-// lib/controllers/referee_controller.dart
 import 'dart:io';
 import 'package:VarXPro/views/pages/RefereeTraking/model/referee_analysis.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/service/referee_api_service.dart';
@@ -41,7 +40,7 @@ class RefereeState {
   }) {
     return RefereeState(
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: error ?? this.error,
       health: health ?? this.health,
       analyzeResponse: analyzeResponse ?? this.analyzeResponse,
       cleanResponse: cleanResponse ?? this.cleanResponse,
@@ -60,37 +59,59 @@ class RefereeBloc extends Bloc<RefereeEvent, RefereeState> {
 
   Future<void> _onCheckHealth(
       CheckHealthEvent event, Emitter<RefereeState> emit) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final health = await service.checkHealth();
       emit(state.copyWith(isLoading: false, health: health));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(
+        isLoading: false,
+        error: e.toString().contains('FileNotFoundError')
+            ? 'Backend model file missing. Contact administrator.'
+            : 'Failed to check API health: $e',
+      ));
     }
   }
 
   Future<void> _onAnalyzeVideo(
       AnalyzeVideoEvent event, Emitter<RefereeState> emit) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.analyzeVideo(
         video: event.video,
         confThreshold: event.confThreshold,
       );
+      if (!response.ok) {
+        emit(state.copyWith(
+          isLoading: false,
+          error: response.reportText.isNotEmpty
+              ? response.reportText
+              : 'Analysis failed on server.',
+        ));
+        return;
+      }
       emit(state.copyWith(isLoading: false, analyzeResponse: response));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(
+        isLoading: false,
+        error: e.toString().contains('FileNotFoundError')
+            ? 'Backend model file missing. Contact administrator.'
+            : 'Failed to analyze video: $e',
+      ));
     }
   }
 
   Future<void> _onCleanFiles(
       CleanFilesEvent event, Emitter<RefereeState> emit) async {
-    emit(state.copyWith(isLoading: true));
+    emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.clean();
       emit(state.copyWith(isLoading: false, cleanResponse: response));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: e.toString()));
+      emit(state.copyWith(
+        isLoading: false,
+        error: 'Failed to clean server files: $e',
+      ));
     }
   }
 }
