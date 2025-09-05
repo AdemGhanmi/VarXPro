@@ -122,6 +122,37 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
                   languageProvider,
                   textPrimary,
                 ),
+                if (_controller.finalVideoPath != null && !_controller.isRecording)
+                  Positioned(
+                    bottom: 20,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: ScaleTransition(
+                        scale: _glowAnimation,
+                        child: ElevatedButton.icon(
+                          icon: Icon(Icons.play_arrow, color: textPrimary),
+                          label: Text(
+                            Translations.translate('view_recording', lang),
+                            style: GoogleFonts.roboto(color: textPrimary),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VideoPlaybackScreen(filePath: _controller.finalVideoPath!),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.getLabelColor(seedColor, modeProvider.currentMode),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           );
@@ -301,18 +332,6 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                      ),
-                      action: SnackBarAction(
-                        label: Translations.translate('view', lang),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  VideoPlaybackScreen(filePath: videoPath),
-                            ),
-                          );
-                        },
                       ),
                     ),
                   );

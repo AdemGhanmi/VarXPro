@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'package:flutter_screen_recording/flutter_screen_recording.dart';
 import 'package:path_provider/path_provider.dart';
@@ -23,16 +24,14 @@ class RecordingService {
   }
 
   Future<void> startRecording(String channelName, String title, String message) async {
-    final filePath = await getRecordingFilePath(channelName);
     await FlutterScreenRecording.startRecordScreen(
       "Recording $channelName",
       titleNotification: title,
       messageNotification: message,
     );
-    // filePath متاعك موجود لو تحب تحفظو بعد
   }
 
   Future<String?> stopRecording() async {
-    return await FlutterScreenRecording.stopRecordScreen; // <- لازم ()
+    return await FlutterScreenRecording.stopRecordScreen;
   }
 }

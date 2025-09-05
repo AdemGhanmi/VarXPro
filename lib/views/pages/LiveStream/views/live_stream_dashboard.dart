@@ -223,6 +223,7 @@ class _LiveStreamDashboardState extends State<LiveStreamDashboard> with TickerPr
     final crossAxisCount = screenWidth < 400 ? 2 : screenWidth < 600 ? 3 : screenWidth < 900 ? 4 : 6;
 
     return Scaffold(
+     
       body: Stack(
         children: [
           Positioned.fill(
@@ -256,9 +257,7 @@ class _LiveStreamDashboardState extends State<LiveStreamDashboard> with TickerPr
               return NestedScrollView(
                 controller: _scrollController,
                 headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                  
-                  ];
+                  return [];
                 },
                 body: _controller.isLoading
                     ? Center(
@@ -273,7 +272,8 @@ class _LiveStreamDashboardState extends State<LiveStreamDashboard> with TickerPr
                             ),
                             SizedBox(height: isPortrait ? 16 : 12),
                             Text(
-Translations.translate('loading_channels', languageProvider.currentLanguage),                              style: GoogleFonts.roboto(
+                              Translations.translate('loading_channels', languageProvider.currentLanguage),
+                              style: GoogleFonts.roboto(
                                 color: textSecondary,
                                 fontSize: isPortrait ? 16 : 14,
                                 fontWeight: FontWeight.w500,
@@ -301,7 +301,8 @@ Translations.translate('loading_channels', languageProvider.currentLanguage),   
                                 ),
                                 SizedBox(height: isPortrait ? 16 : 12),
                                 Text(
-Translations.translate('unknown_error', languageProvider.currentLanguage),                                  style: GoogleFonts.roboto(
+                                  Translations.translate('unknown_error', languageProvider.currentLanguage),
+                                  style: GoogleFonts.roboto(
                                     color: textSecondary,
                                     fontSize: isPortrait ? 16 : 14,
                                     fontWeight: FontWeight.w500,
@@ -324,7 +325,8 @@ Translations.translate('unknown_error', languageProvider.currentLanguage),      
                                     elevation: 2,
                                   ),
                                   child: Text(
-Translations.translate('retry', languageProvider.currentLanguage),                                    style: GoogleFonts.roboto(
+                                    Translations.translate('retry', languageProvider.currentLanguage),
+                                    style: GoogleFonts.roboto(
                                       fontSize: isPortrait ? 14 : 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -350,7 +352,8 @@ Translations.translate('retry', languageProvider.currentLanguage),              
                                         padding: EdgeInsets.only(right: screenWidth * 0.02),
                                         child: ChoiceChip(
                                           label: Text(
-Translations.translate('all', languageProvider.currentLanguage),                                            style: GoogleFonts.roboto(
+                                            Translations.translate('all', languageProvider.currentLanguage),
+                                            style: GoogleFonts.roboto(
                                               color: modeProvider.currentMode == 2 ? Colors.black : Colors.white,
                                               fontSize: isPortrait ? 14 : 12,
                                               fontWeight: FontWeight.w600,
@@ -471,7 +474,8 @@ Translations.translate('all', languageProvider.currentLanguage),                
                                             ),
                                             SizedBox(height: isPortrait ? 16 : 12),
                                             Text(
-Translations.translate('no_channels_found', languageProvider.currentLanguage),                                              style: GoogleFonts.roboto(
+                                              Translations.translate('no_channels_found', languageProvider.currentLanguage),
+                                              style: GoogleFonts.roboto(
                                                 color: textSecondary,
                                                 fontSize: isPortrait ? 16 : 14,
                                                 fontWeight: FontWeight.w500,
@@ -489,7 +493,8 @@ Translations.translate('no_channels_found', languageProvider.currentLanguage),  
                                                 ),
                                               ),
                                               child: Text(
-Translations.translate('reset_filters', languageProvider.currentLanguage),                                                style: GoogleFonts.roboto(
+                                                Translations.translate('reset_filters', languageProvider.currentLanguage),
+                                                style: GoogleFonts.roboto(
                                                   fontSize: isPortrait ? 14 : 12,
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -617,9 +622,9 @@ class _FootballGridPainter extends CustomPainter {
     final rect = Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
     canvas.drawRect(rect, fieldPaint);
 
-    final midX = rect.center.dy;
-    canvas.drawLine(Offset(rect.left + rect.width / 2 - 100, midX), Offset(rect.left + rect.width / 2 + 100, midX), fieldPaint);
-    canvas.drawCircle(Offset(rect.left + rect.width / 2, midX), 30, fieldPaint);
+    final midY = rect.center.dy;
+    canvas.drawLine(Offset(rect.left + rect.width / 2 - 100, midY), Offset(rect.left + rect.width / 2 + 100, midY), fieldPaint);
+    canvas.drawCircle(Offset(rect.left + rect.width / 2, midY), 30, fieldPaint);
   }
 
   @override

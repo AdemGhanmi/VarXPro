@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'package:VarXPro/views/pages/LiveStream/service/permission_service.dart';
 import 'package:VarXPro/views/pages/LiveStream/service/recording_service.dart';
@@ -31,7 +32,6 @@ class StreamVideoController extends ChangeNotifier {
   VideoPlayerController? get videoController => _videoController;
   ChewieController? get chewieController => _chewieController;
 
-  /// 🎥 Initialiser le player
   Future<void> initializePlayer(String streamUrl) async {
     try {
       _videoController?.dispose();
@@ -65,7 +65,6 @@ class StreamVideoController extends ChangeNotifier {
     }
   }
 
-  /// 📲 Demander les permissions
   Future<void> requestPermissions() async {
     try {
       await _permissionService.requestPermissions();
@@ -76,7 +75,6 @@ class StreamVideoController extends ChangeNotifier {
     _safeNotify();
   }
 
-  /// ⏺️ Démarrer l’enregistrement
   Future<void> startRecording(String channelName, String title, String message) async {
     try {
       isRecording = true;
@@ -103,7 +101,6 @@ class StreamVideoController extends ChangeNotifier {
     }
   }
 
-  /// ⏹️ Arrêter l’enregistrement
   Future<String?> stopRecording() async {
     recordingTimer?.cancel();
     recordingTimer = null;
@@ -130,7 +127,6 @@ class StreamVideoController extends ChangeNotifier {
     }
   }
 
-  /// 👆 Toggle des controls
   void toggleControls() {
     showControls = !showControls;
     controlsTimer?.cancel();

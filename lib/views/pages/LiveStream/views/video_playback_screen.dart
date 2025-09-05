@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'package:VarXPro/model/appColor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
@@ -258,3 +259,4 @@ class _VideoPlaybackScreenState extends State<VideoPlaybackScreen> with TickerPr
     );
   }
 }
+
