@@ -3,7 +3,6 @@ import 'package:VarXPro/views/pages/RefereeTraking/model/referee_analysis.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/service/referee_api_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 abstract class RefereeEvent {}
 
 class CheckHealthEvent extends RefereeEvent {}
@@ -22,6 +21,7 @@ class RefereeState {
   final HealthResponse? health;
   final AnalyzeResponse? analyzeResponse;
   final CleanResponse? cleanResponse;
+  final String? reportText;
 
   RefereeState({
     this.isLoading = false,
@@ -29,6 +29,7 @@ class RefereeState {
     this.health,
     this.analyzeResponse,
     this.cleanResponse,
+    this.reportText,
   });
 
   RefereeState copyWith({
@@ -37,6 +38,7 @@ class RefereeState {
     HealthResponse? health,
     AnalyzeResponse? analyzeResponse,
     CleanResponse? cleanResponse,
+    String? reportText,
   }) {
     return RefereeState(
       isLoading: isLoading ?? this.isLoading,
@@ -44,6 +46,7 @@ class RefereeState {
       health: health ?? this.health,
       analyzeResponse: analyzeResponse ?? this.analyzeResponse,
       cleanResponse: cleanResponse ?? this.cleanResponse,
+      reportText: reportText ?? this.reportText,
     );
   }
 }
@@ -64,6 +67,7 @@ class RefereeBloc extends Bloc<RefereeEvent, RefereeState> {
       final health = await service.checkHealth();
       emit(state.copyWith(isLoading: false, health: health));
     } catch (e) {
+      print('Health check error: ${e.toString()}'); // Added logging
       emit(state.copyWith(
         isLoading: false,
         error: e.toString().contains('FileNotFoundError')
@@ -81,17 +85,22 @@ class RefereeBloc extends Bloc<RefereeEvent, RefereeState> {
         video: event.video,
         confThreshold: event.confThreshold,
       );
+      String reportText = response.reportText ?? '';
+      if (reportText.isEmpty && response.artifacts.reportUrl.isNotEmpty) {
+        reportText = await service.getArtifactText(response.artifacts.reportUrl);
+      }
       if (!response.ok) {
         emit(state.copyWith(
           isLoading: false,
-          error: response.reportText.isNotEmpty
-              ? response.reportText
+          error: reportText.isNotEmpty
+              ? reportText
               : 'Analysis failed on server.',
         ));
         return;
       }
-      emit(state.copyWith(isLoading: false, analyzeResponse: response));
+      emit(state.copyWith(isLoading: false, analyzeResponse: response, reportText: reportText));
     } catch (e) {
+      print('Analyze video error: ${e.toString()}'); // Added logging for exact error
       emit(state.copyWith(
         isLoading: false,
         error: e.toString().contains('FileNotFoundError')
@@ -108,6 +117,7 @@ class RefereeBloc extends Bloc<RefereeEvent, RefereeState> {
       final response = await service.clean();
       emit(state.copyWith(isLoading: false, cleanResponse: response));
     } catch (e) {
+      print('Clean files error: ${e.toString()}'); // Added logging
       emit(state.copyWith(
         isLoading: false,
         error: 'Failed to clean server files: $e',

@@ -24,9 +24,8 @@ android {
         applicationId = "com.example.var_x_pro"
 
         // Versions héritées de flutter.gradle
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
-
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 

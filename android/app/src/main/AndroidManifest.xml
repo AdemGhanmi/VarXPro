@@ -1,17 +1,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.var_x_pro">
-    <!-- Permissions for Android 13+ (API 33+) -->
+
+    <!-- Permissions Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
-    <!-- Permissions for Android 12 and below -->
+    
+    <!-- Permissions Android 12 et plus bas -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    
+    <!-- Camera / Audio -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    
+    <!-- Location pour médias -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"/>
+    
+    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    
+    <!-- Foreground service (pour screen recording) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:name="${applicationName}"
         android:label="VarXPro"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="true">
 
         <activity
             android:name=".MainActivity"
@@ -27,6 +44,6 @@
             </intent-filter>
         </activity>
 
-        <meta-data android:name="flutterEmbedding" android:value="2" />
+        <meta-data android:name="flutterEmbedding" android:value="2"/>
     </application>
 </manifest>

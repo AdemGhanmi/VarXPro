@@ -1,10 +1,11 @@
+
 // lib/views/pages/TrackingAndGoalAnalysis/service/tracking_service.dart
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/model/analysis_result.dart'; // Assuming this is the model file
+import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/model/analysis_result.dart'; 
 
 class TrackingService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.18:8002')); // Update IP if needed
+  final Dio _dio = Dio(BaseOptions(baseUrl: 'https://tracking.varxpro.com')); 
 
   Future<HealthResponse> checkHealth() async {
     try {

@@ -1,8 +1,8 @@
 // splash_screen.dart - Do not change as per instructions
 import 'dart:math';
+import 'package:VarXPro/views/home.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'package:VarXPro/views/home_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -78,7 +78,6 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: bgTop,
       body: Stack(
         children: [
-          // Arrière-plan avec terrain de football stylisé
           Positioned.fill(
             child: CustomPaint(
               painter: _FootballGridPainter(),
@@ -201,7 +200,6 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 32),
 
-                // Nom de l'application avec dégradé
                 ShaderMask(
                   shaderCallback: (bounds) => const LinearGradient(
                     colors: [
@@ -228,7 +226,6 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 8),
 
-                // Sous-titre avec effet de lueur subtile
                 Opacity(
                   opacity: 0.9,
                   child: Text(
@@ -307,7 +304,6 @@ class _SplashScreenState extends State<SplashScreen>
 
                 const SizedBox(height: 16),
 
-                // Indication de chargement
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -363,7 +359,6 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// Peintre pour le terrain de football avec grille stylisée
 class _FootballGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -376,19 +371,16 @@ class _FootballGridPainter extends CustomPainter {
       ..color = const Color(0xFF11FFB2).withOpacity(0.08)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
 
-    // Rectangle du terrain
     final inset = 28.0;
     final rect = Rect.fromLTWH(
         inset, inset, size.width - inset * 2, size.height - inset * 2);
     canvas.drawRect(rect, pitch);
     canvas.drawRect(rect, glow);
 
-    // Ligne médiane et cercle central
     final midY = rect.centerLeft.dy;
     canvas.drawLine(Offset(rect.left, midY), Offset(rect.right, midY), pitch);
     canvas.drawCircle(rect.center, min(rect.width, rect.height) * 0.12, pitch);
 
-    // Zones de penalty
     void penaltyBoxes() {
       final boxW = rect.width * 0.18;
       final boxH = rect.height * 0.24;
@@ -399,7 +391,6 @@ class _FootballGridPainter extends CustomPainter {
       canvas.drawRect(leftBox, pitch);
       canvas.drawRect(rightBox, pitch);
 
-      // Points de penalty
       final leftPenaltySpot = Offset(rect.left + boxW * 0.7, rect.center.dy);
       final rightPenaltySpot = Offset(rect.right - boxW * 0.7, rect.center.dy);
       canvas.drawCircle(leftPenaltySpot, 3, pitch);
@@ -408,7 +399,6 @@ class _FootballGridPainter extends CustomPainter {
 
     penaltyBoxes();
 
-    // Grille tactique avec perspective
     final gridPaint = Paint()
       ..color = Colors.white.withOpacity(0.06)
       ..strokeWidth = 0.8;
@@ -421,7 +411,6 @@ class _FootballGridPainter extends CustomPainter {
       canvas.drawLine(Offset(rect.left, y), Offset(rect.right, y), gridPaint);
     }
 
-    // Ajout d'arcs de cercle stylisés
     final arcPaint = Paint()
       ..color = const Color(0xFF11FFB2).withOpacity(0.1)
       ..style = PaintingStyle.stroke
@@ -448,7 +437,6 @@ class _FootballGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// Peintre pour la ligne de scan animée
 class _ScanLinePainter extends CustomPainter {
   final double progress;
   _ScanLinePainter({required this.progress});
@@ -471,7 +459,6 @@ class _ScanLinePainter extends CustomPainter {
 
     canvas.drawRect(Rect.fromLTWH(0, y - 100, size.width, 200), line);
 
-    // Ajout d'un effet de lumière projetée sous la ligne de scan
     final glow = Paint()
       ..shader = RadialGradient(
         colors: [
@@ -491,7 +478,6 @@ class _ScanLinePainter extends CustomPainter {
       oldDelegate.progress != progress;
 }
 
-/// Peintre pour les anneaux radar animés
 class _RadarRingsPainter extends CustomPainter {
   final double time;
   _RadarRingsPainter({required this.time});
@@ -515,7 +501,6 @@ class _RadarRingsPainter extends CustomPainter {
       canvas.drawCircle(center, r, ring);
     }
 
-    // Effet de balayage radar rotatif
     final sweepPaint = Paint()
       ..shader = SweepGradient(
         colors: [

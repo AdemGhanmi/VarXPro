@@ -7,9 +7,7 @@ import 'package:csv/csv.dart';
 import '../model/foul_detection.dart';
 
 class FoulDetectionService {
-  // ملاحظة: لو تخدم من Emulator Android و السيرفر على نفس PC:
-  // استعمل 10.0.2.2 بدل 192.168.x.x
-  static const String _host = 'http://192.168.1.18:8000';
+  static const String _host = 'https://fouldetection.varxpro.com';
   static const String _baseApi = '$_host/api';
 
   Future<Map<String, dynamic>> ping() async {

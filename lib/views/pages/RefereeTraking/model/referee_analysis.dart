@@ -1,7 +1,8 @@
+
 class HealthResponse {
   final String status;
   final bool modelLoaded;
-  final Map<String, int>? classes;
+  final Map<String, String>? classes;
 
   HealthResponse({
     required this.status,
@@ -14,7 +15,7 @@ class HealthResponse {
       status: json['status'] as String,
       modelLoaded: json['model_loaded'] as bool,
       classes: json['classes'] != null
-          ? Map<String, int>.from(json['classes'])
+          ? Map<String, String>.from(json['classes'])
           : null,
     );
   }
@@ -25,14 +26,14 @@ class AnalyzeResponse {
   final double confThreshold;
   final Artifacts artifacts;
   final Summary summary;
-  final String reportText;
+  final String? reportText;
 
   AnalyzeResponse({
     required this.ok,
     required this.confThreshold,
     required this.artifacts,
     required this.summary,
-    required this.reportText,
+    this.reportText,
   });
 
   factory AnalyzeResponse.fromJson(Map<String, dynamic> json) {
@@ -41,7 +42,7 @@ class AnalyzeResponse {
       confThreshold: (json['conf_threshold'] as num).toDouble(),
       artifacts: Artifacts.fromJson(json['artifacts'] as Map<String, dynamic>),
       summary: Summary.fromJson(json['summary'] as Map<String, dynamic>),
-      reportText: json['report_text'] as String,
+      reportText: json['report_text'] as String?,
     );
   }
 }
@@ -125,3 +126,4 @@ class CleanResponse {
     );
   }
 }
+

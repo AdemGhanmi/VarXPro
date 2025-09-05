@@ -1,21 +1,30 @@
-// lib/views/pages/FiledLinesPages/service/perspective_service.dart
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/model/perspective_model.dart';
 
 class PerspectiveService {
-  static const String baseUrl = 'http://192.168.1.18:8001';
-
+  static const String defaultBaseUrl = 'https://keyfieldlines.varxpro.com';
   final Dio _dio;
 
   PerspectiveService({String? baseUrl})
       : _dio = Dio(BaseOptions(
-          baseUrl: baseUrl ?? PerspectiveService.baseUrl,
-          connectTimeout: const Duration(seconds: 30),
-          receiveTimeout: const Duration(seconds: 30),
-          sendTimeout: const Duration(seconds: 30),
+          baseUrl: baseUrl ?? defaultBaseUrl,
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
+          sendTimeout: const Duration(seconds: 60),
+          validateStatus: (status) => status != null && status < 500,
         )) {
-    _dio.interceptors.add(LogInterceptor(responseBody: true));
+    _dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
+  }
+
+  Future<bool> isCalibrated() async {
+    try {
+      final response = await _dio.get('/health');
+      final health = HealthResponse.fromJson(response.data as Map<String, dynamic>);
+      return health.calibrated;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<HealthResponse> checkHealth() async {
@@ -23,7 +32,7 @@ class PerspectiveService {
       final response = await _dio.get('/health');
       return HealthResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to check health: $e');
+      throw _handleDioError(e, 'check health');
     }
   }
 
@@ -32,16 +41,14 @@ class PerspectiveService {
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(image.path, filename: 'image.jpg'),
       });
-      
       final response = await _dio.post(
-        '/detect-lines', 
+        '/detect-lines',
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
-      
       return DetectLinesResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to detect lines: $e');
+      throw _handleDioError(e, 'detect lines');
     }
   }
 
@@ -56,21 +63,16 @@ class PerspectiveService {
         'source_points': sourcePoints,
         'dst_width': dstWidth,
         'dst_height': dstHeight,
+        if (saveAs != null && saveAs.isNotEmpty) 'save_as': saveAs,
       };
-      
-      if (saveAs != null && saveAs.isNotEmpty) {
-        data['save_as'] = saveAs;
-      }
-      
       final response = await _dio.post(
         '/set-calibration',
         data: data,
         options: Options(contentType: 'application/json'),
       );
-      
       return CalibrationResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to set calibration: $e');
+      throw _handleDioError(e, 'set calibration');
     }
   }
 
@@ -81,10 +83,9 @@ class PerspectiveService {
         data: {'name': name},
         options: Options(contentType: 'application/json'),
       );
-      
       return LoadCalibrationResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to load calibration: $e');
+      throw _handleDioError(e, 'load calibration by name');
     }
   }
 
@@ -96,111 +97,128 @@ class PerspectiveService {
           filename: 'calibration.npz',
         ),
       });
-      
       final response = await _dio.post(
-        '/load-calibration', 
+        '/load-calibration',
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
-      
       return LoadCalibrationResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to load calibration file: $e');
+      throw _handleDioError(e, 'load calibration by file');
     }
   }
 
   Future<TransformFrameResponse> transformFrame(File image) async {
+    if (!await isCalibrated()) {
+      throw Exception('API not calibrated. Please set or load calibration first.');
+    }
     try {
       final formData = FormData.fromMap({
         'image': await MultipartFile.fromFile(image.path, filename: 'image.jpg'),
       });
-      
       final response = await _dio.post(
-        '/transform-frame', 
+        '/transform-frame',
         data: formData,
         options: Options(contentType: 'multipart/form-data'),
       );
-      
       return TransformFrameResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to transform frame: $e');
+      throw _handleDioError(e, 'transform frame');
     }
   }
 
-Future<TransformVideoResponse> transformVideo(
-  File video, {
-  bool overlayLines = true,
-  String codec = 'mp4v',
-}) async {
-  try {
-    // Validate file size (e.g., max 100MB)
-    final fileSize = await video.length();
-    if (fileSize > 100 * 1024 * 1024) {
-      throw Exception('Video file is too large (max 100MB)');
+  Future<TransformVideoResponse> transformVideo(
+    File video, {
+    bool overlayLines = true,
+    String codec = 'mp4v',
+    Function(int, int)? onProgress,
+  }) async {
+    if (!await isCalibrated()) {
+      throw Exception('API not calibrated. Please set or load calibration first.');
     }
-
-    final formData = FormData.fromMap({
-      'video': await MultipartFile.fromFile(
-        video.path,
-        filename: 'video.mp4',
-      ),
-      'overlay_lines': overlayLines ? '1' : '0',
-      'codec': codec,
-    });
-
-    final response = await _dio.post(
-      '/transform-video',
-      data: formData,
-      options: Options(
-        contentType: 'multipart/form-data',
-        receiveTimeout: const Duration(minutes: 5),
-        sendTimeout: const Duration(minutes: 5),
-      ),
-      onSendProgress: (sent, total) {
-        print('Upload progress: ${(sent / total * 100).toStringAsFixed(2)}%');
-      },
-    );
-
-    return TransformVideoResponse.fromJson(response.data as Map<String, dynamic>);
-  } catch (e) {
-    throw Exception('Failed to transform video: $e');
+    try {
+      final fileSize = await video.length();
+      if (fileSize > 100 * 1024 * 1024) {
+        throw Exception('Video file is too large (max 100MB)');
+      }
+      final formData = FormData.fromMap({
+        'video': await MultipartFile.fromFile(video.path, filename: 'video.mp4'),
+        'overlay_lines': overlayLines ? '1' : '0',
+        'codec': codec,
+      });
+      final response = await _dio.post(
+        '/transform-video',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          receiveTimeout: const Duration(minutes: 5),
+          sendTimeout: const Duration(minutes: 5),
+        ),
+        onSendProgress: onProgress,
+      );
+      return TransformVideoResponse.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw _handleDioError(e, 'transform video');
+    }
   }
-}
 
   Future<TransformPointResponse> transformPoint(double x, double y) async {
+    if (!await isCalibrated()) {
+      throw Exception('API not calibrated. Please set or load calibration first.');
+    }
     try {
       final response = await _dio.post(
         '/transform-point',
         data: {'x': x, 'y': y},
         options: Options(contentType: 'application/json'),
       );
-      
       return TransformPointResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to transform point: $e');
+      throw _handleDioError(e, 'transform point');
     }
   }
 
   Future<TransformPointResponse> inverseTransformPoint(double x, double y) async {
+    if (!await isCalibrated()) {
+      throw Exception('API not calibrated. Please set or load calibration first.');
+    }
     try {
       final response = await _dio.post(
         '/inverse-transform-point',
         data: {'x': x, 'y': y},
         options: Options(contentType: 'application/json'),
       );
-      
       return TransformPointResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to inverse transform point: $e');
+      throw _handleDioError(e, 'inverse transform point');
     }
   }
 
   Future<CleanResponse> clean() async {
     try {
-      final response = await _dio.post('/clean');
+      final response = await _dio.post('/clean', options: Options(contentType: 'application/json'));
       return CleanResponse.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      throw Exception('Failed to clean: $e');
+      throw _handleDioError(e, 'clean artifacts');
     }
+  }
+
+  Exception _handleDioError(dynamic e, String operation) {
+    if (e is DioException) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        return Exception('Connection timeout during $operation. Please try again.');
+      } else if (e.response?.statusCode == 400) {
+        final data = e.response?.data as Map<String, dynamic>?;
+        return Exception('Bad request during $operation: ${data?['error'] ?? 'Invalid input'}');
+      } else if (e.response?.statusCode == 500) {
+        final data = e.response?.data as Map<String, dynamic>?;
+        return Exception('Server error during $operation: ${data?['error'] ?? 'Internal server error'}');
+      } else if (e.type == DioExceptionType.connectionError) {
+        return Exception('Network error during $operation. Please check your connection.');
+      }
+    }
+    return Exception('Failed to $operation: ${e.toString()}');
   }
 }

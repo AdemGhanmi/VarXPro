@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+
 class AppColors {
   static const Map<int, Color> seedColors = {
-    1: Color(0xFF1263A0), // Classic Mode (Blue)
-    2: Color(0xFF4CAF50), // Light Mode (Green)
-    3: Color(0xFF0288D1), // Pro Analysis Mode (Cyan)
-    4: Color(0xFF8E24AA), // VAR Vision Mode (Purple)
-    5: Color(0xFFFFA000), // Referee Mode (Yellow)
+    1: Color(0xFF0D47A1), 
+    2: Color(0xFF26A69A), 
+    3: Color(0xFF00695C), 
+    4: Color(0xFF512DA8),
+    5: Color(0xFFFF5722),
   };
 
   static const Color onPrimaryColor = Colors.white;
@@ -16,68 +17,68 @@ class AppColors {
 
   static Color getPrimaryColor(Color seedColor, int mode) {
     switch (mode) {
-      case 2: return Colors.green[700]!;
+      case 2: return Colors.teal[700]!;
       case 3: return Colors.cyan[800]!;
       case 4: return Colors.purple[700]!;
-      case 5: return Colors.yellow[800]!;
+      case 5: return Colors.orange[800]!;
       default: return seedColor;
     }
   }
 
   static Color getSecondaryColor(Color seedColor, int mode) {
     switch (mode) {
-      case 2: return Colors.green[300]!;
+      case 2: return Colors.teal[300]!;
       case 3: return Colors.cyan[400]!;
       case 4: return Colors.purple[300]!;
-      case 5: return Colors.yellow[400]!;
-      default: return Color.lerp(seedColor, Colors.blue, 0.5)!;
+      case 5: return Colors.orange[400]!;
+      default: return Color.lerp(seedColor, Colors.blue, 0.3)!;
     }
   }
 
   static Color getTertiaryColor(Color seedColor, int mode) {
     switch (mode) {
-      case 2: return Colors.green[100]!;
+      case 2: return Colors.teal[100]!;
       case 3: return Colors.cyan[100]!;
       case 4: return Colors.purple[100]!;
-      case 5: return Colors.yellow[100]!;
-      default: return Color.lerp(seedColor, Colors.cyan, 0.7)!;
+      case 5: return Colors.orange[100]!;
+      default: return Color.lerp(seedColor, Colors.cyan, 0.5)!;
     }
   }
 
   static Color getShadowColor(Color seedColor, int mode) {
     switch (mode) {
-      case 2: return Colors.green[200]!.withOpacity(0.3);
-      case 3: return Colors.cyan[200]!.withOpacity(0.3);
-      case 4: return Colors.purple[200]!.withOpacity(0.3);
-      case 5: return Colors.yellow[200]!.withOpacity(0.3);
-      default: return Color.lerp(seedColor, Colors.greenAccent, 0.5)!.withOpacity(0.3);
+      case 2: return Colors.teal[200]!.withOpacity(0.2);
+      case 3: return Colors.cyan[200]!.withOpacity(0.2);
+      case 4: return Colors.purple[200]!.withOpacity(0.2);
+      case 5: return Colors.orange[200]!.withOpacity(0.2);
+      default: return Color.lerp(seedColor, Colors.blue, 0.3)!.withOpacity(0.2);
     }
   }
 
   static Color getDividerColor(Color seedColor, int mode) {
     switch (mode) {
-      case 2: return Colors.green[100]!.withOpacity(0.2);
-      case 3: return Colors.cyan[100]!.withOpacity(0.2);
-      case 4: return Colors.purple[100]!.withOpacity(0.2);
-      case 5: return Colors.yellow[100]!.withOpacity(0.2);
-      default: return Color.lerp(seedColor, Colors.greenAccent, 0.5)!.withOpacity(0.2);
+      case 2: return Colors.teal[100]!.withOpacity(0.1);
+      case 3: return Colors.cyan[100]!.withOpacity(0.1);
+      case 4: return Colors.purple[100]!.withOpacity(0.1);
+      case 5: return Colors.orange[100]!.withOpacity(0.1);
+      default: return Color.lerp(seedColor, Colors.blue, 0.3)!.withOpacity(0.1);
     }
   }
 
   static Color getLabelColor(Color seedColor, int mode) {
     switch (mode) {
-      case 2: return Colors.green[300]!;
-      case 3: return Colors.cyan[300]!;
-      case 4: return Colors.purple[300]!;
-      case 5: return Colors.yellow[300]!;
-      default: return Color.lerp(seedColor, Colors.greenAccent, 0.5)!;
+      case 2: return Colors.teal[400]!;
+      case 3: return Colors.cyan[400]!;
+      case 4: return Colors.purple[400]!;
+      case 5: return Colors.orange[400]!;
+      default: return Color.lerp(seedColor, Colors.blue, 0.3)!;
     }
   }
 
   static Color getBackgroundColor(int mode) {
     switch (mode) {
-      case 2: return Colors.grey[100]!;
-      case 3: return Colors.grey[800]!;
+      case 2: return Colors.grey[50]!;
+      case 3: return Colors.grey[850]!;
       case 4: return Colors.black87;
       case 5: return Colors.grey[900]!;
       default: return const Color(0xFF0A1B33);
@@ -87,16 +88,16 @@ class AppColors {
   static Color getSurfaceColor(int mode) {
     switch (mode) {
       case 2: return Colors.white;
-      case 3: return Colors.grey[700]!;
-      case 4: return Colors.grey[800]!;
-      case 5: return Colors.grey[800]!;
+      case 3: return Colors.grey[800]!;
+      case 4: return Colors.grey[850]!;
+      case 5: return Colors.grey[850]!;
       default: return const Color(0xFF0D2B59);
     }
   }
 
   static Color getTextColor(int mode) {
     switch (mode) {
-      case 2: return Colors.black87;
+      case 2: return Colors.black;
       default: return Colors.white;
     }
   }
@@ -111,34 +112,34 @@ class AppColors {
   static LinearGradient getAppBarGradient(int mode) {
     switch (mode) {
       case 2:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.green, Colors.greenAccent],
+          colors: [Colors.teal[700]!, Colors.teal[500]!],
         );
       case 3:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.cyan, Colors.blueGrey],
+          colors: [Colors.cyan[800]!, Colors.cyan[600]!],
         );
       case 4:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.purple, Colors.blue],
+          colors: [Colors.purple[700]!, Colors.purple[500]!],
         );
       case 5:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.yellow, Colors.grey],
+          colors: [Colors.orange[800]!, Colors.orange[600]!],
         );
       default:
         return const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0D2B59), Color(0xFF1263A0)],
+          colors: [Color(0xFF0D2B59), Color(0xFF0D47A1)],
         );
     }
   }
@@ -146,34 +147,34 @@ class AppColors {
   static LinearGradient getBodyGradient(int mode) {
     switch (mode) {
       case 2:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.white, Colors.grey],
+          colors: [Colors.grey[50]!, Colors.teal[50]!],
         );
       case 3:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.blueGrey, Colors.grey],
+          colors: [Colors.grey[850]!, Colors.cyan[900]!],
         );
       case 4:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.black87, Colors.grey],
+          colors: [Colors.black87, Colors.purple[900]!],
         );
       case 5:
-        return const LinearGradient(
+        return LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.grey, Colors.black],
+          colors: [Colors.grey[900]!, Colors.orange[900]!],
         );
       default:
         return const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF071628), Color(0xFF0D2B59)],
+          colors: [Color(0xFF071628), Color(0xFF0D47A1)],
         );
     }
   }

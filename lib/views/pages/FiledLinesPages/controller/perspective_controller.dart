@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/model/perspective_model.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
 
-// Events
 abstract class PerspectiveEvent {}
 
 class CheckHealthEvent extends PerspectiveEvent {}
@@ -69,7 +67,6 @@ class InverseTransformPointEvent extends PerspectiveEvent {
 
 class CleanEvent extends PerspectiveEvent {}
 
-// State
 class PerspectiveState {
   final bool isLoading;
   final String? error;
@@ -82,6 +79,7 @@ class PerspectiveState {
   final TransformPointResponse? transformPointResponse;
   final TransformPointResponse? inversePointResponse;
   final CleanResponse? cleanResponse;
+  final double? uploadProgress;
 
   PerspectiveState({
     this.isLoading = false,
@@ -95,6 +93,7 @@ class PerspectiveState {
     this.transformPointResponse,
     this.inversePointResponse,
     this.cleanResponse,
+    this.uploadProgress,
   });
 
   PerspectiveState copyWith({
@@ -109,6 +108,7 @@ class PerspectiveState {
     TransformPointResponse? transformPointResponse,
     TransformPointResponse? inversePointResponse,
     CleanResponse? cleanResponse,
+    double? uploadProgress,
   }) {
     return PerspectiveState(
       isLoading: isLoading ?? this.isLoading,
@@ -122,6 +122,7 @@ class PerspectiveState {
       transformPointResponse: transformPointResponse ?? this.transformPointResponse,
       inversePointResponse: inversePointResponse ?? this.inversePointResponse,
       cleanResponse: cleanResponse ?? this.cleanResponse,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
     );
   }
 }
@@ -140,41 +141,32 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
     on<TransformPointEvent>(_onTransformPoint);
     on<InverseTransformPointEvent>(_onInverseTransformPoint);
     on<CleanEvent>(_onClean);
-    on<ResetCleanResponseEvent>(_onResetCleanResponse);
+on<ResetCleanResponseEvent>((event, emit) {
+  emit(state.copyWith(cleanResponse: null));
+});
   }
 
-  Future<void> _onCheckHealth(
-    CheckHealthEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
-    print('CheckHealthEvent triggered'); // Debug log
+  Future<void> _onCheckHealth(CheckHealthEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final health = await service.checkHealth();
-      print('Health response: $health'); // Debug log
       emit(state.copyWith(isLoading: false, health: health));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onDetectLines(
-    DetectLinesEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onDetectLines(DetectLinesEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.detectLines(event.image);
       emit(state.copyWith(isLoading: false, detectLinesResponse: response));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onSetCalibration(
-    SetCalibrationEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onSetCalibration(SetCalibrationEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.setCalibration(
@@ -184,143 +176,99 @@ class PerspectiveBloc extends Bloc<PerspectiveEvent, PerspectiveState> {
         saveAs: event.saveAs,
       );
       emit(state.copyWith(isLoading: false, calibrationResponse: response));
+      add(CheckHealthEvent());
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onLoadCalibrationByName(
-    LoadCalibrationByNameEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onLoadCalibrationByName(LoadCalibrationByNameEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.loadCalibrationByName(event.name);
       emit(state.copyWith(isLoading: false, loadCalibrationResponse: response));
+      if (response.ok) add(CheckHealthEvent());
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onLoadCalibrationByFile(
-    LoadCalibrationByFileEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onLoadCalibrationByFile(LoadCalibrationByFileEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.loadCalibrationByFile(event.calibrationFile);
       emit(state.copyWith(isLoading: false, loadCalibrationResponse: response));
+      if (response.ok) add(CheckHealthEvent());
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onTransformFrame(
-    TransformFrameEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onTransformFrame(TransformFrameEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.transformFrame(event.image);
       emit(state.copyWith(isLoading: false, transformFrameResponse: response));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onTransformVideo(
-    TransformVideoEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
-    emit(state.copyWith(isLoading: true, error: null));
+  Future<void> _onTransformVideo(TransformVideoEvent event, Emitter<PerspectiveState> emit) async {
+    emit(state.copyWith(isLoading: true, error: null, uploadProgress: 0.0));
     try {
       final response = await service.transformVideo(
         event.video,
         overlayLines: event.overlayLines,
         codec: event.codec,
+        onProgress: (sent, total) {
+          emit(state.copyWith(uploadProgress: sent / total));
+        },
       );
-      emit(state.copyWith(isLoading: false, transformVideoResponse: response));
+      emit(state.copyWith(isLoading: false, transformVideoResponse: response, uploadProgress: null));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString(), uploadProgress: null));
     }
   }
 
-  Future<void> _onTransformPoint(
-    TransformPointEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onTransformPoint(TransformPointEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.transformPoint(event.x, event.y);
       emit(state.copyWith(isLoading: false, transformPointResponse: response));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onInverseTransformPoint(
-    InverseTransformPointEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
+  Future<void> _onInverseTransformPoint(InverseTransformPointEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.inverseTransformPoint(event.x, event.y);
       emit(state.copyWith(isLoading: false, inversePointResponse: response));
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  Future<void> _onClean(
-    CleanEvent event,
-    Emitter<PerspectiveState> emit,
-  ) async {
-    print('CleanEvent triggered'); // Debug log
+  Future<void> _onClean(CleanEvent event, Emitter<PerspectiveState> emit) async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final response = await service.clean();
-      print('Clean response: $response'); // Debug log
-      // Reset to initial state, keeping only cleanResponse
-      emit(PerspectiveState(
+      emit(state.copyWith(
         isLoading: false,
         cleanResponse: response,
+        detectLinesResponse: null,
+        transformFrameResponse: null,
+        transformVideoResponse: null,
       ));
-      // Automatically trigger health check to refresh API status
       add(CheckHealthEvent());
     } catch (e) {
-      emit(state.copyWith(isLoading: false, error: _handleError(e)));
+      emit(state.copyWith(isLoading: false, error: e.toString()));
     }
   }
 
-  void _onResetCleanResponse(
-    ResetCleanResponseEvent event,
-    Emitter<PerspectiveState> emit,
-  ) {
-    print('ResetCleanResponseEvent triggered'); // Debug log
+  void _onResetCleanResponse(ResetCleanResponseEvent event, Emitter<PerspectiveState> emit) {
     emit(state.copyWith(cleanResponse: null, error: null));
-  }
-
-  String _handleError(dynamic e) {
-    print('Error occurred: $e'); // Debug log
-    if (e is DioException) {
-      if (e.type == DioExceptionType.connectionTimeout) {
-        return 'Server connection timed out. Please try again.';
-      } else if (e.response?.statusCode == 400) {
-        final data = e.response?.data;
-        if (data is Map && data.containsKey('error')) {
-          return 'Bad request: ${data['error']}';
-        }
-        return 'Bad request: Invalid input';
-      } else if (e.response?.statusCode == 500) {
-        final data = e.response?.data;
-        if (data is Map && data.containsKey('error')) {
-          return 'Server error: ${data['error']}';
-        }
-        return 'Server error: Internal server error';
-      } else if (e.type == DioExceptionType.connectionError) {
-        return 'Cannot connect to server. Please check your connection.';
-      }
-    }
-    return 'Error: ${e.toString()}';
   }
 }

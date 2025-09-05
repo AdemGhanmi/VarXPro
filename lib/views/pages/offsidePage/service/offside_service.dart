@@ -8,7 +8,7 @@ class OffsideService {
   OffsideService() {
     const baseUrl = String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'http://192.168.1.18:8000',
+      defaultValue: 'https://offside.varxpro.com',
     );
 
     _dio = Dio(BaseOptions(

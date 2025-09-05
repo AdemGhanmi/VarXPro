@@ -1,4 +1,5 @@
-// lib/models/tracking_model.dart
+
+// lib/views/pages/TrackingAndGoalAnalysis/model/analysis_result.dart
 class HealthResponse {
   final String status;
   final bool modelLoaded;

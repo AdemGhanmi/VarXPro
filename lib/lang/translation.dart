@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class Translations {
   static const Map<String, Map<String, dynamic>> pageTitles = {
     'en': {
@@ -9,8 +7,68 @@ class Translations {
         'Field Lines',
         'Offside',
         'Referee Tracking',
+        'Live Streaming', // Add this
       ],
-      'navLabels': ['Tracking', 'Faults', 'Lines', 'Offside', 'Referee'],
+      'Referpage': {
+        'API Status': 'API Status',
+        'Model Loaded: ': 'Model Loaded: ',
+        'Classes: ': 'Classes: ',
+        'Upload Video for Analysis': 'Upload Video for Analysis',
+        'Analysis Results': 'Analysis Results',
+        'Total Distance': 'Total Distance',
+        'Average Speed': 'Average Speed',
+        'Max Speed': 'Max Speed',
+        'Sprints': 'Sprints',
+        'First Half Distance': 'First Half Distance',
+        'Second Half Distance': 'Second Half Distance',
+        'Download Report TXT': 'Download Report TXT',
+        'Download Metrics CSV': 'Download Metrics CSV',
+        'Could not open report': 'Could not open report',
+        'Could not open metrics CSV': 'Could not open metrics CSV',
+        'Full Report': 'Full Report',
+        'No report available': 'No report available',
+        'Heatmap': 'Heatmap',
+        'Speed Plot': 'Speed Plot',
+        'Proximity Plot': 'Proximity Plot',
+        'Output Video': 'Output Video',
+        'Sample Frames': 'Sample Frames',
+        'Failed to load frame': 'Failed to load frame',
+        'Clean Server Files': 'Clean Server Files',
+        'Cleaned ': 'Cleaned ',
+        ' files': ' files',
+        'Failed to load image': 'Failed to load image',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyzing video... This may take 10-30 minutes or longer.',
+        'Retry': 'Retry',
+        'Play Tic-Tac-Toe while waiting!': 'Play Tic-Tac-Toe while waiting!',
+        'It\'s a draw!': 'It\'s a draw!',
+        ' wins!': ' wins!',
+        'Reset Game': 'Reset Game',
+        'Analysis complete! View results.': 'Analysis complete! View results.',
+        'Unknown': 'Unknown',
+      },
+      'homePage': {
+        'subtitle': 'AI-Powered Football Video Analytics',
+        'playerTrackingDesc':
+            'Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.',
+        'foulDetectionDesc':
+            'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
+        'keyFieldLinesDesc':
+            'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
+        'offsideDesc':
+            'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
+        'refereeTrackingDesc':
+            'Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.',
+        'enterApp': 'Enter the App',
+      },
+      'navLabels': [
+        'Tracking',
+        'Faults',
+        'Lines',
+        'Offside',
+        'Referee',
+        'Live',
+      ],
       'chooseLanguage': 'Choose Language',
       'chooseMode': 'Choose Mode',
       'languages': ['English', 'French', 'Arabic'],
@@ -54,12 +112,13 @@ class Translations {
         'parameters': 'Parameters',
         'lineMode': 'Line Mode',
         'photoAccessDenied': 'Please grant photo access to pick images',
-        'photoAccessPermanentlyDenied': 'Photo access denied. Enable in settings.',
+        'photoAccessPermanentlyDenied':
+            'Photo access denied. Enable in settings.',
         'noImageSelected': 'No image selected',
         'errorPickingImage': 'Error picking image',
+        'error': 'Error',
         'settings': 'Settings',
         'pickedImage': 'Picked Image',
-        'error': 'Error',
         // New translations for the provided pages
         'videoMustBeMp4': 'Video must be in MP4 format',
         'overlayLines': 'Overlay Lines',
@@ -118,6 +177,29 @@ class Translations {
         'inputInverse': 'Input (Inverse)',
         'outputInverse': 'Output (Inverse)',
         'errorInverse': 'Error (Inverse)',
+        'fieldLinesDetection': 'Field Lines Detection',
+        'mainActions': 'Main Actions',
+
+        'calibrationResult': 'Calibration Result',
+
+        'detectionResult': 'Detection Result',
+
+        'transformationResult': 'Transformation Result',
+
+        'videoTransformationResult': 'Video Transformation Result',
+
+        'pointTransformationResult': 'Point Transformation Result',
+
+        'artifactsCleaned': 'Artifacts Cleaned',
+        'cleanArtifacts': 'Clean Artifacts',
+
+        'status': 'Status',
+        'fieldLinesAnalysis': 'Field Lines Analysis',
+        "fieldLinesDescription":
+            "Detect and calibrate football field lines for tactical analysis.",
+
+        "fieldLinesDetected": "Field lines detected",
+        "noFieldLinesDetected": "No field lines detected",
       },
       'foulDetectionPage': {
         'error': 'Error',
@@ -145,6 +227,11 @@ class Translations {
         'noVideoSource': 'No video source provided',
         'failedToLoadVideo': 'Failed to load video',
         'retry': 'Retry',
+        'loading': 'Loading',
+        'processing': 'Processing',
+        'data': 'Data',
+        'report': 'Report',
+        'foulDetection': 'Foul Detection',
       },
       'refereeTrackingPage': {
         'error': 'Error',
@@ -176,7 +263,8 @@ class Translations {
         'failedToLoadVideo': 'Failed to load video',
         'retry': 'Retry',
         'fileAccessDenied': 'Please grant file access to pick files',
-        'fileAccessPermanentlyDenied': 'File access denied. Enable in settings.',
+        'fileAccessPermanentlyDenied':
+            'File access denied. Enable in settings.',
         'noFileSelected': 'No file selected',
         'settings': 'Settings',
       },
@@ -205,15 +293,57 @@ class Translations {
         'analysisPlot': 'Analysis Plot:',
         'metricsChart': 'Metrics Chart:',
         'resultsTable': 'Results Table:',
-        'cleanArtifacts': 'Clean Artifacts',
-        'artifactsCleaned': 'Artifacts cleaned successfully',
-        'fileAccessDenied': 'Please grant file access to pick files',
-        'fileAccessPermanentlyDenied': 'File access denied. Enable in settings.',
+        'cleanArtifacts': 'Clean Temporary Files',
+        'artifactsCleaned': 'Temporary Files Cleaned Successfully',
+        'fileAccessDenied':
+            'Please grant file access permission to select files',
+        'fileAccessPermanentlyDenied':
+            'File access denied. Enable it in settings.',
         'noFileSelected': 'No file selected',
         'settings': 'Settings',
         'connected': 'Connected',
         'disconnected': 'Disconnected',
+        'processedVideo': 'Processed Video',
+        'failedToLoadImage': 'Failed to Load Image',
+        'failedToLoadChart': 'Failed to Load Chart',
+        'errorLoadingResults': 'Error Loading Results',
+        'noResultsData': 'No Results Data Available',
+        'emptyCSV': 'Empty CSV File',
+        'showMore': 'Show More',
+        'showLess': 'Show Less',
+        'showAll': 'Show All',
       },
+
+      'live_streaming': 'Live Streaming',
+      'explore_channels': 'Explore live channels and streams',
+      'refresh': 'Refresh',
+      'reset_filters': 'Reset Filters',
+      'loading_channels': 'Loading channels...',
+      'unknown_error': 'Unknown error occurred',
+      'retry': 'Retry',
+      'all': 'All',
+      'search_channels': 'Search channels...',
+      'no_channels_found': 'No channels found with current filters',
+      'playback_in_progress': 'Playback in Progress',
+      'quit': 'Quit',
+      'recording_saved': 'Recording saved successfully',
+      'view': 'View',
+      'recording_in_progress': 'Recording in Progress',
+      'recording': 'Recording',
+      'error_loading_video': 'Error loading video',
+      'recording_playback': 'Recording Playback',
+      'share': 'Share',
+      'check_out_this_recording': 'Check out this recording',
+      'error_sharing': 'Error sharing',
+      'delete': 'Delete',
+      'confirm_delete': 'Confirm Delete',
+      'delete_recording_confirm':
+          'Are you sure you want to delete this recording?',
+      'cancel': 'Cancel',
+      'recording_deleted': 'Recording deleted',
+      'error_deleting': 'Error deleting',
+      'loading_recording': 'Loading recording...',
+      'loading': 'Loading',
     },
     'fr': {
       'titles': [
@@ -222,8 +352,62 @@ class Translations {
         'Lignes de Terrain',
         'Hors-jeu',
         'Suivi de l\'Arbitre',
+        'Diffusion en Direct', // Add this
       ],
-      'navLabels': ['Suivi', 'Fautes', 'Lignes', 'Hors-jeu', 'Arbitre'],
+      'Referpage': {
+        'API Status': 'Statut de l\'API',
+        'Model Loaded: ': 'Modèle Chargé : ',
+        'Classes: ': 'Classes : ',
+        'Upload Video for Analysis': 'Télécharger la Vidéo pour Analyse',
+        'Analysis Results': 'Résultats de l\'Analyse',
+        'Total Distance': 'Distance Totale',
+        'Average Speed': 'Vitesse Moyenne',
+        'Max Speed': 'Vitesse Maximale',
+        'Sprints': 'Sprints',
+        'First Half Distance': 'Distance Première Mi-temps',
+        'Second Half Distance': 'Distance Seconde Mi-temps',
+        'Download Report TXT': 'Télécharger le Rapport TXT',
+        'Download Metrics CSV': 'Télécharger les Métriques CSV',
+        'Could not open report': 'Impossible d\'ouvrir le rapport',
+        'Could not open metrics CSV': 'Impossible d\'ouvrir les métriques CSV',
+        'Full Report': 'Rapport Complet',
+        'No report available': 'Aucun rapport disponible',
+        'Heatmap': 'Carte de Chaleur',
+        'Speed Plot': 'Graphique de Vitesse',
+        'Proximity Plot': 'Graphique de Proximité',
+        'Output Video': 'Vidéo de Sortie',
+        'Sample Frames': 'Images Échantillons',
+        'Failed to load frame': 'Échec du chargement de l\'image',
+        'Clean Server Files': 'Nettoyer les Fichiers du Serveur',
+        'Cleaned ': 'Nettoyé ',
+        ' files': ' fichiers',
+        'Failed to load image': 'Échec du chargement de l\'image',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyse de la vidéo en cours... Cela peut prendre 10-30 minutes ou plus.',
+        'Retry': 'Réessayer',
+        'Play Tic-Tac-Toe while waiting!': 'Jouez au Morpion en attendant !',
+        'It\'s a draw!': 'C\'est un match nul !',
+        ' wins!': ' gagne !',
+        'Reset Game': 'Réinitialiser le Jeu',
+        'Analysis complete! View results.':
+            'Analyse terminée ! Voir les résultats.',
+        'Unknown': 'Inconnu',
+      },
+      'homePage': {
+        'subtitle': 'Analyse Vidéo de Football Alimentée par IA',
+        'playerTrackingDesc':
+            'Système IA avancé pour le suivi des joueurs et l analyse des buts dans les vidéos de football, fournissant des insights sur les mouvements, vitesses et opportunités de buts.',
+        'foulDetectionDesc':
+            'Détecter et analyser les fautes en utilisant l apprentissage automatique, générant des rapports sur les événements, vidéos et résumés de données.',
+        'keyFieldLinesDesc':
+            'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
+        'offsideDesc':
+            'Détection précise du hors-jeu pour des images uniques ou en lot, avec options pour lignes personnalisées et directions d attaque.',
+        'refereeTrackingDesc':
+            'Suivre les mouvements de l arbitre, calculer les distances, vitesses et générer des cartes de chaleur, graphiques de vitesse et analyses de proximité.',
+        'enterApp': 'Entrer dans l App',
+      },
+      'navLabels': ['Suivi', 'Fautes', 'Lignes', 'Hors-jeu', 'Arbitre', 'Live'],
       'chooseLanguage': 'Choisir la Langue',
       'chooseMode': 'Choisir le Mode',
       'languages': ['Anglais', 'Français', 'Arabe'],
@@ -263,16 +447,19 @@ class Translations {
         'annotatedZip': 'ZIP Annoté',
         'noRuns': 'Aucune analyse précédente trouvée',
         'noValidRuns': 'Aucune analyse valide trouvée',
-        'pressRefresh': 'Appuyez sur rafraîchir pour charger les analyses précédentes',
+        'pressRefresh':
+            'Appuyez sur rafraîchir pour charger les analyses précédentes',
         'parameters': 'Paramètres',
         'lineMode': 'Mode de Ligne',
-        'photoAccessDenied': 'Veuillez accorder l\'accès aux photos pour choisir des images',
-        'photoAccessPermanentlyDenied': 'Accès aux photos refusé. Activez dans les paramètres.',
+        'photoAccessDenied':
+            'Veuillez accorder l\'accès aux photos pour choisir des images',
+        'photoAccessPermanentlyDenied':
+            'Accès aux photos refusé. Activez dans les paramètres.',
         'noImageSelected': 'Aucune image sélectionnée',
         'errorPickingImage': 'Erreur lors de la sélection de l\'image',
+        'error': 'Erreur',
         'settings': 'Paramètres',
         'pickedImage': 'Image choisie',
-        'error': 'Erreur',
         // New translations for the provided pages
         'videoMustBeMp4': 'La vidéo doit être au format MP4',
         'overlayLines': 'Superposer les lignes',
@@ -299,7 +486,8 @@ class Translations {
         'enterHeight': 'Veuillez entrer la hauteur',
         'saveAs': 'Enregistrer sous',
         'setCalibration': 'Définir la calibration',
-        'calibrationFileMustBeNpz': 'Le fichier de calibration doit être au format NPZ',
+        'calibrationFileMustBeNpz':
+            'Le fichier de calibration doit être au format NPZ',
         'imageMustBeJpgOrPng': 'L\'image doit être au format JPG ou PNG',
         'loadCalibrationByName': 'Charger la calibration par nom',
         'loadCalibrationByFile': 'Charger la calibration par fichier',
@@ -331,6 +519,29 @@ class Translations {
         'inputInverse': 'Entrée (Inverse)',
         'outputInverse': 'Sortie (Inverse)',
         'errorInverse': 'Erreur (Inverse)',
+        'fieldLinesDetection': 'Détection des lignes de terrain',
+        'mainActions': 'Actions principales',
+
+        'calibrationResult': 'Résultat de la calibration',
+
+        'detectionResult': 'Résultat de la détection',
+
+        'transformationResult': 'Résultat de la transformation',
+
+        'videoTransformationResult': 'Résultat de la transformation vidéo',
+
+        'pointTransformationResult': 'Résultat de la transformation des points',
+
+        'artifactsCleaned': 'Artefacts nettoyés',
+        'cleanArtifacts': 'Nettoyer les artefacts',
+
+        'status': 'État',
+        'fieldLinesAnalysis': 'Analyse des lignes de terrain',
+        "fieldLinesDescription":
+            "Détecter et calibrer les lignes du terrain de football pour l'analyse tactique.",
+
+        "fieldLinesDetected": "Lignes du terrain détectées",
+        "noFieldLinesDetected": "Aucune ligne détectée",
       },
       'foulDetectionPage': {
         'error': 'Erreur',
@@ -358,6 +569,11 @@ class Translations {
         'noVideoSource': 'Aucune source vidéo fournie',
         'failedToLoadVideo': 'Échec du chargement de la vidéo',
         'retry': 'Réessayer',
+        'loading': 'Chargement',
+        'processing': 'Traitement',
+        'data': 'Données',
+        'report': 'Rapport',
+        'foulDetection': 'Détection de Fautes',
       },
       'refereeTrackingPage': {
         'error': 'Erreur',
@@ -384,12 +600,15 @@ class Translations {
         'filesRemoved': 'Fichiers Supprimés',
         'failedToLoadHeatmap': 'Échec du chargement de la carte de chaleur',
         'failedToLoadSpeedPlot': 'Échec du chargement du graphique de vitesse',
-        'failedToLoadProximityPlot': 'Échec du chargement du graphique de proximité',
+        'failedToLoadProximityPlot':
+            'Échec du chargement du graphique de proximité',
         'failedToLoadFrame': 'Échec du chargement de l\'image',
         'failedToLoadVideo': 'Échec du chargement de la vidéo',
         'retry': 'Réessayer',
-        'fileAccessDenied': 'Veuillez accorder l\'accès aux fichiers pour choisir des fichiers',
-        'fileAccessPermanentlyDenied': 'Accès aux fichiers refusé. Activez dans les paramètres.',
+        'fileAccessDenied':
+            'Veuillez accorder l\'accès aux fichiers pour choisir des fichiers',
+        'fileAccessPermanentlyDenied':
+            'Accès aux fichiers refusé. Activez dans les paramètres.',
         'noFileSelected': 'Aucun fichier sélectionné',
         'settings': 'Paramètres',
       },
@@ -397,36 +616,79 @@ class Translations {
         'error': 'Erreur',
         'apiStatus': 'Statut de l\'API',
         'status': 'Statut',
-        'modelLoaded': 'Modèle Chargé',
+        'modelLoaded': 'Modèle chargé',
         'yes': 'Oui',
         'no': 'Non',
-        'analysisConfiguration': 'Configuration de l\'Analyse',
-        'pickAndAnalyzeVideo': 'Choisir et Analyser la Vidéo',
-        'detectionConfidence': 'Confiance de Détection (0-1)',
-        'showTrails': 'Afficher les Traînées',
-        'showSkeleton': 'Afficher le Squelette',
-        'showBoxes': 'Afficher les Boîtes de Délimitation',
-        'showIds': 'Afficher les IDs des Joueurs',
-        'trailLength': 'Longueur de la Traînée',
-        'goalPostsCoordinates': 'Coordonnées des Poteaux de But',
-        'leftX': 'Gauche X',
-        'leftY': 'Gauche Y',
-        'rightX': 'Droite X',
-        'rightY': 'Droite Y',
-        'framesProcessed': 'Images Traitées',
-        'playerCount': 'Nombre de Joueurs',
-        'analysisPlot': 'Graphique d\'Analyse :',
-        'metricsChart': 'Graphique des Métriques :',
-        'resultsTable': 'Tableau des Résultats :',
-        'cleanArtifacts': 'Nettoyer les Artefacts',
-        'artifactsCleaned': 'Artefacts nettoyés avec succès',
-        'fileAccessDenied': 'Veuillez accorder l\'accès aux fichiers pour choisir des fichiers',
-        'fileAccessPermanentlyDenied': 'Accès aux fichiers refusé. Activez dans les paramètres.',
+        'analysisConfiguration': 'Configuration de l\'analyse',
+        'pickAndAnalyzeVideo': 'Choisir et analyser la vidéo',
+        'detectionConfidence': 'Confiance de détection (0-1)',
+        'showTrails': 'Afficher les trajectoires',
+        'showSkeleton': 'Afficher le squelette',
+        'showBoxes': 'Afficher les boîtes englobantes',
+        'showIds': 'Afficher les identifiants des joueurs',
+        'trailLength': 'Longueur de la trajectoire',
+        'goalPostsCoordinates': 'Coordonnées des poteaux de but',
+        'leftX': 'X gauche',
+        'leftY': 'Y gauche',
+        'rightX': 'X droite',
+        'rightY': 'Y droite',
+        'framesProcessed': 'Images traitées',
+        'playerCount': 'Nombre de joueurs',
+        'analysisPlot': 'Graphique d\'analyse :',
+        'metricsChart': 'Graphique des métriques :',
+        'resultsTable': 'Tableau des résultats :',
+        'cleanArtifacts': 'Nettoyer les fichiers temporaires',
+        'artifactsCleaned': 'Fichiers temporaires nettoyés avec succès',
+        'fileAccessDenied':
+            'Veuillez autoriser l\'accès aux fichiers pour sélectionner des fichiers',
+        'fileAccessPermanentlyDenied':
+            'Accès aux fichiers refusé. Activez-le dans les paramètres.',
         'noFileSelected': 'Aucun fichier sélectionné',
         'settings': 'Paramètres',
         'connected': 'Connecté',
         'disconnected': 'Déconnecté',
+        'processedVideo': 'Vidéo traitée',
+        'failedToLoadImage': 'Échec du chargement de l\'image',
+        'failedToLoadChart': 'Échec du chargement du graphique',
+        'errorLoadingResults': 'Erreur lors du chargement des résultats',
+        'noResultsData': 'Aucune donnée de résultat disponible',
+        'emptyCSV': 'Fichier CSV vide',
+        'showMore': 'Afficher plus',
+        'showLess': 'Afficher moins',
+        'showAll': 'Tout afficher',
       },
+
+      // New translations for live stream pages
+      'live_streaming': 'Diffusion en Direct',
+      'explore_channels': 'Explorez les chaînes et streams en direct',
+      'refresh': 'Rafraîchir',
+      'reset_filters': 'Réinitialiser les Filtres',
+      'loading_channels': 'Chargement des chaînes...',
+      'unknown_error': 'Erreur inconnue survenue',
+      'retry': 'Réessayer',
+      'all': 'Tous',
+      'search_channels': 'Rechercher des chaînes...',
+      'no_channels_found': 'Aucune chaîne trouvée avec les filtres actuels',
+      'playback_in_progress': 'Lecture en Cours',
+      'quit': 'Quitter',
+      'recording_saved': 'Enregistrement sauvegardé avec succès',
+      'view': 'Voir',
+      'recording_in_progress': 'Enregistrement en Cours',
+      'recording': 'Enregistrement',
+      'error_loading_video': 'Erreur lors du chargement de la vidéo',
+      'recording_playback': 'Lecture de l\'Enregistrement',
+      'share': 'Partager',
+      'check_out_this_recording': 'Découvrez cet enregistrement',
+      'error_sharing': 'Erreur lors du partage',
+      'delete': 'Supprimer',
+      'confirm_delete': 'Confirmer la Suppression',
+      'delete_recording_confirm':
+          'Êtes-vous sûr de vouloir supprimer cet enregistrement ?',
+      'cancel': 'Annuler',
+      'recording_deleted': 'Enregistrement supprimé',
+      'error_deleting': 'Erreur lors de la suppression',
+      'loading_recording': 'Chargement de l\'enregistrement...',
+      'loading': 'Chargement',
     },
     'ar': {
       'titles': [
@@ -435,8 +697,62 @@ class Translations {
         'خطوط الملعب',
         'تسلل',
         'تتبع الحكم',
+        'البث المباشر', // Add this
       ],
-      'navLabels': ['تتبع', 'أخطاء', 'خطوط', 'تسلل', 'حكم'],
+      'Referpage': {
+        'API Status': 'حالة API',
+        'Model Loaded: ': 'النموذج المحمل: ',
+        'Classes: ': 'الفئات: ',
+        'Upload Video for Analysis': 'تحميل الفيديو للتحليل',
+        'Analysis Results': 'نتائج التحليل',
+        'Total Distance': 'المسافة الإجمالية',
+        'Average Speed': 'السرعة المتوسطة',
+        'Max Speed': 'السرعة القصوى',
+        'Sprints': 'الركض السريع',
+        'First Half Distance': 'مسافة الشوط الأول',
+        'Second Half Distance': 'مسافة الشوط الثاني',
+        'Download Report TXT': 'تحميل التقرير TXT',
+        'Download Metrics CSV': 'تحميل المقاييس CSV',
+        'Could not open report': 'تعذر فتح التقرير',
+        'Could not open metrics CSV': 'تعذر فتح المقاييس CSV',
+        'Full Report': 'التقرير الكامل',
+        'No report available': 'لا يوجد تقرير متاح',
+        'Heatmap': 'خريطة الحرارة',
+        'Speed Plot': 'رسم السرعة',
+        'Proximity Plot': 'رسم القرب',
+        'Output Video': 'فيديو الإخراج',
+        'Sample Frames': 'إطارات العينة',
+        'Failed to load frame': 'فشل في تحميل الإطار',
+        'Clean Server Files': 'تنظيف ملفات الخادم',
+        'Cleaned ': 'تم تنظيف ',
+        ' files': ' ملفات',
+        'Failed to load image': 'فشل في تحميل الصورة',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'جاري تحليل الفيديو... قد يستغرق ذلك 10-30 دقيقة أو أكثر.',
+        'Retry': 'إعادة المحاولة',
+        'Play Tic-Tac-Toe while waiting!': 'العب تيك تاك تو أثناء الانتظار!',
+        'It\'s a draw!': 'إنه تعادل!',
+        ' wins!': ' يفوز!',
+        'Reset Game': 'إعادة اللعبة',
+        'Analysis complete! View results.': 'اكتمل التحليل! عرض النتائج.',
+        'Unknown': 'غير معروف',
+      },
+
+      'homePage': {
+        'subtitle': 'تحليل فيديو كرة القدم مدعوم بالذكاء الاصطناعي',
+        'playerTrackingDesc':
+            'نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، يوفر رؤى حول الحركات والسرعات وفرص الأهداف.',
+        'foulDetectionDesc':
+            'كشف وتحليل الأخطاء باستخدام التعلم الآلي، إنشاء تقارير عن الأحداث والفيديوهات وملخصات البيانات.',
+        'keyFieldLinesDesc':
+            'تحديد خطوط الملعب الرئيسية، إجراء تحولات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
+        'offsideDesc':
+            'كشف دقيق للتسلل للإطارات الفردية أو المعالجة الدفعية، مع خيارات للخطوط المخصصة واتجاهات الهجوم.',
+        'refereeTrackingDesc':
+            'تتبع حركات الحكم، حساب المسافات والسرعات، وإنشاء خرائط حرارية ورسوم بيانية للسرعة وتحليل القرب.',
+        'enterApp': 'الدخول إلى التطبيق',
+      },
+      'navLabels': ['تتبع', 'أخطاء', 'خطوط', 'تسلل', 'حكم', 'البث المباشر'],
       'chooseLanguage': 'اختر اللغة',
       'chooseMode': 'اختر الوضع',
       'languages': ['الإنجليزية', 'الفرنسية', 'العربية'],
@@ -480,12 +796,13 @@ class Translations {
         'parameters': 'المعلمات',
         'lineMode': 'وضع الخط',
         'photoAccessDenied': 'يرجى منح إذن الوصول إلى الصور لاختيار الصور',
-        'photoAccessPermanentlyDenied': 'تم رفض الوصول إلى الصور. قم بالتفعيل في الإعدادات.',
+        'photoAccessPermanentlyDenied':
+            'تم رفض الوصول إلى الصور. قم بالتفعيل في الإعدادات.',
         'noImageSelected': 'لم يتم اختيار صورة',
         'errorPickingImage': 'خطأ أثناء اختيار الصورة',
+        'error': 'خطأ',
         'settings': 'الإعدادات',
         'pickedImage': 'الصورة المختارة',
-        'error': 'خطأ',
         // New translations for the provided pages
         'videoMustBeMp4': 'يجب أن تكون الفيديوهات بصيغة MP4',
         'overlayLines': 'تراكب الخطوط',
@@ -544,6 +861,29 @@ class Translations {
         'inputInverse': 'الإدخال (عكسي)',
         'outputInverse': 'الإخراج (عكسي)',
         'errorInverse': 'خطأ (عكسي)',
+        'fieldLinesDetection': 'كشف خطوط الملعب',
+        'mainActions': 'الإجراءات الرئيسية',
+
+        'calibrationResult': 'نتيجة المعايرة',
+
+        'detectionResult': 'نتيجة الكشف',
+
+        'transformationResult': 'نتيجة التحويل',
+
+        'videoTransformationResult': 'نتيجة تحويل الفيديو',
+
+        'pointTransformationResult': 'نتيجة تحويل النقاط',
+
+        'artifactsCleaned': 'تم تنظيف الملفات المؤقتة',
+        'cleanArtifacts': 'تنظيف الملفات المؤقتة',
+
+        'status': 'الحالة',
+        'fieldLinesAnalysis': 'تحليل خطوط الملعب',
+        "fieldLinesDescription":
+            "كشف ومعايرة خطوط ملعب كرة القدم للتحليل التكتيكي.",
+
+        "fieldLinesDetected": "تم اكتشاف خطوط الملعب",
+        "noFieldLinesDetected": "لم يتم اكتشاف أي خطوط",
       },
       'foulDetectionPage': {
         'error': 'خطأ',
@@ -571,6 +911,11 @@ class Translations {
         'noVideoSource': 'لم يتم توفير مصدر فيديو',
         'failedToLoadVideo': 'فشل تحميل الفيديو',
         'retry': 'إعادة المحاولة',
+        'loading': 'جارٍ التحميل',
+        'processing': 'جارٍ المعالجة',
+        'data': 'البيانات',
+        'report': 'تقرير',
+        'foulDetection': 'كشف الأخطاء',
       },
       'refereeTrackingPage': {
         'error': 'خطأ',
@@ -602,7 +947,8 @@ class Translations {
         'failedToLoadVideo': 'فشل تحميل الفيديو',
         'retry': 'إعادة المحاولة',
         'fileAccessDenied': 'يرجى منح إذن الوصول إلى الملفات لاختيار الملفات',
-        'fileAccessPermanentlyDenied': 'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
+        'fileAccessPermanentlyDenied':
+            'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
         'noFileSelected': 'لم يتم اختيار ملف',
         'settings': 'الإعدادات',
       },
@@ -631,17 +977,62 @@ class Translations {
         'analysisPlot': 'رسم التحليل:',
         'metricsChart': 'رسم المقاييس:',
         'resultsTable': 'جدول النتائج:',
-        'cleanArtifacts': 'تنظيف الآثار',
-        'artifactsCleaned': 'تم تنظيف الآثار بنجاح',
+        'cleanArtifacts': 'تنظيف الملفات المؤقتة',
+        'artifactsCleaned': 'تم تنظيف الملفات المؤقتة بنجاح',
         'fileAccessDenied': 'يرجى منح إذن الوصول إلى الملفات لاختيار الملفات',
-        'fileAccessPermanentlyDenied': 'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
+        'fileAccessPermanentlyDenied':
+            'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
         'noFileSelected': 'لم يتم اختيار ملف',
         'settings': 'الإعدادات',
         'connected': 'متصل',
         'disconnected': 'غير متصل',
+        'processedVideo': 'الفيديو المعالج',
+        'failedToLoadImage': 'فشل تحميل الصورة',
+        'failedToLoadChart': 'فشل تحميل الرسم البياني',
+        'errorLoadingResults': 'حدث خطأ أثناء تحميل النتائج',
+        'noResultsData': 'لا توجد بيانات نتائج متاحة',
+        'emptyCSV': 'ملف CSV فارغ',
+        'showMore': 'عرض المزيد',
+        'showLess': 'عرض أقل',
+        'showAll': 'عرض الكل',
       },
+
+      // New translations for live stream pages
+      'live_streaming': 'البث المباشر',
+      'explore_channels': 'استكشف القنوات والتدفقات المباشرة',
+      'refresh': 'تحديث',
+      'reset_filters': 'إعادة تعيين الفلاتر',
+      'loading_channels': 'جاري تحميل القنوات...',
+      'unknown_error': 'حدث خطأ غير معروف',
+      'retry': 'إعادة المحاولة',
+      'all': 'الكل',
+      'search_channels': 'البحث عن القنوات...',
+      'no_channels_found': 'لم يتم العثور على قنوات بالفلاتر الحالية',
+      'playback_in_progress': 'التشغيل قيد التقدم',
+      'quit': 'الخروج',
+      'recording_saved': 'تم حفظ التسجيل بنجاح',
+      'view': 'عرض',
+      'recording_in_progress': 'التسجيل قيد التقدم',
+      'recording': 'تسجيل',
+      'error_loading_video': 'خطأ في تحميل الفيديو',
+      'recording_playback': 'تشغيل التسجيل',
+      'share': 'مشاركة',
+      'check_out_this_recording': 'تحقق من هذا التسجيل',
+      'error_sharing': 'خطأ في المشاركة',
+      'delete': 'حذف',
+      'confirm_delete': 'تأكيد الحذف',
+      'delete_recording_confirm': 'هل أنت متأكد من حذف هذا التسجيل؟',
+      'cancel': 'إلغاء',
+      'recording_deleted': 'تم حذف التسجيل',
+      'error_deleting': 'خطأ في الحذف',
+      'loading_recording': 'جاري تحميل التسجيل...',
+      'loading': 'جاري التحميل',
     },
   };
+
+  static String translate(String key, String lang) {
+    return pageTitles[lang]?[key] ?? pageTitles['en']![key] ?? key;
+  }
 
   static String getTitle(int index, String lang) {
     return pageTitles[lang]?['titles']?[index] ??
@@ -692,5 +1083,15 @@ class Translations {
   static String getPlayerTrackingText(String key, String lang) {
     return pageTitles[lang]?['playerTrackingPage']?[key] ??
         pageTitles['en']!['playerTrackingPage']![key];
+  }
+
+  static String getHomeText(String key, String lang) {
+    return pageTitles[lang]?['homePage']?[key] ??
+        pageTitles['en']!['homePage']![key];
+  }
+
+  static String getTranslation(String key, String lang) {
+    return pageTitles[lang]?['Referpage']?[key] ??
+        pageTitles['en']!['Referpage']![key];
   }
 }
