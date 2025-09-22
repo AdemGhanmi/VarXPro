@@ -1,12 +1,14 @@
 import 'dart:convert';
+import 'package:VarXPro/views/pages/DetailArbiter/view/detail_arbiter.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
-import 'package:VarXPro/lang/translation.dart'; 
+import 'package:VarXPro/lang/translation.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,7 +33,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     futureReferees = fetchReferees();
 
-    // Animation for the glowing button effect
     _glowController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
@@ -40,7 +41,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    // Animation for the scan line
     _scanController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
@@ -57,24 +57,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Future<List<Referee>> fetchReferees() async {
-    final response = await http.get(
-      Uri.parse('https://refereelist.varxpro.com/referees'),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('https://refereelistdetail.varxpro.com/json'),
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final results = data['results'] as List;
-      return results.map((json) => Referee.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load referees');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((dynamic jsonObj) {
+          final Map<String, dynamic> json = jsonObj as Map<String, dynamic>;
+          try {
+            return Referee.fromJson(json);
+          } catch (e) {
+            // Create partial referee without details for error cases
+            return Referee(
+              confed: json['confed'] ?? '',
+              country: json['country'] ?? '',
+              details: null,
+              gender: json['gender'] ?? '',
+              lastEnriched: json['last_enriched'] ?? 0,
+              name: json['name'] ?? '',
+              roles: json['roles'] != null ? List<String>.from(json['roles']) : <String>[],
+              since: json['since'] ?? 0,
+              year: json['year'],
+            );
+          }
+        }).toList();
+      } else {
+        throw Exception('Failed to load referees: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching referees: $e');
+      rethrow;
     }
   }
 
   List<Referee> getFilteredReferees() {
     return allReferees.where((referee) {
       final nameMatch = referee.name.toLowerCase().contains(
-        _searchController.text.toLowerCase(),
-      );
+            _searchController.text.toLowerCase(),
+          );
       final confedMatch =
           selectedConfed == null || referee.confed == selectedConfed;
       final countryMatch =
@@ -85,7 +107,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _showLanguageDialog(
-      BuildContext context, LanguageProvider langProvider, ModeProvider modeProvider, String currentLang) {
+    BuildContext context,
+    LanguageProvider langProvider,
+    ModeProvider modeProvider,
+    String currentLang,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -99,8 +125,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.98),
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.92),
+                AppColors.getSurfaceColor(modeProvider.currentMode)
+                    .withOpacity(0.98),
+                AppColors.getSurfaceColor(modeProvider.currentMode)
+                    .withOpacity(0.92),
               ],
             ),
             boxShadow: [
@@ -124,34 +152,43 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 24),
-              ...Translations.getLanguages(currentLang).asMap().entries.map((entry) {
-                int idx = entry.key;
-                String lang = entry.value;
-                String code = idx == 0 ? 'en' : idx == 1 ? 'fr' : 'ar';
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    tileColor: AppColors.getTertiaryColor(
-                            AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!, modeProvider.currentMode)
-                        .withOpacity(0.2),
-                    title: Text(
-                      lang,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.getTextColor(modeProvider.currentMode),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+              ...Translations.getLanguages(currentLang).asMap().entries.map(
+                    (entry) {
+                  int idx = entry.key;
+                  String lang = entry.value;
+                  String code = idx == 0 ? 'en' : idx == 1 ? 'fr' : 'ar';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
                       ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      tileColor: AppColors.getTertiaryColor(
+                        AppColors.seedColors[modeProvider.currentMode] ??
+                            AppColors.seedColors[1]!,
+                        modeProvider.currentMode,
+                      ).withOpacity(0.2),
+                      title: Text(
+                        lang,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(modeProvider.currentMode),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onTap: () {
+                        langProvider.changeLanguage(code);
+                        Navigator.pop(ctx);
+                      },
                     ),
-                    onTap: () {
-                      langProvider.changeLanguage(code);
-                      Navigator.pop(ctx);
-                    },
-                  ),
-                );
-              }).toList(),
+                  );
+                },
+              ).toList(),
             ],
           ),
         ),
@@ -159,12 +196,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  void _showModeDialog(BuildContext context, ModeProvider modeProvider, String currentLang) {
+  void _showModeDialog(
+    BuildContext context,
+    ModeProvider modeProvider,
+    String currentLang,
+  ) {
     final List<Map<String, dynamic>> _modes = [
-      {"name": Translations.getModes(currentLang)[0], "icon": Icons.sports_soccer},
+      {
+        "name": Translations.getModes(currentLang)[0],
+        "icon": Icons.sports_soccer,
+      },
       {"name": Translations.getModes(currentLang)[1], "icon": Icons.light_mode},
       {"name": Translations.getModes(currentLang)[2], "icon": Icons.analytics},
-      {"name": Translations.getModes(currentLang)[3], "icon": Icons.video_camera_front},
+      {
+        "name": Translations.getModes(currentLang)[3],
+        "icon": Icons.video_camera_front,
+      },
       {"name": Translations.getModes(currentLang)[4], "icon": Icons.sports},
     ];
 
@@ -181,8 +228,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.98),
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.92),
+                AppColors.getSurfaceColor(modeProvider.currentMode)
+                    .withOpacity(0.98),
+                AppColors.getSurfaceColor(modeProvider.currentMode)
+                    .withOpacity(0.92),
               ],
             ),
             boxShadow: [
@@ -213,11 +262,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     tileColor: AppColors.getTertiaryColor(
-                            AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!, modeProvider.currentMode)
-                        .withOpacity(0.2),
+                      AppColors.seedColors[modeProvider.currentMode] ??
+                          AppColors.seedColors[1]!,
+                      modeProvider.currentMode,
+                    ).withOpacity(0.2),
                     leading: Icon(
                       icon,
                       color: AppColors.getTextColor(modeProvider.currentMode),
@@ -249,16 +305,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final modeProvider = Provider.of<ModeProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
-    final currentLang = langProvider.currentLanguage;
+    final currentLang = langProvider.currentLanguage ?? 'en'; // Fallback to 'en'
+    debugPrint('Current language: $currentLang'); // Debug log
     final textColor = AppColors.getTextColor(modeProvider.currentMode);
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final seedColor =
+        AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background with subtle football field grid
           Positioned.fill(
             child: CustomPaint(
               painter: _FootballGridPainter(modeProvider.currentMode),
@@ -269,7 +326,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ),
             ),
           ),
-          // Animated scan line
           Positioned.fill(
             child: AnimatedBuilder(
               animation: _scanController,
@@ -285,89 +341,93 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               },
             ),
           ),
-          // Main content
           SafeArea(
             child: Padding(
               padding: EdgeInsets.all(isLargeScreen ? 24.0 : 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with logo, title, and language/mode selectors
                   TweenAnimationBuilder(
                     tween: Tween<double>(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 1000),
                     curve: Curves.easeOutCubic,
                     builder: (context, value, child) => Opacity(
                       opacity: value,
-                      child: Transform.scale(
-                        scale: value * 1.05,
-                        child: child,
-                      ),
+                      child: Transform.scale(scale: value * 1.05, child: child),
                     ),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          width: isLargeScreen ? 70 : 50,
-                          height: isLargeScreen ? 70 : 50,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.getPrimaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
-                                blurRadius: 12,
-                                spreadRadius: 3,
-                                offset: const Offset(0, 4),
+                        Row(
+                          children: [
+                            Container(
+                              width: isLargeScreen ? 70 : 50,
+                              height: isLargeScreen ? 70 : 50,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.getPrimaryColor(
+                                      seedColor,
+                                      modeProvider.currentMode,
+                                    ).withOpacity(0.3),
+                                    blurRadius: 12,
+                                    spreadRadius: 3,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              'assets/logo.jpg',
-                              fit: BoxFit.cover,
+                              child: ClipOval(
+                                child: Image.asset(
+                                  'assets/logo.jpg',
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                Translations.getHomeText('mainTitle', currentLang),
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isLargeScreen ? 28 : 22,
-                                  fontFamily: 'Poppins',
-                                  shadows: [
-                                    Shadow(
-                                      blurRadius: 6,
-                                      color: Colors.black.withOpacity(0.15),
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  Translations.getHomeText(
+                                    'mainTitle',
+                                    currentLang,
+                                  ),
+                                  style: TextStyle(
+                                    color: textColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: isLargeScreen ? 28 : 22,
+                                    fontFamily: 'Poppins',
+                                    shadows: [
+                                      Shadow(
+                                        blurRadius: 6,
+                                        color: Colors.black.withOpacity(0.15),
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                Translations.getHomeText('subtitle', currentLang),
-                                style: TextStyle(
-                                  color: textColor.withOpacity(0.7),
-                                  fontSize: isLargeScreen ? 16 : 12,
-                                  fontStyle: FontStyle.italic,
+                                const SizedBox(height: 4),
+                                Text(
+                                  Translations.getHomeText(
+                                    'subtitle',
+                                    currentLang,
+                                  ),
+                                  style: TextStyle(
+                                    color: textColor.withOpacity(0.7),
+                                    fontSize: isLargeScreen ? 16 : 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                          ],
                         ),
                         
-                     
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Search bar
                   TweenAnimationBuilder(
                     tween: Tween<double>(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 1200),
@@ -395,10 +455,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         controller: _searchController,
                         onChanged: (value) => setState(() {}),
                         decoration: InputDecoration(
-                          hintText: Translations.getRefereeDirectoryText('searchReferees', currentLang),
-                          hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
+                          hintText: Translations.getRefereeDirectoryText(
+                            'searchReferees',
+                            currentLang,
+                          ),
+                          hintStyle: TextStyle(
+                            color: textColor.withOpacity(0.5),
+                          ),
                           prefixIcon: Icon(
-                            Icons.search,
+                            Icons.search_rounded,
                             color: textColor.withOpacity(0.7),
                           ),
                           border: InputBorder.none,
@@ -411,8 +476,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Feature chips
                   TweenAnimationBuilder(
                     tween: Tween<double>(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 1400),
@@ -429,33 +492,45 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       child: Row(
                         children: [
                           _buildFeatureChip(
-                            icon: Icons.memory,
-                            label: Translations.getRefereeDirectoryText('aiAnalysis', currentLang),
-                            color: Colors.blue,
+                            icon: Icons.smart_toy_rounded, // Updated icon
+                            label: Translations.getRefereeDirectoryText(
+                              'aiAnalysis',
+                              currentLang,
+                            ),
+                            color: Colors.blueAccent,
                             textColor: textColor,
                             modeProvider: modeProvider,
                           ),
                           const SizedBox(width: 10),
                           _buildFeatureChip(
-                            icon: Icons.videocam,
-                            label: Translations.getRefereeDirectoryText('varTechnology', currentLang),
-                            color: Colors.purple,
+                            icon: Icons.videocam_rounded, // Updated icon
+                            label: Translations.getRefereeDirectoryText(
+                              'varTechnology',
+                              currentLang,
+                            ),
+                            color: Colors.purpleAccent,
                             textColor: textColor,
                             modeProvider: modeProvider,
                           ),
                           const SizedBox(width: 10),
                           _buildFeatureChip(
-                            icon: Icons.bar_chart,
-                            label: Translations.getRefereeDirectoryText('liveDashboard', currentLang),
-                            color: Colors.green,
+                            icon: Icons.dashboard_rounded, // Updated icon
+                            label: Translations.getRefereeDirectoryText(
+                              'liveDashboard',
+                              currentLang,
+                            ),
+                            color: Colors.greenAccent,
                             textColor: textColor,
                             modeProvider: modeProvider,
                           ),
                           const SizedBox(width: 10),
                           _buildFeatureChip(
-                            icon: Icons.location_on,
-                            label: Translations.getRefereeDirectoryText('offsideDetection', currentLang),
-                            color: Colors.orange,
+                            icon: Icons.location_pin, // Updated icon
+                            label: Translations.getRefereeDirectoryText(
+                              'offsideDetection',
+                              currentLang,
+                            ),
+                            color: Colors.orangeAccent,
                             textColor: textColor,
                             modeProvider: modeProvider,
                           ),
@@ -464,8 +539,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Referee directory title and count
                   TweenAnimationBuilder(
                     tween: Tween<double>(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 1600),
@@ -481,7 +554,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          Translations.getRefereeDirectoryText('refereesDirectory', currentLang),
+                          Translations.getRefereeDirectoryText(
+                            'refereesDirectory',
+                            currentLang,
+                          ),
                           style: TextStyle(
                             color: textColor,
                             fontWeight: FontWeight.bold,
@@ -499,119 +575,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Filters
-                  TweenAnimationBuilder(
-                    tween: Tween<double>(begin: 0, end: 1),
-                    duration: const Duration(milliseconds: 1800),
-                    curve: Curves.easeOut,
-                    builder: (context, value, child) => Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset((1 - value) * 50, 0),
-                        child: child,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.getSurfaceColor(modeProvider.currentMode),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.withOpacity(0.2),
-                              ),
-                            ),
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              underline: const SizedBox(),
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                size: 18,
-                                color: textColor.withOpacity(0.7),
-                              ),
-                              hint: Text(
-                                Translations.getRefereeDirectoryText('allConfederations', currentLang),
-                                style: TextStyle(color: textColor.withOpacity(0.7)),
-                              ),
-                              value: selectedConfed,
-                              items: allReferees
-                                  .map((ref) => ref.confed)
-                                  .toSet()
-                                  .map(
-                                    (conf) => DropdownMenuItem(
-                                      value: conf,
-                                      child: Text(
-                                        conf,
-                                        style: TextStyle(color: textColor),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (val) {
-                                setState(() {
-                                  selectedConfed = val;
-                                  selectedCountry = null;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.getSurfaceColor(modeProvider.currentMode),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.grey.withOpacity(0.2),
-                              ),
-                            ),
-                            child: DropdownButton<String>(
-                              isExpanded: true,
-                              underline: const SizedBox(),
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                size: 18,
-                                color: textColor.withOpacity(0.7),
-                              ),
-                              hint: Text(
-                                Translations.getRefereeDirectoryText('allCountries', currentLang),
-                                style: TextStyle(color: textColor.withOpacity(0.7)),
-                              ),
-                              value: selectedCountry,
-                              items: (selectedConfed == null
-                                      ? allReferees
-                                      : allReferees.where((r) => r.confed == selectedConfed))
-                                  .map((ref) => ref.country)
-                                  .toSet()
-                                  .map(
-                                    (country) => DropdownMenuItem(
-                                      value: country,
-                                      child: Text(
-                                        country,
-                                        style: TextStyle(color: textColor),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (val) {
-                                setState(() {
-                                  selectedCountry = val;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Referee list
                   Expanded(
                     child: FutureBuilder<List<Referee>>(
                       future: futureReferees,
@@ -619,32 +582,100 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         if (snapshot.hasData) {
                           allReferees = snapshot.data!;
                           final filteredReferees = getFilteredReferees();
-
-                          return filteredReferees.isEmpty
-                              ? _buildEmptyState(textColor, currentLang)
-                              : GridView.builder(
-                                  controller: _scrollController,
-                                  physics: const BouncingScrollPhysics(),
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: isLargeScreen ? (screenWidth > 900 ? 3 : 2) : 1,
-                                    mainAxisSpacing: 16,
-                                    crossAxisSpacing: 16,
-                                    childAspectRatio: isLargeScreen ? 1.6 : 1.5,
-                                  ),
-                                  itemCount: filteredReferees.length,
-                                  itemBuilder: (context, index) {
-                                    final referee = filteredReferees[index];
-                                    return TweenAnimationBuilder(
-                                      tween: Tween<double>(begin: 0, end: 1),
-                                      duration: Duration(milliseconds: 600 + (index * 100)),
-                                      curve: Curves.easeOutCubic,
-                                      builder: (context, value, child) => Opacity(
-                                        opacity: value,
-                                        child: Transform.translate(
-                                          offset: Offset((1 - value) * 50, 0),
-                                          child: child,
+                          if (filteredReferees.isEmpty) {
+                            return _buildEmptyState(textColor, currentLang);
+                          }
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DropdownButton<String>(
+                                      isExpanded: true,
+                                      value: selectedConfed,
+                                      hint: Text(
+                                        Translations.getRefereeDirectoryText(
+                                          'allConfederations',
+                                          currentLang,
                                         ),
                                       ),
+                                      items: allReferees
+                                          .map((ref) => ref.confed)
+                                          .toSet()
+                                          .map(
+                                            (conf) => DropdownMenuItem(
+                                              value: conf,
+                                              child: Text(conf),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          selectedConfed = val;
+                                          selectedCountry = null;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: DropdownButton<String>(
+                                      isExpanded: true,
+                                      value: selectedCountry,
+                                      hint: Text(
+                                        Translations.getRefereeDirectoryText(
+                                          'allCountries',
+                                          currentLang,
+                                        ),
+                                      ),
+                                      items: (selectedConfed == null
+                                              ? allReferees
+                                              : allReferees.where(
+                                                  (r) => r.confed == selectedConfed,
+                                                ))
+                                          .map((ref) => ref.country)
+                                          .toSet()
+                                          .map(
+                                            (country) => DropdownMenuItem(
+                                              value: country,
+                                              child: Text(country),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          selectedCountry = val;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Expanded(
+                                child: GridView.builder(
+                                  controller: _scrollController,
+                                  itemCount: filteredReferees.length,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 1,
+                                    mainAxisSpacing: 16,
+                                    crossAxisSpacing: 16,
+                                    childAspectRatio: 1.5,
+                                  ),
+                                  itemBuilder: (context, index) {
+                                    final referee = filteredReferees[index];
+                                    return GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => DetailArbiter(
+                                              referee: referee,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                       child: _buildRefereeCard(
                                         referee,
                                         textColor,
@@ -654,7 +685,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                       ),
                                     );
                                   },
-                                );
+                                ),
+                              ),
+                            ],
+                          );
                         } else if (snapshot.hasError) {
                           return _buildErrorState(textColor, currentLang);
                         }
@@ -685,23 +719,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: color.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: color),
+          Icon(icon, size: 20, color: color),
           const SizedBox(width: 8),
           Text(
             label,
             style: TextStyle(
               color: textColor,
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -717,9 +751,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     String currentLang,
   ) {
     return Card(
-      elevation: 4,
+      elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      shadowColor: AppColors.getShadowColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
+      shadowColor: AppColors.getShadowColor(seedColor, modeProvider.currentMode)
+          .withOpacity(0.4),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -728,7 +763,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             end: Alignment.bottomRight,
             colors: [
               AppColors.getSurfaceColor(modeProvider.currentMode),
-              AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.7),
+              AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
             ],
           ),
         ),
@@ -757,7 +792,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: referee.gender == 'Male'
                               ? Colors.blue.withOpacity(0.2)
@@ -765,9 +803,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          referee.gender == 'Male' ? Icons.male : Icons.female,
-                          size: 16,
-                          color: referee.gender == 'Male' ? Colors.blue : Colors.pink,
+                          referee.gender == 'Male'
+                              ? Icons.male_rounded
+                              : Icons.female_rounded,
+                          size: 18,
+                          color: referee.gender == 'Male'
+                              ? Colors.blueAccent
+                              : Colors.pinkAccent,
                         ),
                       ),
                     ],
@@ -776,7 +818,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Icon(
-                        Icons.flag,
+                        Icons.flag_rounded,
                         size: 16,
                         color: textColor.withOpacity(0.7),
                       ),
@@ -790,7 +832,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(width: 12),
                       Icon(
-                        Icons.account_balance,
+                        Icons.account_balance_rounded,
                         size: 16,
                         color: textColor.withOpacity(0.7),
                       ),
@@ -816,7 +858,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       children: referee.roles
                           .map(
                             (role) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: _getRoleColor(role).withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(6),
@@ -835,7 +880,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     )
                   else
                     Text(
-                      Translations.getRefereeDirectoryText('noRolesSpecified', currentLang),
+                      Translations.getRefereeDirectoryText(
+                        'noRolesSpecified',
+                        currentLang,
+                      ),
                       style: TextStyle(
                         color: textColor.withOpacity(0.6),
                         fontSize: 12,
@@ -845,13 +893,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   Row(
                     children: [
                       Icon(
-                        Icons.calendar_today,
+                        Icons.calendar_month_rounded,
                         size: 14,
                         color: textColor.withOpacity(0.6),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since ?? Translations.getRefereeDirectoryText('na', currentLang)}',
+                        '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since}',
                         style: TextStyle(
                           color: textColor.withOpacity(0.6),
                           fontSize: 12,
@@ -860,7 +908,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
+                  if (referee.details?.worldfootball?.overallTotals != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        color: Colors.orange.withOpacity(0.8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ],
+              ),
+              Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: textColor.withOpacity(0.6),
+                ),
               ),
             ],
           ),
@@ -872,13 +939,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Color _getRoleColor(String role) {
     switch (role.toLowerCase()) {
       case 'var':
-        return Colors.purple;
+        return Colors.purpleAccent;
       case 'referee':
-        return Colors.blue;
+        return Colors.blueAccent;
       case 'assistant':
-        return Colors.green;
+        return Colors.greenAccent;
       case 'reviewer':
-        return Colors.orange;
+        return Colors.orangeAccent;
       default:
         return Colors.grey;
     }
@@ -890,13 +957,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.search,
+            Icons.search_off_rounded,
             size: 60,
             color: textColor.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(
-            Translations.getRefereeDirectoryText('noRefereesFound', currentLang),
+            Translations.getRefereeDirectoryText(
+              'noRefereesFound',
+              currentLang,
+            ),
             style: TextStyle(
               color: textColor,
               fontSize: 18,
@@ -905,7 +975,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 8),
           Text(
-            Translations.getRefereeDirectoryText('adjustSearchOrFilters', currentLang),
+            Translations.getRefereeDirectoryText(
+              'adjustSearchOrFilters',
+              currentLang,
+            ),
             style: TextStyle(color: textColor.withOpacity(0.7)),
           ),
         ],
@@ -919,13 +992,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.warning,
+            Icons.warning_amber_rounded,
             size: 60,
             color: Colors.orange.withOpacity(0.7),
           ),
           const SizedBox(height: 16),
           Text(
-            Translations.getRefereeDirectoryText('failedToLoadReferees', currentLang),
+            Translations.getRefereeDirectoryText(
+              'failedToLoadReferees',
+              currentLang,
+            ),
             style: TextStyle(
               color: textColor,
               fontSize: 18,
@@ -934,7 +1010,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 8),
           Text(
-            Translations.getRefereeDirectoryText('checkConnection', currentLang),
+            Translations.getRefereeDirectoryText(
+              'checkConnection',
+              currentLang,
+            ),
             style: TextStyle(color: textColor.withOpacity(0.7)),
           ),
           const SizedBox(height: 16),
@@ -950,9 +1029,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                backgroundColor: Colors.blueAccent,
               ),
-              child: Text(Translations.getRefereeDirectoryText('retry', currentLang)),
+              child: Text(
+                Translations.getRefereeDirectoryText('retry', currentLang),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
         ],
@@ -961,24 +1047,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildLoadingState(Color textColor, String currentLang) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade700),
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: ListView.builder(
+        itemCount: 5, // Placeholder count
+        itemBuilder: (context, index) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+          child: Container(
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            Translations.getRefereeDirectoryText('loadingReferees', currentLang),
-            style: TextStyle(color: textColor.withOpacity(0.6)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1010,14 +1093,19 @@ class _FootballGridPainter extends CustomPainter {
 
     final inset = 40.0;
     final rect = Rect.fromLTWH(
-        inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
+      inset,
+      inset * 2,
+      size.width - inset * 2,
+      size.height - inset * 4,
+    );
     canvas.drawRect(rect, fieldPaint);
 
     final midX = rect.center.dy;
     canvas.drawLine(
-        Offset(rect.left + rect.width / 2 - 100, midX),
-        Offset(rect.left + rect.width / 2 + 100, midX),
-        fieldPaint);
+      Offset(rect.left + rect.width / 2 - 100, midX),
+      Offset(rect.left + rect.width / 2 + 100, midX),
+      fieldPaint,
+    );
     canvas.drawCircle(Offset(rect.left + rect.width / 2, midX), 30, fieldPaint);
   }
 
@@ -1030,7 +1118,11 @@ class _ScanLinePainter extends CustomPainter {
   final int mode;
   final Color seedColor;
 
-  _ScanLinePainter({required this.progress, required this.mode, required this.seedColor});
+  _ScanLinePainter({
+    required this.progress,
+    required this.mode,
+    required this.seedColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1056,10 +1148,12 @@ class _ScanLinePainter extends CustomPainter {
           AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
           Colors.transparent,
         ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width / 2, y),
-        radius: size.width * 0.25,
-      ));
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(size.width / 2, y),
+          radius: size.width * 0.25,
+        ),
+      );
 
     canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
   }

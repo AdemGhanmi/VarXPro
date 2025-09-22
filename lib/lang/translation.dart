@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Translations {
   static const Map<String, Map<String, dynamic>> pageTitles = {
     'en': {
@@ -10,6 +12,35 @@ class Translations {
         'Live Streaming',
         'Home',
       ],
+      'refereeDirectory': {
+        'searchReferees': 'Search Referees',
+        'aiAnalysis': 'AI Analysis',
+        'varTechnology': 'VAR Technology',
+        'liveDashboard': 'Live Dashboard',
+        'offsideDetection': 'Offside Detection',
+        'refereesDirectory': 'Referees Directory',
+        'referees': 'Referees',
+        'noRefereesFound': 'No Referees Found',
+        'adjustSearchOrFilters': 'Adjust your search or filters',
+        'failedToLoadReferees': 'Failed to Load Referees',
+        'checkConnection': 'Please check your connection',
+        'retry': 'Retry',
+        'noRolesSpecified': 'No Roles Specified',
+        'since': 'Since',
+        'na': 'N/A',
+        'allConfederations': 'All Confederations',
+        'allCountries': 'All Countries',
+      },
+      'refereeDetails': {
+        'title': 'Referee Details',
+        'details': 'Details',
+        'confederation': 'Confederation',
+        'since': 'Since',
+        'gender': 'Gender',
+        'roles': 'Roles',
+        'noRolesSpecified': 'No Roles Specified',
+        'na': 'N/A',
+      },
       'Referpage': {
         'API Status': 'API Status',
         'Model Loaded: ': 'Model Loaded: ',
@@ -48,24 +79,30 @@ class Translations {
         'Analysis complete! View results.': 'Analysis complete! View results.',
         'Unknown': 'Unknown',
       },
-      "homePage": {
-        "subtitle": "AI-Powered Football Video Analytics",
-        "playerTrackingDesc":
-            "Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.",
-        "foulDetectionDesc":
-            "Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.",
-        "keyFieldLinesDesc":
-            "Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.",
-        "offsideDesc":
-            "Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.",
-        "refereeTrackingDesc":
-            "Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.",
-        "aiInsightsDesc":
-            "Leverage AI to gain insights into game patterns, strategies, and player performance metrics.",
-        "enterApp": "Enter the App",
-        "mainTitle": "Advanced VAR Technology",
-      },
-      'navLabels': [
+'homePage': {
+      'subtitle': 'AI-Powered Football Video Analytics',
+      'playerTrackingTitle': 'Player Tracking',
+      'playerTrackingDesc':
+          'Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.',
+      'foulDetectionTitle': 'Foul Detection',
+      'foulDetectionDesc':
+          'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
+      'keyFieldLinesTitle': 'Key Field Lines',
+      'keyFieldLinesDesc':
+          'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
+      'offsideTitle': 'Offside Detection',
+      'offsideDesc':
+          'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
+      'refereeTrackingTitle': 'Referee Tracking',
+      'refereeTrackingDesc':
+          'Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.',
+      'aiInsightsTitle': 'AI Insights',
+      'aiInsightsDesc':
+          'Get the best AI-powered solutions for your football analysis problems, including tracking, verification, and more.',
+      'enterApp': 'Enter the App',
+      'mainTitle': 'Advanced VAR Technology',
+    },
+          'navLabels': [
         'Tracking',
         'Faults',
         'Lines',
@@ -379,6 +416,38 @@ class Translations {
         'Diffusion en Direct',
         'Home',
       ],
+
+      'refereeDirectory': {
+        'searchReferees': 'Rechercher des arbitres',
+        'aiAnalysis': 'Analyse IA',
+        'varTechnology': 'Technologie VAR',
+        'liveDashboard': 'Tableau de bord en direct',
+        'offsideDetection': 'Détection de hors-jeu',
+        'refereesDirectory': 'Répertoire des arbitres',
+        'referees': 'Arbitres',
+        'noRefereesFound': 'Aucun arbitre trouvé',
+        'adjustSearchOrFilters':
+            'Ajustez votre recherche ou vos filtres',
+        'failedToLoadReferees': 'Échec du chargement des arbitres',
+        'checkConnection': 'Vérifiez votre connexion',
+        'retry': 'Réessayer',
+        'noRolesSpecified': 'Aucun rôle spécifié',
+        'since': 'Depuis',
+        'na': 'N/D',
+        'allConfederations': 'Toutes les confédérations',
+        'allCountries': 'Tous les pays',
+      },
+      'refereeDetails': {
+        'title': 'Détails de l\'arbitre',
+        'details': 'Détails',
+        'confederation': 'Confédération',
+        'since': 'Depuis',
+        'gender': 'Genre',
+        'roles': 'Rôles',
+        'noRolesSpecified': 'Aucun rôle spécifié',
+        'na': 'N/D',
+      },
+
       'Referpage': {
         'API Status': 'Statut de l\'API',
         'Model Loaded: ': 'Modèle Chargé : ',
@@ -418,23 +487,29 @@ class Translations {
             'Analyse terminée ! Voir les résultats.',
         'Unknown': 'Inconnu',
       },
-      "homePage": {
-        "subtitle": "Analyse vidéo de football propulsée par l'IA",
-        "playerTrackingDesc":
-            "Système avancé d'IA pour suivre les joueurs et analyser les buts dans les vidéos de football, fournissant des informations sur les mouvements, les vitesses et les opportunités de but.",
-        "foulDetectionDesc":
-            "Détecter et analyser les fautes en utilisant l'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.",
-        "keyFieldLinesDesc":
-            "Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.",
-        "offsideDesc":
-            "Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d'attaque.",
-        "refereeTrackingDesc":
-            "Suivre les mouvements de l'arbitre, calculer les distances, les vitesses et générer des cartes de chaleur, des graphiques de vitesse et une analyse de proximité.",
-        "aiInsightsDesc":
-            "Exploitez l'IA pour obtenir des informations sur les schémas de jeu, les stratégies et les performances des joueurs.",
-        "enterApp": "Entrer dans l'application",
-        "mainTitle": "Technologie VAR avancée",
-      },
+    'homePage': {
+      'subtitle': 'Analyse vidéo de football propulsée par l\'IA',
+      'playerTrackingTitle': 'Suivi des joueurs',
+      'playerTrackingDesc':
+          'Système avancé d\'IA pour suivre les joueurs et analyser les buts dans les vidéos de football, fournissant des informations sur les mouvements, les vitesses et les opportunités de but.',
+      'foulDetectionTitle': 'Détection de fautes',
+      'foulDetectionDesc':
+          'Détecter et analyser les fautes en utilisant l\'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.',
+      'keyFieldLinesTitle': 'Lignes de terrain clés',
+      'keyFieldLinesDesc':
+          'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
+      'offsideTitle': 'Détection de hors-jeu',
+      'offsideDesc':
+          'Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d\'attaque.',
+      'refereeTrackingTitle': 'Suivi de l\'arbitre',
+      'refereeTrackingDesc':
+          'Suivre les mouvements de l\'arbitre, calculer les distances, les vitesses et générer des cartes de chaleur, des graphiques de vitesse et une analyse de proximité.',
+      'aiInsightsTitle': 'Perspectives IA',
+      'aiInsightsDesc':
+          'Obtenez les meilleures solutions basées sur l\'IA pour vos problèmes d\'analyse de football, y compris le suivi, la vérification, et plus encore.',
+      'enterApp': 'Entrer dans l\'application',
+      'mainTitle': 'Technologie VAR avancée',
+    },
       'navLabels': ['Suivi', 'Fautes', 'Lignes', 'Hors-jeu', 'Arbitre', 'Live'],
       'chooseLanguage': 'Choisir la Langue',
       'chooseMode': 'Choisir le Mode',
@@ -749,6 +824,36 @@ class Translations {
         'البث المباشر',
         'بيت',
       ],
+
+      'refereeDirectory': {
+        'searchReferees': 'البحث عن الحكام',
+        'aiAnalysis': 'تحليل الذكاء الاصطناعي',
+        'varTechnology': 'تقنية VAR',
+        'liveDashboard': 'لوحة تحكم مباشرة',
+        'offsideDetection': 'كشف التسلل',
+        'refereesDirectory': 'دليل الحكام',
+        'referees': 'حكام',
+        'noRefereesFound': 'لم يتم العثور على حكام',
+        'adjustSearchOrFilters': 'اضبط بحثك أو مرشحاتك',
+        'failedToLoadReferees': 'فشل تحميل الحكام',
+        'checkConnection': 'يرجى التحقق من اتصالك',
+        'retry': 'إعادة المحاولة',
+        'noRolesSpecified': 'لم يتم تحديد أدوار',
+        'since': 'منذ',
+        'na': 'غير متوفر',
+        'allConfederations': 'جميع الاتحادات',
+        'allCountries': 'جميع الدول',
+      },
+      'refereeDetails': {
+        'title': 'تفاصيل الحكم',
+        'details': 'التفاصيل',
+        'confederation': 'الاتحاد',
+        'since': 'منذ',
+        'gender': 'الجنس',
+        'roles': 'الأدوار',
+        'noRolesSpecified': 'لم يتم تحديد أدوار',
+        'na': 'غير متوفر',
+      },
       'Referpage': {
         'API Status': 'حالة API',
         'Model Loaded: ': 'النموذج المحمل: ',
@@ -788,23 +893,29 @@ class Translations {
         'Unknown': 'غير معروف',
       },
 
-      "homePage": {
-        "subtitle": "تحليل فيديو كرة القدم باستخدام الذكاء الاصطناعي",
-        "playerTrackingDesc":
-            "نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، مع توفير رؤى حول الحركات والسرعات وفرص التسجيل.",
-        "foulDetectionDesc":
-            "كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.",
-        "keyFieldLinesDesc":
-            "تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.",
-        "offsideDesc":
-            "كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.",
-        "refereeTrackingDesc":
-            "تتبع حركات الحكم، وحساب المسافات والسرعات، وإنشاء خرائط حرارة ورسوم سرعات وتحليل القرب.",
-        "aiInsightsDesc":
-            "استخدم الذكاء الاصطناعي للحصول على رؤى حول أنماط اللعب والاستراتيجيات وأداء اللاعبين.",
-        "enterApp": "دخول التطبيق",
-        "mainTitle": "تقنية VAR المتقدمة",
-      },
+     'homePage': {
+      'subtitle': 'تحليل فيديو كرة القدم باستخدام الذكاء الاصطناعي',
+      'playerTrackingTitle': 'تتبع اللاعبين',
+      'playerTrackingDesc':
+          'نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، مع توفير رؤى حول الحركات والسرعات وفرص التسجيل.',
+      'foulDetectionTitle': 'كشف الأخطاء',
+      'foulDetectionDesc':
+          'كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.',
+      'keyFieldLinesTitle': 'خطوط الملعب الرئيسية',
+      'keyFieldLinesDesc':
+          'تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
+      'offsideTitle': 'كشف التسلل',
+      'offsideDesc':
+          'كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.',
+      'refereeTrackingTitle': 'تتبع الحكم',
+      'refereeTrackingDesc':
+          'تتبع حركات الحكم، وحساب المسافات والسرعات، وإنشاء خرائط حرارة ورسوم سرعات وتحليل القرب.',
+      'aiInsightsTitle': 'رؤى الذكاء الاصطناعي',
+      'aiInsightsDesc':
+          'احصل على أفضل الحلول المدعومة بالذكاء الاصطناعي لمشاكل تحليل كرة القدم، بما في ذلك التتبع والتحقق والمزيد.',
+      'enterApp': 'دخول التطبيق',
+      'mainTitle': 'تقنية VAR المتقدمة',
+    },
       'navLabels': ['تتبع', 'أخطاء', 'خطوط', 'تسلل', 'حكم', 'البث المباشر'],
       'chooseLanguage': 'اختر اللغة',
       'chooseMode': 'اختر الوضع',
@@ -1102,6 +1213,21 @@ class Translations {
       'na': 'غير متاح',
     },
   };
+
+
+
+  
+  static String getRefereeDetailsText(String key, String lang) {
+    final validLang = ['en', 'fr', 'ar'].contains(lang) ? lang : 'en';
+    final translation = pageTitles[validLang]?['refereeDetails']?[key] ??
+        pageTitles['en']?['refereeDetails']?[key] ??
+        'Missing translation for $key';
+    if (translation == null) {
+      debugPrint('Translation error: key=$key, lang=$lang, validLang=$validLang');
+      return 'Translation not found';
+    }
+    return translation;
+  }
 
   static String translate(String key, String lang) {
     return pageTitles[lang]?[key] ?? pageTitles['en']![key] ?? key;

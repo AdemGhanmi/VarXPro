@@ -1,17 +1,20 @@
-
 import 'dart:async';
-import 'package:VarXPro/views/pages/LiveStream/service/permission_service.dart';
-import 'package:VarXPro/views/pages/LiveStream/service/recording_service.dart';
-
+import 'dart:io';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:logger/logger.dart';
+import 'package:media_store_plus/media_store_plus.dart';
+import 'package:provider/provider.dart';
+import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:video_player/video_player.dart';
 
 class StreamVideoController extends ChangeNotifier {
-  final PermissionService _permissionService = PermissionService();
-  final RecordingService _recordingService = RecordingService();
   final Logger _logger = Logger();
+  static const platform = MethodChannel('screen_service_channel');
 
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
@@ -27,12 +30,12 @@ class StreamVideoController extends ChangeNotifier {
   bool showControls = true;
   Timer? controlsTimer;
 
-  bool _isDisposed = false; 
+  bool _isDisposed = false;
 
   VideoPlayerController? get videoController => _videoController;
   ChewieController? get chewieController => _chewieController;
 
-  Future<void> initializePlayer(String streamUrl) async {
+  Future<void> initializePlayer(String streamUrl, String channelName) async {
     try {
       _videoController?.dispose();
       _chewieController?.dispose();
@@ -47,10 +50,10 @@ class StreamVideoController extends ChangeNotifier {
         allowFullScreen: false,
         showControls: false,
         materialProgressColors: ChewieProgressColors(
-          playedColor: const Color(0xFFFFC107),
-          handleColor: const Color(0xFFFFC107),
-          backgroundColor: const Color(0xFF424242),
-          bufferedColor: const Color(0xFF424242).withOpacity(0.5),
+          playedColor: AppColors.seedColors[1]!,
+          handleColor: AppColors.seedColors[1]!,
+          backgroundColor: AppColors.getTextColor(1).withOpacity(0.3),
+          bufferedColor: AppColors.getTextColor(1).withOpacity(0.5),
         ),
       );
 
@@ -59,30 +62,38 @@ class StreamVideoController extends ChangeNotifier {
       _safeNotify();
     } catch (e, stackTrace) {
       _logger.e("Error initializing player", error: e, stackTrace: stackTrace);
-      errorMessage = "Error loading video: $e";
+      errorMessage = Translations.translate('error_loading_video', 'en') + ': $channelName';
       isPlayerReady = false;
       _safeNotify();
     }
   }
 
   Future<void> requestPermissions() async {
-    try {
-      await _permissionService.requestPermissions();
-    } catch (e) {
-      _logger.e("Permission error", error: e);
-      errorMessage = "Permission denied";
-    }
     _safeNotify();
   }
 
-  Future<void> startRecording(String channelName, String title, String message) async {
+  Future<void> startRecording(
+    BuildContext context,
+    String channelName,
+    String title,
+    String message,
+  ) async {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final currentLang = languageProvider.currentLanguage ?? 'en';
+    
     try {
       isRecording = true;
       recordingDuration = 0;
       showControls = true;
       errorMessage = null;
 
-      await _recordingService.startRecording(channelName, title, message);
+      final fileName =
+          'stream_${channelName}_${DateTime.now().millisecondsSinceEpoch}';
+      await platform.invokeMethod('startRecording', <String, dynamic>{
+        'fileName': fileName,
+        'notificationTitle': title,
+        'notificationText': message,
+      });
 
       recordingTimer?.cancel();
       recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -91,40 +102,170 @@ class StreamVideoController extends ChangeNotifier {
       });
 
       _resetControlsTimer();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Translations.translate('recording_in_progress', currentLang),
+            style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+          ),
+          backgroundColor: AppColors.seedColors[1]!,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       _safeNotify();
     } catch (e, stackTrace) {
       _logger.e("Error starting recording", error: e, stackTrace: stackTrace);
-      errorMessage = "Error recording: $e";
+      errorMessage = Translations.translate('error', currentLang) + ': $e';
       isRecording = false;
       _safeNotify();
-      await stopRecording();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Translations.translate('error', currentLang) + ': $e',
+            style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
-  Future<String?> stopRecording() async {
+  Future<String?> stopRecording(BuildContext context) async {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final currentLang = languageProvider.currentLanguage ?? 'en';
+    
     recordingTimer?.cancel();
     recordingTimer = null;
     controlsTimer?.cancel();
     controlsTimer = null;
 
     try {
-      final videoPath = await _recordingService.stopRecording();
-      if (videoPath == null) throw Exception('Recording failed');
-
+      final filePath = await platform.invokeMethod<String>('stopRecording');
       isRecording = false;
       showControls = true;
-      finalVideoPath = videoPath;
+
+      if (filePath != null && filePath.isNotEmpty) {
+        await saveToGallery(context, filePath);
+        finalVideoPath = filePath;
+      } else {
+        throw Exception(Translations.translate('no_file_selected', currentLang));
+      }
 
       _resetControlsTimer();
       _safeNotify();
-      return videoPath;
+      return filePath;
     } catch (e, stackTrace) {
       _logger.e("Error stopping recording", error: e, stackTrace: stackTrace);
-      errorMessage = "Error: $e";
+      errorMessage = Translations.translate('error', currentLang) + ': $e';
       isRecording = false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Translations.translate('error', currentLang) + ': $e',
+            style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       _safeNotify();
       return null;
     }
+  }
+
+  Future<void> saveToGallery(BuildContext context, String filePath) async {
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final currentLang = languageProvider.currentLanguage ?? 'en';
+    
+    if (!File(filePath).existsSync()) {
+      _logger.e('Recording file does not exist: $filePath');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Translations.translate('no_file_selected', currentLang),
+            style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final mediaStore = MediaStore();
+      await mediaStore.saveFile(
+        tempFilePath: filePath,
+        dirType: DirType.video,
+        dirName: DirName.dcim,
+        relativePath: 'AI_Tactical',
+      );
+      _logger.i('Recording saved to DCIM/AI_Tactical at path: $filePath');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Translations.translate('recording_saved', currentLang),
+            style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+          ),
+          backgroundColor: AppColors.seedColors[1]!,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      _logger.e('Failed to save video to DCIM: $e');
+      try {
+        final mediaStore = MediaStore();
+        await mediaStore.saveFile(
+          tempFilePath: filePath,
+          dirType: DirType.video,
+          dirName: DirName.movies,
+          relativePath: 'AI_Tactical',
+        );
+        _logger.i('Fallback save to Movies/AI_Tactical succeeded');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              Translations.translate('recording_saved', currentLang),
+              style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+            ),
+            backgroundColor: AppColors.seedColors[1]!,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (fallbackE) {
+        _logger.e('Fallback save also failed: $fallbackE');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              Translations.translate('error', currentLang) + ': $fallbackE',
+              style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void play() {
+    _videoController?.play();
+    _safeNotify();
+  }
+
+  void pause() {
+    _videoController?.pause();
+    _safeNotify();
+  }
+
+  double get volume => _videoController?.value.volume ?? 0.0;
+
+  bool get isPlaying => _videoController?.value.isPlaying ?? false;
+
+  Future<void> setVolume(double vol) async {
+    await _videoController?.setVolume(vol);
+    _safeNotify();
   }
 
   void toggleControls() {

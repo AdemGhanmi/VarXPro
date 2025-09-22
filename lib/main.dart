@@ -1,5 +1,5 @@
 import 'package:VarXPro/provider/langageprovider.dart';
-import 'package:VarXPro/views/splash_screen.dart.dart';
+import 'package:VarXPro/views/home.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'model/appcolor.dart';
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
               ),
               fontFamily: 'Poppins',
             ),
-            home: const SplashScreen(),
+            home: const HomePage(),
             debugShowCheckedModeBanner: false,
           );
         },

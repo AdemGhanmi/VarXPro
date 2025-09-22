@@ -1,3 +1,4 @@
+
 import 'package:VarXPro/views/pages/LiveStream/model/category.dart';
 import 'package:VarXPro/views/pages/LiveStream/model/channel.dart';
 import 'package:VarXPro/views/pages/LiveStream/service/api_service.dart';
@@ -29,7 +30,7 @@ class LiveStreamController extends ChangeNotifier {
       filterChannels();
     } catch (e, stackTrace) {
       _logger.e("Error loading data", error: e, stackTrace: stackTrace);
-      errorMessage = 'Error loading data';
+      errorMessage = 'Le chargement des données a échoué. Veuillez réessayer.'; // Custom message
     } finally {
       isLoading = false;
       notifyListeners();

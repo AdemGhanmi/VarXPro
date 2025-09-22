@@ -1,15 +1,14 @@
-import 'package:VarXPro/model/appColor.dart';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
-import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/views/pages/LiveStream/controller/video_player_controller.dart';
-import 'package:VarXPro/views/pages/LiveStream/views/video_playback_screen.dart';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:logger/logger.dart';
+import 'package:video_player/video_player.dart';
 
 class VideoFullScreenPage extends StatefulWidget {
   final String streamUrl;
@@ -25,150 +24,102 @@ class VideoFullScreenPage extends StatefulWidget {
   State<VideoFullScreenPage> createState() => _VideoFullScreenPageState();
 }
 
-class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerProviderStateMixin {
+class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
   final StreamVideoController _controller = StreamVideoController();
-  final Logger _logger = Logger();
-  Offset _recordButtonPosition = const Offset(20, 20);
-
-  late AnimationController _glowController;
-  late Animation<double> _glowAnimation;
+  bool _isLandscape = true;
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeRight,
-      DeviceOrientation.landscapeLeft,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
-    _controller.initializePlayer(widget.streamUrl);
+    _setOrientation(landscape: true);
+    _controller.initializePlayer(
+      widget.streamUrl,
+      widget.channelName ?? Translations.translate('unknown', 'en'),
+    );
     _controller.requestPermissions();
-
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-    _glowAnimation = Tween(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-    _glowController.repeat(reverse: true);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (ModalRoute.of(context)?.isCurrent == true) {
-      if (!_glowController.isAnimating) _glowController.repeat(reverse: true);
+  void _setOrientation({required bool landscape}) {
+    if (landscape) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeRight,
+        DeviceOrientation.landscapeLeft,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } else {
-      _glowController.stop();
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     }
+    setState(() {
+      _isLandscape = landscape;
+    });
   }
 
   @override
   void dispose() {
-    _glowController.stop();
-    _glowController.dispose();
-    // Ensure orientation is restored before disposing controller
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]).then((_) {
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      try {
-        _controller.dispose();
-        _logger.i("VideoFullScreenPage disposed successfully");
-      } catch (e, stackTrace) {
-        _logger.e("Error disposing VideoFullScreenPage", error: e, stackTrace: stackTrace);
-      }
-    });
+    _setOrientation(landscape: false);
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
-    final modeProvider = Provider.of<ModeProvider>(context);
+    final themeProvider = Provider.of<ModeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
-    final lang = languageProvider.currentLanguage;
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
-    final primaryColor = AppColors.getPrimaryColor(seedColor, modeProvider.currentMode);
-    final textPrimary = AppColors.getTextColor(modeProvider.currentMode);
+    final currentLang = languageProvider.currentLanguage ?? 'en';
+    final seedColor = AppColors.seedColors[themeProvider.currentMode] ?? AppColors.seedColors[1]!;
 
     return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
-      body: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, _) {
-          return GestureDetector(
-            onTap: _controller.toggleControls,
-            child: Stack(
-              children: [
-                if (_controller.errorMessage != null)
-                  _buildErrorScreen(languageProvider, primaryColor, textPrimary)
-                else if (_controller.isPlayerReady &&
-                    _controller.videoController != null &&
-                    _controller.chewieController != null)
-                  Center(
-                    child: AspectRatio(
-                      aspectRatio: _controller.videoController!.value.aspectRatio,
-                      child: Chewie(controller: _controller.chewieController!),
+      backgroundColor: AppColors.getBackgroundColor(themeProvider.currentMode),
+      body: SafeArea(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return GestureDetector(
+              onTap: _controller.toggleControls,
+              child: Stack(
+                children: [
+                  // Background Gradient
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: AppColors.getBodyGradient(themeProvider.currentMode),
                     ),
                   ),
-                _buildControlsOverlay(languageProvider, textPrimary),
-                _buildFloatingRecordButton(
-                  context,
-                  screenSize,
-                  languageProvider,
-                  textPrimary,
-                ),
-                if (_controller.finalVideoPath != null && !_controller.isRecording)
-                  Positioned(
-                    bottom: 20,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: ScaleTransition(
-                        scale: _glowAnimation,
-                        child: ElevatedButton.icon(
-                          icon: Icon(Icons.play_arrow, color: textPrimary),
-                          label: Text(
-                            Translations.translate('view_recording', lang),
-                            style: GoogleFonts.roboto(color: textPrimary),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => VideoPlaybackScreen(filePath: _controller.finalVideoPath!),
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.getLabelColor(seedColor, modeProvider.currentMode),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          ),
+                  if (_controller.errorMessage != null)
+                    _buildErrorScreen(languageProvider, seedColor, currentLang)
+                  else if (!_controller.isPlayerReady)
+                    _buildLoadingScreen(languageProvider, currentLang)
+                  else if (_controller.isPlayerReady &&
+                      _controller.videoController != null &&
+                      _controller.chewieController != null)
+                    Center(
+                      child: AspectRatio(
+                        aspectRatio: _controller.videoController!.value.aspectRatio,
+                        child: Chewie(
+                          controller: _controller.chewieController!,
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          );
-        },
+                  _buildControlsOverlay(languageProvider, currentLang, seedColor),
+                  if (_controller.isPlayerReady)
+                    _buildBottomControls(languageProvider, currentLang, themeProvider, seedColor),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildErrorScreen(
     LanguageProvider languageProvider,
-    Color primaryColor,
-    Color textPrimary,
+    Color seedColor,
+    String currentLang,
   ) {
-    final lang = languageProvider.currentLanguage;
-    final modeProvider = Provider.of<ModeProvider>(context, listen: false);
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -177,11 +128,11 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.getLabelColor(seedColor, modeProvider.currentMode).withOpacity(0.1),
+              color: seedColor.withOpacity(0.1),
             ),
             child: Icon(
               Icons.error_outline,
-              color: AppColors.getLabelColor(seedColor, modeProvider.currentMode),
+              color: seedColor,
               size: 48,
             ),
           ),
@@ -189,7 +140,7 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
           Text(
             _controller.errorMessage!,
             style: GoogleFonts.roboto(
-              color: textPrimary,
+              color: AppColors.getTextColor(Provider.of<ModeProvider>(context).currentMode),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -197,10 +148,13 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => _controller.initializePlayer(widget.streamUrl),
+            onPressed: () => _controller.initializePlayer(
+              widget.streamUrl,
+              widget.channelName ?? Translations.translate('unknown', currentLang),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.getLabelColor(seedColor, modeProvider.currentMode),
-              foregroundColor: primaryColor,
+              backgroundColor: seedColor,
+              foregroundColor: AppColors.onPrimaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -208,11 +162,37 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
               elevation: 2,
             ),
             child: Text(
-              Translations.translate('retry', lang),
+              Translations.translate('retry', currentLang),
               style: GoogleFonts.roboto(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
+                color: AppColors.onPrimaryColor,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingScreen(
+    LanguageProvider languageProvider,
+    String currentLang,
+  ) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.seedColors[1]!),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "${Translations.translate('loading', currentLang)} ${widget.channelName ?? Translations.translate('unknown', currentLang)}...",
+            style: GoogleFonts.roboto(
+              color: AppColors.getTextColor(Provider.of<ModeProvider>(context).currentMode),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -222,9 +202,9 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
 
   Widget _buildControlsOverlay(
     LanguageProvider languageProvider,
-    Color textPrimary,
+    String currentLang,
+    Color seedColor,
   ) {
-    final lang = languageProvider.currentLanguage;
     return AnimatedOpacity(
       opacity: _controller.showControls ? 1.0 : 0.0,
       duration: const Duration(milliseconds: 300),
@@ -233,17 +213,22 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
         child: Column(
           children: [
             AppBar(
-              backgroundColor: Colors.black.withOpacity(0.5),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: AppColors.getAppBarGradient(Provider.of<ModeProvider>(context).currentMode),
+                ),
+              ),
               leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: textPrimary),
+                icon: Icon(Icons.arrow_back, color: AppColors.onPrimaryColor),
                 onPressed: () => Navigator.pop(context),
-                tooltip: Translations.translate('quit', lang),
+                tooltip: Translations.translate('quit', currentLang),
               ),
               title: Text(
-                widget.channelName ??
-                    Translations.translate('playback_in_progress', lang),
+                widget.channelName ?? Translations.translate('playback_in_progress', currentLang),
                 style: GoogleFonts.roboto(
-                  color: textPrimary,
+                  color: AppColors.onPrimaryColor,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -255,7 +240,7 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.circle,
                           color: Colors.red,
                           size: 12,
@@ -263,7 +248,7 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
                         const SizedBox(width: 8),
                         Text(
                           '${_controller.recordingDuration} s',
-                          style: GoogleFonts.roboto(color: textPrimary),
+                          style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
                         ),
                       ],
                     ),
@@ -276,94 +261,149 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> with TickerPr
     );
   }
 
-  Widget _buildFloatingRecordButton(
-    BuildContext context,
-    Size screenSize,
+  Widget _buildBottomControls(
     LanguageProvider languageProvider,
-    Color textPrimary,
+    String currentLang,
+    ModeProvider themeProvider,
+    Color seedColor,
   ) {
-    final lang = languageProvider.currentLanguage;
-    final modeProvider = Provider.of<ModeProvider>(context, listen: false);
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
-    final recordColor = _controller.isRecording ? Colors.red : AppColors.getLabelColor(seedColor, modeProvider.currentMode);
     return Positioned(
-      left: _recordButtonPosition.dx.clamp(0, screenSize.width - 60),
-      top: _recordButtonPosition.dy.clamp(0, screenSize.height - 60),
-      child: GestureDetector(
-        onPanUpdate: (details) {
-          setState(() {
-            _recordButtonPosition = Offset(
-              (_recordButtonPosition.dx + details.delta.dx).clamp(
-                0,
-                screenSize.width - 60,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedOpacity(
+        opacity: _controller.showControls ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        child: IgnorePointer(
+          ignoring: !_controller.showControls,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  seedColor.withOpacity(0.7),
+                  seedColor.withOpacity(0.3),
+                ],
               ),
-              (_recordButtonPosition.dy + details.delta.dy).clamp(
-                0,
-                screenSize.height - 60,
-              ),
-            );
-          });
-        },
-        child: ScaleTransition(
-          scale: _glowAnimation,
-          child: FloatingActionButton(
-            backgroundColor: recordColor,
-            mini: true,
-            child: Icon(
-              _controller.isRecording ? Icons.stop : Icons.fiber_manual_record,
-              color: textPrimary,
-              size: 20,
             ),
-            onPressed: () async {
-              if (_controller.isRecording) {
-                final videoPath = await _controller.stopRecording();
-                if (videoPath != null && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        Translations.translate('recording_saved', lang),
-                        style: GoogleFonts.roboto(
-                          color: AppColors.getTextColor(modeProvider.currentMode),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      backgroundColor: AppColors.getLabelColor(seedColor, modeProvider.currentMode),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  );
-                }
-              } else {
-                await _controller.startRecording(
-                  widget.channelName ?? 'video',
-                  Translations.translate('recording_in_progress', lang),
-                  "${Translations.translate('recording', lang)} ${widget.channelName}",
-                );
-              }
-
-              if (_controller.errorMessage != null && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      _controller.errorMessage!,
-                      style: GoogleFonts.roboto(
-                        color: AppColors.getTextColor(modeProvider.currentMode),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    backgroundColor: AppColors.getLabelColor(seedColor, modeProvider.currentMode),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _controller.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: AppColors.onPrimaryColor,
+                    size: 32,
+                  ),
+                  onPressed: () {
+                    if (_controller.isPlaying) {
+                      _controller.pause();
+                    } else {
+                      _controller.play();
+                    }
+                  },
+                ),
+                Expanded(
+                  child: VideoProgressIndicator(
+                    _controller.videoController!,
+                    allowScrubbing: true,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    colors: VideoProgressColors(
+                      playedColor: seedColor,
+                      bufferedColor: AppColors.onPrimaryColor.withOpacity(0.5),
+                      backgroundColor: AppColors.onPrimaryColor.withOpacity(0.2),
                     ),
                   ),
-                );
-              }
-            },
+                ),
+                IconButton(
+                  icon: Icon(
+                    _controller.volume > 0 ? Icons.volume_up : Icons.volume_off,
+                    color: AppColors.onPrimaryColor,
+                    size: 24,
+                  ),
+                  onPressed: () {
+                    final newVolume = _controller.volume > 0 ? 0.0 : 1.0;
+                    _controller.setVolume(newVolume);
+                  },
+                ),
+                SizedBox(
+                  width: 60,
+                  child: Slider(
+                    value: _controller.volume,
+                    onChanged: (value) {
+                      _controller.setVolume(value);
+                    },
+                    activeColor: AppColors.onPrimaryColor,
+                    inactiveColor: AppColors.onPrimaryColor.withOpacity(0.3),
+                    min: 0.0,
+                    max: 1.0,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  color: AppColors.getSurfaceColor(themeProvider.currentMode),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                      if (_controller.isRecording) {
+                        await _controller.stopRecording(context);
+                        if (mounted && _controller.finalVideoPath != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                Translations.translate('recording_saved', currentLang),
+                                style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+                              ),
+                              backgroundColor: seedColor,
+                            ),
+                          );
+                        }
+                      } else {
+                        await _controller.startRecording(
+                          context,
+                          widget.channelName ?? Translations.translate('unknown', currentLang),
+                          Translations.translate('recording_in_progress', currentLang),
+                          "${Translations.translate('recording', currentLang)} ${widget.channelName}",
+                        );
+                      }
+                    },
+                    splashColor: seedColor.withOpacity(0.2),
+                    highlightColor: seedColor.withOpacity(0.1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        _controller.isRecording ? Icons.stop_circle : Icons.fiber_manual_record,
+                        color: _controller.isRecording ? Colors.red : seedColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  color: AppColors.getSurfaceColor(themeProvider.currentMode),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () {
+                      _setOrientation(landscape: !_isLandscape);
+                    },
+                    splashColor: seedColor.withOpacity(0.2),
+                    highlightColor: seedColor.withOpacity(0.1),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        _isLandscape ? Icons.portrait : Icons.landscape,
+                        color: seedColor,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

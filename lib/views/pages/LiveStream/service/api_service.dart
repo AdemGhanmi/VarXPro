@@ -1,7 +1,8 @@
-
+// api_service.dart - No changes.
 import 'dart:convert';
 import 'package:VarXPro/views/pages/LiveStream/model/category.dart';
 import 'package:VarXPro/views/pages/LiveStream/model/channel.dart';
+
 import 'package:http/http.dart' as http;
 
 
@@ -13,24 +14,32 @@ class ApiService {
   Future<List<Category>> fetchCategories() async {
     final url =
         '$baseUrl/player_api.php?username=$username&password=$password&action=get_live_categories';
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Category.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load categories: ${response.statusCode}');
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Category.fromJson(json)).toList();
+      } else {
+        throw Exception('Erreur backend: Impossible de charger les catégories.'); // Custom message
+      }
+    } catch (e) {
+      throw Exception('Erreur de connexion au backend. Veuillez vérifier votre réseau.'); // Custom
     }
   }
 
   Future<List<Channel>> fetchChannels() async {
     final url =
         '$baseUrl/player_api.php?username=$username&password=$password&action=get_live_streams';
-    final response = await http.get(Uri.parse(url));
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      return data.map((json) => Channel.fromJson(json)).toList();
-    } else {
-      throw Exception('Failed to load channels: ${response.statusCode}');
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => Channel.fromJson(json)).toList();
+      } else {
+        throw Exception('Erreur backend: Impossible de charger les chaînes.'); // Custom
+      }
+    } catch (e) {
+      throw Exception('Erreur de connexion au backend. Veuillez vérifier votre réseau.'); // Custom
     }
   }
 

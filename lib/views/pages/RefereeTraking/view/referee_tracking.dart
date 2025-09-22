@@ -16,7 +16,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 
-// Define base URL as a constant
 const String baseUrl = 'https://refereetrackingsystem.varxpro.com';
 
 class RefereeTrackingSystemPage extends StatefulWidget {

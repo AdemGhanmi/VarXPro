@@ -33,10 +33,11 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
 
   final List<Widget> _pages = [
     const HomePage(),
-    RepositoryProvider(
-      create: (context) => TrackingService(),
-      child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage(),
+      RepositoryProvider(
+      create: (context) => RefereeService(),
+      child: const RefereeTrackingSystemPage(),
     ),
+   
     RepositoryProvider(
       create: (context) => FoulDetectionService(),
       child: const FoulDetectionPage(),
@@ -49,9 +50,9 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
       create: (context) => OffsideService(),
       child: const OffsidePage(),
     ),
-    RepositoryProvider(
-      create: (context) => RefereeService(),
-      child: const RefereeTrackingSystemPage(),
+   RepositoryProvider(
+      create: (context) => TrackingService(),
+      child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage(),
     ),
     RepositoryProvider(
       create: (context) => LiveStreamController(),
@@ -105,7 +106,6 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         AppColors.seedColors[modeProvider.currentMode] ??
         AppColors.seedColors[1]!;
 
-    // الحصول على حجم الشاشة لتحديد إذا كانت صغيرة
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 400;
 
@@ -202,26 +202,31 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildResponsiveBottomNavBar(
-    LanguageProvider langProvider,
-    ModeProvider modeProvider,
-    String currentLang,
-    Color seedColor,
-    bool isSmallScreen,
-  ) {
-    return Container(
-      height: isSmallScreen ? 70 : 90, // ارتفاع أقل للشاشات الصغيرة
+Widget _buildResponsiveBottomNavBar(
+  LanguageProvider langProvider,
+  ModeProvider modeProvider,
+  String currentLang,
+  Color seedColor,
+  bool isSmallScreen,
+) {
+  final screenWidth = MediaQuery.of(context).size.width;
+  // Dynamic navbar height based on screen size
+  final navBarHeight = screenWidth < 360 ? 60.0 : screenWidth < 600 ? 70.0 : 80.0;
+  // Dynamic icon size based on screen width
+  final iconSize = screenWidth < 360 ? 20.0 : screenWidth < 600 ? 24.0 : 28.0;
+  // Dynamic padding for navbar items
+  final itemPadding = screenWidth < 360 ? 6.0 : screenWidth < 600 ? 8.0 : 10.0;
+
+  return SafeArea(
+    child: Container(
+      height: navBarHeight,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.getSurfaceColor(
-              modeProvider.currentMode,
-            ).withOpacity(0.95),
-            AppColors.getSurfaceColor(
-              modeProvider.currentMode,
-            ).withOpacity(0.8),
+            AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.95),
+            AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
           ],
         ),
         boxShadow: [
@@ -238,14 +243,16 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Use spaceEvenly to prevent overflow
         children: [
           _buildResponsiveNavItem(
-            Icons.track_changes,
-            Translations.getNavLabel(0, currentLang),
+            Icons.sports,
+            Translations.getNavLabel(4, currentLang),
             1,
             seedColor,
             isSmallScreen,
+            iconSize,
+            itemPadding,
           ),
           _buildResponsiveNavItem(
             Icons.warning_amber_rounded,
@@ -253,6 +260,8 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
             2,
             seedColor,
             isSmallScreen,
+            iconSize,
+            itemPadding,
           ),
           _buildResponsiveNavItem(
             Icons.line_axis,
@@ -260,21 +269,27 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
             3,
             seedColor,
             isSmallScreen,
+            iconSize,
+            itemPadding,
           ),
-          _buildResponsiveHomeNavItem(seedColor, isSmallScreen), // Home icon in the center
+          _buildResponsiveHomeNavItem(seedColor, isSmallScreen, iconSize, itemPadding),
           _buildResponsiveNavItem(
             Icons.flag_circle,
             Translations.getNavLabel(3, currentLang),
             4,
             seedColor,
             isSmallScreen,
+            iconSize,
+            itemPadding,
           ),
           _buildResponsiveNavItem(
-            Icons.sports,
-            Translations.getNavLabel(4, currentLang),
+            Icons.track_changes,
+            Translations.getNavLabel(0, currentLang),
             5,
             seedColor,
             isSmallScreen,
+            iconSize,
+            itemPadding,
           ),
           _buildResponsiveNavItem(
             Icons.live_tv,
@@ -282,127 +297,117 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
             6,
             seedColor,
             isSmallScreen,
+            iconSize,
+            itemPadding,
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildResponsiveHomeNavItem(Color seedColor, bool isSmallScreen) {
-    final isSelected = _selectedIndex == 0; // Home is at index 0
-    final modeProvider = Provider.of<ModeProvider>(context);
+Widget _buildResponsiveHomeNavItem(
+  Color seedColor,
+  bool isSmallScreen,
+  double iconSize,
+  double itemPadding,
+) {
+  final isSelected = _selectedIndex == 0;
+  final modeProvider = Provider.of<ModeProvider>(context);
 
-    return GestureDetector(
-      onTap: () => _onItemTapped(0),
-      child: AnimatedBuilder(
-        animation: _glowController,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(0, isSmallScreen ? -8 : -10), // ارتفاع أقل للشاشات الصغيرة
-            child: Transform.scale(
-              scale: _glowController.value,
-              child: Container(
-                padding: EdgeInsets.all(isSmallScreen ? 8 : 12), // padding أصغر
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      isSelected
-                          ? AppColors.getPrimaryColor(
-                              seedColor,
-                              modeProvider.currentMode,
-                            )
-                          : AppColors.getTertiaryColor(
-                              seedColor,
-                              modeProvider.currentMode,
-                            ).withOpacity(0.8),
-                      isSelected
-                          ? AppColors.getTertiaryColor(
-                              seedColor,
-                              modeProvider.currentMode,
-                            )
-                          : AppColors.getSurfaceColor(
-                              modeProvider.currentMode,
-                            ).withOpacity(0.9),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isSelected
-                          ? AppColors.getPrimaryColor(
-                              seedColor,
-                              modeProvider.currentMode,
-                            ).withOpacity(0.4)
-                          : Colors.black.withOpacity(0.2),
-                      blurRadius: isSmallScreen ? 8 : 12, // ظل أصغر
-                      spreadRadius: isSmallScreen ? 2 : 3, // انتشار أقل
-                      offset: const Offset(0, 4),
-                    ),
+  return GestureDetector(
+    onTap: () => _onItemTapped(0),
+    child: AnimatedBuilder(
+      animation: _glowController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, isSmallScreen ? -6 : -8), // Adjusted for better alignment
+          child: Transform.scale(
+            scale: _glowController.value,
+            child: Container(
+              padding: EdgeInsets.all(itemPadding),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    isSelected
+                        ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
+                        : AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                            .withOpacity(0.8),
+                    isSelected
+                        ? AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                        : AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.9),
                   ],
-                  border: Border.all(
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.getPrimaryColor(
-                            seedColor,
-                            modeProvider.currentMode,
-                          ).withOpacity(0.5),
-                    width: isSmallScreen ? 1.5 : 2, // حدود أرق
-                  ),
                 ),
-                child: Icon(
-                  Icons.home,
-                  size: isSmallScreen ? 28 : 36, // أيقونة أصغر للشاشات الصغيرة
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
+                            .withOpacity(0.4)
+                        : Colors.black.withOpacity(0.2),
+                    blurRadius: isSmallScreen ? 6 : 8,
+                    spreadRadius: isSmallScreen ? 1 : 2,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
                   color: isSelected
                       ? Colors.white
-                      : AppColors.getPrimaryColor(
-                          seedColor,
-                          modeProvider.currentMode,
-                        ),
+                      : AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
+                          .withOpacity(0.5),
+                  width: isSmallScreen ? 1.0 : 1.5,
                 ),
               ),
+              child: Icon(
+                Icons.home,
+                size: iconSize,
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.getPrimaryColor(seedColor, modeProvider.currentMode),
+              ),
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
-  Widget _buildResponsiveNavItem(
-    IconData icon,
-    String label,
-    int index,
-    Color seedColor,
-    bool isSmallScreen,
-  ) {
-    final isSelected = _selectedIndex == index;
-    final modeProvider = Provider.of<ModeProvider>(context);
+Widget _buildResponsiveNavItem(
+  IconData icon,
+  String label,
+  int index,
+  Color seedColor,
+  bool isSmallScreen,
+  double iconSize,
+  double itemPadding,
+) {
+  final isSelected = _selectedIndex == index;
+  final modeProvider = Provider.of<ModeProvider>(context);
 
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
+  return GestureDetector(
+    onTap: () => _onItemTapped(index),
+    child: Tooltip(
+      message: label, // Show label as tooltip on small screens
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 8 : 12, 
-          vertical: isSmallScreen ? 6 : 8,
+          horizontal: itemPadding,
+          vertical: itemPadding / 1.5, // Reduced vertical padding for better alignment
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.getPrimaryColor(
-                  seedColor,
-                  modeProvider.currentMode,
-                ).withOpacity(0.15)
+              ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode).withOpacity(0.15)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.getPrimaryColor(
-                      seedColor,
-                      modeProvider.currentMode,
-                    ).withOpacity(0.2),
+                    color: AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
+                        .withOpacity(0.2),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -411,6 +416,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedBuilder(
               animation: _bubbleController,
@@ -418,19 +424,15 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                 return Transform.scale(
                   scale: isSelected ? 1.1 : 1.0,
                   child: Stack(
+                    alignment: Alignment.center,
                     children: [
                       Icon(
                         icon,
-                        size: isSmallScreen ? 22 : 28, // أيقونات أصغر
+                        size: iconSize,
                         color: isSelected
-                            ? AppColors.getPrimaryColor(
-                                seedColor,
-                                modeProvider.currentMode,
-                              )
-                            : AppColors.getTertiaryColor(
-                                seedColor,
-                                modeProvider.currentMode,
-                              ).withOpacity(0.8),
+                            ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
+                            : AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                                .withOpacity(0.8),
                       ),
                       if (isSelected)
                         Positioned(
@@ -439,13 +441,11 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                           child: ScaleTransition(
                             scale: _bubbleController,
                             child: Container(
-                              width: isSmallScreen ? 6 : 8, // نقطة أصغر
-                              height: isSmallScreen ? 6 : 8,
+                              width: isSmallScreen ? 5 : 6,
+                              height: isSmallScreen ? 5 : 6,
                               decoration: BoxDecoration(
                                 color: AppColors.getPrimaryColor(
-                                  seedColor,
-                                  modeProvider.currentMode,
-                                ),
+                                    seedColor, modeProvider.currentMode),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -456,29 +456,30 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                 );
               },
             ),
-            const SizedBox(height: 4),
-            if (!isSmallScreen) // إخفاء النص على الشاشات الصغيرة
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: isSmallScreen ? 9 : 10, // خط أصغر
-                  color: isSelected
-                      ? AppColors.getPrimaryColor(
-                          seedColor,
-                          modeProvider.currentMode,
-                        )
-                      : AppColors.getTertiaryColor(
-                          seedColor,
-                          modeProvider.currentMode,
-                        ).withOpacity(0.8),
-                  fontWeight: FontWeight.w600,
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: isSmallScreen ? 8 : 9,
+                    color: isSelected
+                        ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
+                        : AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                            .withOpacity(0.8),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   void _showLanguageDialog(
     BuildContext context,
