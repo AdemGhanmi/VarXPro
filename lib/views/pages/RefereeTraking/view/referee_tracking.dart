@@ -8,6 +8,7 @@ import 'package:VarXPro/views/pages/RefereeTraking/controller/referee_controller
 import 'package:VarXPro/views/pages/RefereeTraking/service/referee_api_service.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/widgets/file_picker_widget.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/widgets/video_player_widget.dart';
+import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -30,7 +31,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
     with TickerProviderStateMixin {
   bool _showSplash = true;
   late AnimationController _glowController;
-  late Animation<double> _glowAnimation; // Added declaration
+  late Animation<double> _glowAnimation; 
   late AnimationController _scanController;
   bool _analysisCompleted = false;
 
@@ -160,14 +161,20 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                 if (state.error != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        state.error!,
-                        style: GoogleFonts.roboto(
-                          color: AppColors.getTextColor(
-                            modeProvider.currentMode,
+                      content: Row(
+                        children: [
+                          Text('⚠️', style: GoogleFonts.roboto(fontSize: 20)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              state.error!,
+                              style: GoogleFonts.roboto(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
-                          fontSize: 14,
-                        ),
+                        ],
                       ),
                       backgroundColor: Colors.redAccent,
                       behavior: SnackBarBehavior.floating,
@@ -176,7 +183,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                       ),
                       action: SnackBarAction(
                         label: Translations.getTranslation(
-                            'Retry', languageProvider.currentLanguage),
+                            'Retry', languageProvider.currentLanguage),  // Fixed: No emoji in key
                         textColor: Colors.white,
                         onPressed: () {
                           context.read<RefereeBloc>().add(CheckHealthEvent());
@@ -189,12 +196,27 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                     state.analyzeResponse != null &&
                     !_analysisCompleted) {
                   _analysisCompleted = true;
+                  // Log to history on successful analysis
+                  final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+                  historyProvider.addHistoryItem('Referee Tracking', 'Referee tracking analysis completed');
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(Translations.getTranslation(
-                          'Analysis complete! View results.',
-                          languageProvider.currentLanguage)),
+                      content: Row(
+                        children: [
+                          Text('✅', style: GoogleFonts.roboto(fontSize: 20)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(Translations.getTranslation(
+                                'Analysis complete! View results.',  // Fixed: No emoji in key
+                                languageProvider.currentLanguage)),
+                          ),
+                        ],
+                      ),
                       backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   );
                 }
@@ -210,6 +232,8 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Text('⏳', style: GoogleFonts.roboto(fontSize: 60, color: Colors.orange)),
+                            const SizedBox(height: 16),
                             CircularProgressIndicator(
                               valueColor: AlwaysStoppedAnimation(
                                 AppColors.getTertiaryColor(
@@ -223,7 +247,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Text(
-                                Translations.getTranslation(
+                                Translations.getTranslation(  // Fixed: No emoji in key
                                     'Analyzing video... This may take 10-30 minutes or longer.',
                                     languageProvider.currentLanguage),
                                 style: GoogleFonts.roboto(
@@ -237,7 +261,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              Translations.getTranslation(
+                              Translations.getTranslation(  // Fixed: No emoji in key
                                   'Play Tic-Tac-Toe while waiting!',
                                   languageProvider.currentLanguage),
                               style: GoogleFonts.roboto(
@@ -281,16 +305,22 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  Translations.getTranslation(
-                                      'API Status', languageProvider.currentLanguage),
-                                  style: GoogleFonts.roboto(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.getTextColor(
-                                      modeProvider.currentMode,
+                                Row(
+                                  children: [
+                                    Text('🩺', style: GoogleFonts.roboto(fontSize: 24)),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                          'API Status', languageProvider.currentLanguage)}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                                 const SizedBox(height: 8),
                                 Row(
@@ -328,24 +358,36 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  '${Translations.getTranslation('Model Loaded: ', languageProvider.currentLanguage)}${state.health?.modelLoaded ?? false}',
-                                  style: GoogleFonts.roboto(
-                                    color: AppColors.getTextColor(
-                                      modeProvider.currentMode,
+                                Row(
+                                  children: [
+                                    Text('🤖', style: GoogleFonts.roboto(fontSize: 16)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${Translations.getTranslation('Model Loaded: ', languageProvider.currentLanguage)}${state.health?.modelLoaded ?? false}',
+                                      style: GoogleFonts.roboto(
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                    fontSize: 14,
-                                  ),
+                                  ],
                                 ),
                                 if (state.health?.classes != null)
-                                  Text(
-                                    '${Translations.getTranslation('Classes: ', languageProvider.currentLanguage)}${state.health!.classes!.values.join(", ")}',
-                                    style: GoogleFonts.roboto(
-                                      color: AppColors.getTextColor(
-                                        modeProvider.currentMode,
+                                  Row(
+                                    children: [
+                                      Text('📚', style: GoogleFonts.roboto(fontSize: 16)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${Translations.getTranslation('Classes: ', languageProvider.currentLanguage)}${state.health!.classes!.values.join(", ")}',
+                                        style: GoogleFonts.roboto(
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
+                                          fontSize: 14,
+                                        ),
                                       ),
-                                      fontSize: 14,
-                                    ),
+                                    ],
                                   ),
                               ],
                             ),
@@ -354,35 +396,75 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                         const SizedBox(height: 20),
 
                         // Video Picker
-                        FilePickerWidget(
-                          onFilePicked: (File file) {
-                            setState(() {
-                              _analysisCompleted = false;
-                            });
-                            context.read<RefereeBloc>().add(
-                                  AnalyzeVideoEvent(video: file),
-                                );
-                          },
-                          buttonText: Translations.getTranslation(
-                              'Upload Video for Analysis',
-                              languageProvider.currentLanguage),
-                          allowedExtensions: ['mp4'],
+                        Card(
+                          color: AppColors.getSurfaceColor(
+                            modeProvider.currentMode,
+                          ).withOpacity(0.8),
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('📹', style: GoogleFonts.roboto(fontSize: 24)),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                          'Upload Video for Analysis', languageProvider.currentLanguage)}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                FilePickerWidget(
+                                  onFilePicked: (File file) {
+                                    setState(() {
+                                      _analysisCompleted = false;
+                                    });
+                                    context.read<RefereeBloc>().add(
+                                          AnalyzeVideoEvent(video: file),
+                                        );
+                                  },
+                                  buttonText: '🎥 ${Translations.getTranslation(  // Fixed: Emoji outside key
+                                      'Upload Video for Analysis', languageProvider.currentLanguage)}',  // Reuse key for consistency
+                                  allowedExtensions: ['mp4'],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
 
                         // Analysis Results
                         if (state.analyzeResponse != null &&
                             state.analyzeResponse!.ok) ...[
                           const SizedBox(height: 20),
-                          Text(
-                            Translations.getTranslation(
-                                'Analysis Results', languageProvider.currentLanguage),
-                            style: GoogleFonts.roboto(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.getTextColor(
-                                modeProvider.currentMode,
+                          Row(
+                            children: [
+                              Text('📊', style: GoogleFonts.roboto(fontSize: 24)),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                    'Analysis Results', languageProvider.currentLanguage)}',
+                                style: GoogleFonts.roboto(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.getTextColor(
+                                    modeProvider.currentMode,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                           // Summary
                           Card(
@@ -398,46 +480,64 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Row(
+                                    children: [
+                                      Text('📈', style: GoogleFonts.roboto(fontSize: 20)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                            'Summary', languageProvider.currentLanguage)}',
+                                        style: GoogleFonts.roboto(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
                                   _buildSummaryItem(
-                                    Translations.getTranslation('Total Distance',
-                                        languageProvider.currentLanguage),
+                                    '🏃 ${Translations.getTranslation('Total Distance',
+                                        languageProvider.currentLanguage)}',
                                     '${state.analyzeResponse!.summary.totalDistanceKm.toStringAsFixed(2)} km',
                                     modeProvider.currentMode,
                                     seedColor,
                                   ),
                                   _buildSummaryItem(
-                                    Translations.getTranslation('Average Speed',
-                                        languageProvider.currentLanguage),
+                                    '⚡ ${Translations.getTranslation('Average Speed',
+                                        languageProvider.currentLanguage)}',
                                     '${state.analyzeResponse!.summary.avgSpeedKmH.toStringAsFixed(2)} km/h',
                                     modeProvider.currentMode,
                                     seedColor,
                                   ),
                                   _buildSummaryItem(
-                                    Translations.getTranslation('Max Speed',
-                                        languageProvider.currentLanguage),
+                                    '🚀 ${Translations.getTranslation('Max Speed',
+                                        languageProvider.currentLanguage)}',
                                     '${state.analyzeResponse!.summary.maxSpeedKmH.toStringAsFixed(2)} km/h',
                                     modeProvider.currentMode,
                                     seedColor,
                                   ),
                                   _buildSummaryItem(
-                                    Translations.getTranslation(
-                                        'Sprints', languageProvider.currentLanguage),
+                                    '💨 ${Translations.getTranslation(
+                                        'Sprints', languageProvider.currentLanguage)}',
                                     '${state.analyzeResponse!.summary.sprints}',
                                     modeProvider.currentMode,
                                     seedColor,
                                   ),
                                   _buildSummaryItem(
-                                    Translations.getTranslation(
+                                    '⏰ ${Translations.getTranslation(
                                         'First Half Distance',
-                                        languageProvider.currentLanguage),
+                                        languageProvider.currentLanguage)}',
                                     '${state.analyzeResponse!.summary.distanceFirstHalfKm.toStringAsFixed(2)} km',
                                     modeProvider.currentMode,
                                     seedColor,
                                   ),
                                   _buildSummaryItem(
-                                    Translations.getTranslation(
+                                    '🏁 ${Translations.getTranslation(
                                         'Second Half Distance',
-                                        languageProvider.currentLanguage),
+                                        languageProvider.currentLanguage)}',
                                     '${state.analyzeResponse!.summary.distanceSecondHalfKm.toStringAsFixed(2)} km',
                                     modeProvider.currentMode,
                                     seedColor,
@@ -449,157 +549,216 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                           const SizedBox(height: 20),
 
                           // Download Buttons
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              if (constraints.maxWidth < 600) {
-                                return Column(
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        final url =
-                                            '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
-                                        if (await canLaunchUrl(Uri.parse(url))) {
-                                          await launchUrl(Uri.parse(url));
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                Translations.getTranslation(
-                                                    'Could not open report',
-                                                    languageProvider.currentLanguage),
-                                              ),
+                          Card(
+                            color: AppColors.getSurfaceColor(
+                              modeProvider.currentMode,
+                            ).withOpacity(0.8),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text('📥', style: GoogleFonts.roboto(fontSize: 20)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                            'Downloads', languageProvider.currentLanguage)}',
+                                        style: GoogleFonts.roboto(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      if (constraints.maxWidth < 600) {
+                                        return Column(
+                                          children: [
+                                            _buildDownloadButton(
+                                              '📄',
+                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                                  'Download Report TXT', languageProvider.currentLanguage)}',
+                                              () async {
+                                                final url =
+                                                    '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
+                                                if (await canLaunchUrl(Uri.parse(url))) {
+                                                  await launchUrl(Uri.parse(url));
+                                                } else {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        Translations.getTranslation(
+                                                            'Could not open report',
+                                                            languageProvider.currentLanguage),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              modeProvider.currentMode,
+                                              seedColor,
                                             ),
-                                          );
-                                        }
-                                      },
-                                      child: Text(Translations.getTranslation(
-                                          'Download Report TXT',
-                                          languageProvider.currentLanguage)),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        final url =
-                                            '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
-                                        if (await canLaunchUrl(Uri.parse(url))) {
-                                          await launchUrl(Uri.parse(url));
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                Translations.getTranslation(
-                                                    'Could not open metrics CSV',
-                                                    languageProvider.currentLanguage),
-                                              ),
+                                            const SizedBox(height: 10),
+                                            _buildDownloadButton(
+                                              '📊',
+                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                                  'Download Metrics CSV', languageProvider.currentLanguage)}',
+                                              () async {
+                                                final url =
+                                                    '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
+                                                if (await canLaunchUrl(Uri.parse(url))) {
+                                                  await launchUrl(Uri.parse(url));
+                                                } else {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        Translations.getTranslation(
+                                                            'Could not open metrics CSV',
+                                                            languageProvider.currentLanguage),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              modeProvider.currentMode,
+                                              seedColor,
                                             ),
-                                          );
-                                        }
-                                      },
-                                      child: Text(Translations.getTranslation(
-                                          'Download Metrics CSV',
-                                          languageProvider.currentLanguage)),
-                                    ),
-                                  ],
-                                );
-                              } else {
-                                return Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        final url =
-                                            '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
-                                        if (await canLaunchUrl(Uri.parse(url))) {
-                                          await launchUrl(Uri.parse(url));
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                Translations.getTranslation(
-                                                    'Could not open report',
-                                                    languageProvider.currentLanguage),
-                                              ),
+                                          ],
+                                        );
+                                      } else {
+                                        return Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            _buildDownloadButton(
+                                              '📄',
+                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                                  'Download Report TXT', languageProvider.currentLanguage)}',
+                                              () async {
+                                                final url =
+                                                    '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
+                                                if (await canLaunchUrl(Uri.parse(url))) {
+                                                  await launchUrl(Uri.parse(url));
+                                                } else {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        Translations.getTranslation(
+                                                            'Could not open report',
+                                                            languageProvider.currentLanguage),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              modeProvider.currentMode,
+                                              seedColor,
                                             ),
-                                          );
-                                        }
-                                      },
-                                      child: Text(Translations.getTranslation(
-                                          'Download Report TXT',
-                                          languageProvider.currentLanguage)),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        final url =
-                                            '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
-                                        if (await canLaunchUrl(Uri.parse(url))) {
-                                          await launchUrl(Uri.parse(url));
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                Translations.getTranslation(
-                                                    'Could not open metrics CSV',
-                                                    languageProvider.currentLanguage),
-                                              ),
+                                            _buildDownloadButton(
+                                              '📊',
+                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                                  'Download Metrics CSV', languageProvider.currentLanguage)}',
+                                              () async {
+                                                final url =
+                                                    '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
+                                                if (await canLaunchUrl(Uri.parse(url))) {
+                                                  await launchUrl(Uri.parse(url));
+                                                } else {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        Translations.getTranslation(
+                                                            'Could not open metrics CSV',
+                                                            languageProvider.currentLanguage),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              modeProvider.currentMode,
+                                              seedColor,
                                             ),
-                                          );
-                                        }
-                                      },
-                                      child: Text(Translations.getTranslation(
-                                          'Download Metrics CSV',
-                                          languageProvider.currentLanguage)),
-                                    ),
-                                  ],
-                                );
-                              }
-                            },
+                                          ],
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
 
                           // Report Text
-                          ExpansionTile(
-                            title: Text(
-                              Translations.getTranslation(
-                                  'Full Report', languageProvider.currentLanguage),
-                              style: GoogleFonts.roboto(
-                                color: AppColors.getTextColor(
-                                  modeProvider.currentMode,
-                                ),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          Card(
+                            color: AppColors.getSurfaceColor(
+                              modeProvider.currentMode,
+                            ).withOpacity(0.8),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: SelectableText(
-                                  state.reportText ??
-                                      Translations.getTranslation(
-                                          'No report available',
-                                          languageProvider.currentLanguage),
-                                  style: GoogleFonts.roboto(
-                                    color: AppColors.getTextColor(
-                                      modeProvider.currentMode,
+                            child: ExpansionTile(
+                              leading: Text('📖', style: GoogleFonts.roboto(fontSize: 24, color: Colors.brown)),
+                              title: Text(
+                                '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                    'Full Report', languageProvider.currentLanguage)}',
+                                style: GoogleFonts.roboto(
+                                  color: AppColors.getTextColor(
+                                    modeProvider.currentMode,
+                                  ),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: SelectableText(
+                                    state.reportText ??
+                                        Translations.getTranslation(
+                                            'No report available',
+                                            languageProvider.currentLanguage),
+                                    style: GoogleFonts.roboto(
+                                      color: AppColors.getTextColor(
+                                        modeProvider.currentMode,
+                                      ),
+                                      fontSize: 14,
                                     ),
-                                    fontSize: 14,
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
 
                           // Visualizations
                           const SizedBox(height: 20),
-                          Text(
-                            Translations.getTranslation(
-                                'Heatmap', languageProvider.currentLanguage),
-                            style: GoogleFonts.roboto(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.getTextColor(
-                                modeProvider.currentMode,
+                          Row(
+                            children: [
+                              Text('👁️', style: GoogleFonts.roboto(fontSize: 20)),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                    'Visualizations', languageProvider.currentLanguage)}',
+                                style: GoogleFonts.roboto(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.getTextColor(
+                                    modeProvider.currentMode,
+                                  ),
+                                  fontSize: 16,
+                                ),
                               ),
-                              fontSize: 16,
-                            ),
+                            ],
                           ),
                           _buildImageContainer(
                             '$baseUrl${state.analyzeResponse!.artifacts.heatmapUrl}',
@@ -607,18 +766,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             modeProvider.currentMode,
                             seedColor,
                             languageProvider.currentLanguage,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            Translations.getTranslation(
-                                'Speed Plot', languageProvider.currentLanguage),
-                            style: GoogleFonts.roboto(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.getTextColor(
-                                modeProvider.currentMode,
-                              ),
-                              fontSize: 16,
-                            ),
+                            '🔥 Heatmap',
                           ),
                           _buildImageContainer(
                             '$baseUrl${state.analyzeResponse!.artifacts.speedPlotUrl}',
@@ -626,18 +774,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             modeProvider.currentMode,
                             seedColor,
                             languageProvider.currentLanguage,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            Translations.getTranslation(
-                                'Proximity Plot', languageProvider.currentLanguage),
-                            style: GoogleFonts.roboto(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.getTextColor(
-                                modeProvider.currentMode,
-                              ),
-                              fontSize: 16,
-                            ),
+                            '⚡ Speed Plot',
                           ),
                           _buildImageContainer(
                             '$baseUrl${state.analyzeResponse!.artifacts.proximityPlotUrl}',
@@ -645,171 +782,253 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             modeProvider.currentMode,
                             seedColor,
                             languageProvider.currentLanguage,
+                            '📍 Proximity Plot',
                           ),
 
                           // Output Video
                           const SizedBox(height: 20),
-                          Text(
-                            Translations.getTranslation(
-                                'Output Video', languageProvider.currentLanguage),
-                            style: GoogleFonts.roboto(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.getTextColor(
-                                modeProvider.currentMode,
-                              ),
-                              fontSize: 16,
+                          Card(
+                            color: AppColors.getSurfaceColor(
+                              modeProvider.currentMode,
+                            ).withOpacity(0.8),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                          ),
-                          VideoPlayerWidget(
-                            videoUrl:
-                                '$baseUrl${state.analyzeResponse!.artifacts.outputVideoUrl}',
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('▶️', style: GoogleFonts.roboto(fontSize: 20, color: Colors.red)),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                          'Output Video', languageProvider.currentLanguage)}',
+                                      style: GoogleFonts.roboto(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                VideoPlayerWidget(
+                                  videoUrl:
+                                      '$baseUrl${state.analyzeResponse!.artifacts.outputVideoUrl}',
+                                ),
+                              ],
+                            ),
                           ),
 
                           // Sample Frames
                           if (state.analyzeResponse!.artifacts.sampleFramesUrls
                               .isNotEmpty) ...[
                             const SizedBox(height: 20),
-                            Text(
-                              Translations.getTranslation(
-                                  'Sample Frames', languageProvider.currentLanguage),
-                              style: GoogleFonts.roboto(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.getTextColor(
-                                  modeProvider.currentMode,
-                                ),
-                                fontSize: 16,
+                            Card(
+                              color: AppColors.getSurfaceColor(
+                                modeProvider.currentMode,
+                              ).withOpacity(0.8),
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                            ),
-                            SizedBox(
-                              height: 200,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: state
-                                    .analyzeResponse!.artifacts.sampleFramesUrls.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(right: 8.0),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => Dialog(
-                                            child: Image.network(
-                                              '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
-                                              fit: BoxFit.contain,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  Text(
-                                                Translations.getTranslation(
-                                                    'Failed to load frame',
-                                                    languageProvider.currentLanguage),
-                                                style: GoogleFonts.roboto(
-                                                  color: AppColors.getTextColor(
-                                                    modeProvider.currentMode,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text('📸', style: GoogleFonts.roboto(fontSize: 20, color: Colors.orange)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                            'Sample Frames', languageProvider.currentLanguage)}',
+                                        style: GoogleFonts.roboto(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    height: 200,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: state
+                                          .analyzeResponse!.artifacts.sampleFramesUrls.length,
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(right: 8.0),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => Dialog(
+                                                  child: Image.network(
+                                                    '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
+                                                    fit: BoxFit.contain,
+                                                    errorBuilder: (context, error, stackTrace) =>
+                                                        Text(
+                                                      Translations.getTranslation(
+                                                          'Failed to load frame',
+                                                          languageProvider.currentLanguage),
+                                                      style: GoogleFonts.roboto(
+                                                        color: AppColors.getTextColor(
+                                                          modeProvider.currentMode,
+                                                        ),
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
                                                   ),
-                                                  fontSize: 14,
+                                                ),
+                                              );
+                                            },
+                                            child: Container(
+                                              constraints: const BoxConstraints(
+                                                maxWidth: 150,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: AppColors.getTertiaryColor(
+                                                    seedColor,
+                                                    modeProvider.currentMode,
+                                                  ).withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(12),
+                                                child: Image.network(
+                                                  '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
+                                                  width: 150,
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder:
+                                                      (context, error, stackTrace) => Container(
+                                                    width: 150,
+                                                    height: 150,
+                                                    color: Colors.grey[300],
+                                                    child: Text('❌', style: GoogleFonts.roboto(fontSize: 50, color: Colors.red)),
+                                                  ),
+                                                  loadingBuilder:
+                                                      (context, child, loadingProgress) {
+                                                    if (loadingProgress == null) return child;
+                                                    return Center(
+                                                      child: CircularProgressIndicator(
+                                                        value: loadingProgress
+                                                                .expectedTotalBytes !=
+                                                            null
+                                                            ? loadingProgress
+                                                                    .cumulativeBytesLoaded /
+                                                                (loadingProgress
+                                                                        .expectedTotalBytes ??
+                                                                    1)
+                                                            : null,
+                                                        valueColor:
+                                                            AlwaysStoppedAnimation(
+                                                          AppColors.getTertiaryColor(
+                                                            seedColor,
+                                                            modeProvider.currentMode,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
                                                 ),
                                               ),
                                             ),
                                           ),
                                         );
                                       },
-                                      child: Container(
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 150,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: AppColors.getTertiaryColor(
-                                              seedColor,
-                                              modeProvider.currentMode,
-                                            ).withOpacity(0.3),
-                                            width: 1,
-                                          ),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Image.network(
-                                            '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
-                                            width: 150,
-                                            fit: BoxFit.contain,
-                                            errorBuilder:
-                                                (context, error, stackTrace) => Text(
-                                              Translations.getTranslation(
-                                                  'Failed to load frame',
-                                                  languageProvider.currentLanguage),
-                                              style: GoogleFonts.roboto(
-                                                color: AppColors.getTextColor(
-                                                  modeProvider.currentMode,
-                                                ),
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            loadingBuilder:
-                                                (context, child, loadingProgress) {
-                                              if (loadingProgress == null) return child;
-                                              return Center(
-                                                child: CircularProgressIndicator(
-                                                  value: loadingProgress
-                                                          .expectedTotalBytes !=
-                                                      null
-                                                  ? loadingProgress
-                                                            .cumulativeBytesLoaded /
-                                                        (loadingProgress
-                                                                .expectedTotalBytes ??
-                                                            1)
-                                                  : null,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation(
-                                                    AppColors.getTertiaryColor(
-                                                      seedColor,
-                                                      modeProvider.currentMode,
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
                                     ),
-                                  );
-                                },
+                                  ),
+                                ],
                               ),
                             ),
                           ],
 
                           // Clean Button
                           const SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () =>
-                                context.read<RefereeBloc>().add(CleanFilesEvent()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              foregroundColor: Colors.white,
+                          Card(
+                            color: AppColors.getSurfaceColor(
+                              modeProvider.currentMode,
+                            ).withOpacity(0.8),
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Text(Translations.getTranslation(
-                                'Clean Server Files',
-                                languageProvider.currentLanguage)),
-                          ),
-                          if (state.cleanResponse != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                '${Translations.getTranslation('Cleaned ', languageProvider.currentLanguage)}${state.cleanResponse!.removed}${Translations.getTranslation(' files', languageProvider.currentLanguage)}',
-                                style: GoogleFonts.roboto(
-                                  color: AppColors.getTextColor(
-                                    modeProvider.currentMode,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text('🧹', style: GoogleFonts.roboto(fontSize: 20, color: Colors.red)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
+                                            'Clean Server Files', languageProvider.currentLanguage)}',
+                                        style: GoogleFonts.roboto(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  fontSize: 14,
-                                ),
+                                  const SizedBox(height: 12),
+                                  ElevatedButton.icon(
+                                    onPressed: () =>
+                                        context.read<RefereeBloc>().add(CleanFilesEvent()),
+                                    icon: Text('🗑️', style: GoogleFonts.roboto(fontSize: 18, color: Colors.white)),
+                                    label: Text('${Translations.getTranslation(  // Fixed: Emoji outside key
+                                        'Clean Files', languageProvider.currentLanguage)}'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.redAccent,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                  if (state.cleanResponse != null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Row(
+                                        children: [
+                                          Text('✅', style: GoogleFonts.roboto(fontSize: 16, color: Colors.green)),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${Translations.getTranslation('Cleaned ', languageProvider.currentLanguage)}${state.cleanResponse!.removed}${Translations.getTranslation(' files', languageProvider.currentLanguage)}',
+                                            style: GoogleFonts.roboto(
+                                              color: AppColors.getTextColor(
+                                                modeProvider.currentMode,
+                                              ),
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
+                          ),
                         ],
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
+                  );
               },
             ),
           ],
@@ -828,22 +1047,64 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         children: [
-          Text(
-            '$label: ',
-            style: GoogleFonts.roboto(
-              color: AppColors.getTextColor(mode).withOpacity(0.7),
-              fontSize: 14,
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: GoogleFonts.roboto(
+                color: AppColors.getTextColor(mode).withOpacity(0.7),
+                fontSize: 14,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: GoogleFonts.roboto(
-              color: AppColors.getTextColor(mode),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            flex: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                style: GoogleFonts.roboto(
+                  color: AppColors.getTextColor(mode),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDownloadButton(
+    String iconEmoji,
+    String label,
+    VoidCallback onPressed,
+    int mode,
+    Color seedColor,
+  ) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Text(iconEmoji, style: GoogleFonts.roboto(fontSize: 18)),
+      label: Text(
+        label,
+        style: GoogleFonts.roboto(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.getTertiaryColor(seedColor, mode),
+        foregroundColor: AppColors.getTextColor(mode),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }
@@ -854,64 +1115,97 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
     int mode,
     Color seedColor,
     String currentLanguage,
+    String title,
   ) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => Dialog(
-              child: Image.network(
-            url,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => Text(
-              Translations.getTranslation('Failed to load image', currentLanguage),
-              style: GoogleFonts.roboto(
-                color: AppColors.getTextColor(mode),
-                fontSize: 14,
-              ),
-            ),
-          )),
-        );
-      },
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: screenWidth * 0.5,
-          maxWidth: screenWidth * 0.9,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.network(
-            url,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => Text(
-              Translations.getTranslation('Failed to load image', currentLanguage),
-              style: GoogleFonts.roboto(
-                color: AppColors.getTextColor(mode),
-                fontSize: 14,
-              ),
-            ),
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          (loadingProgress.expectedTotalBytes ?? 1)
-                      : null,
-                  valueColor: AlwaysStoppedAnimation(
-                    AppColors.getTertiaryColor(seedColor, mode),
+    return Card(
+      color: AppColors.getSurfaceColor(
+        mode,
+      ).withOpacity(0.8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('🖼️', style: GoogleFonts.roboto(fontSize: 20, color: Colors.teal)),
+                const SizedBox(width: 4),
+                Text(
+                  title,
+                  style: GoogleFonts.roboto(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.getTextColor(
+                      mode,
+                    ),
+                    fontSize: 16,
                   ),
                 ),
-              );
-            },
-          ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => Dialog(
+                      child: Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Text(
+                      Translations.getTranslation('Failed to load image', currentLanguage),  // Fixed: No emoji in key
+                      style: GoogleFonts.roboto(
+                        color: AppColors.getTextColor(mode),
+                        fontSize: 14,
+                      ),
+                    ),
+                  )),
+                );
+              },
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: screenWidth * 0.5,
+                  maxWidth: screenWidth * 0.9,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 200,
+                      color: Colors.grey[300],
+                      child: Text('❌', style: GoogleFonts.roboto(fontSize: 50, color: Colors.red)),
+                    ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  (loadingProgress.expectedTotalBytes ?? 1)
+                              : null,
+                          valueColor: AlwaysStoppedAnimation(
+                            AppColors.getTertiaryColor(seedColor, mode),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1202,9 +1496,27 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
       decoration: BoxDecoration(
         color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
+        ),
       ),
       child: Column(
         children: [
+          Row(
+            children: [
+              const SizedBox(width: 4),
+              Text(
+                '🎮 ${Translations.getTranslation(  
+                    'Tic-Tac-Toe', widget.currentLanguage)}',
+                style: GoogleFonts.roboto(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(modeProvider.currentMode),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1243,29 +1555,48 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
           if (gameOver)
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(
-                winner == 'Draw'
-                    ? Translations.getTranslation(
-                        'It\'s a draw!', widget.currentLanguage)
-                    : '$winner${Translations.getTranslation(' wins!', widget.currentLanguage)}',
-                style: GoogleFonts.roboto(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (winner == 'Draw')
+                    Text('😑', style: GoogleFonts.roboto(fontSize: 20, color: Colors.grey))
+                  else
+                    Text(
+                      winner == 'X' ? '😊' : '😠',
+                      style: GoogleFonts.roboto(fontSize: 20, color: winner == 'X' ? Colors.green : Colors.red),
+                    ),
+                  const SizedBox(width: 8),
+                  Text(
+                    winner == 'Draw'
+                        ? '🤝 ${Translations.getTranslation(  // Fixed: Emoji outside key
+                            "It's a draw!", widget.currentLanguage)}'
+                        : '$winner${Translations.getTranslation(  // Fixed: Emoji outside key
+                            ' wins!', widget.currentLanguage)} 🏆',
+                    style: GoogleFonts.roboto(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                    ),
+                  ),
+                ],
               ),
             ),
           const SizedBox(height: 10),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: resetGame,
+            icon: Text('🔄', style: GoogleFonts.roboto(fontSize: 18)),
+            label: Text(
+              '${Translations.getTranslation( 
+                  'Reset Game', widget.currentLanguage)}',
+              style: GoogleFonts.roboto(fontSize: 16),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor:
                   AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
               foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-            ),
-            child: Text(
-              Translations.getTranslation('Reset Game', widget.currentLanguage),
-              style: GoogleFonts.roboto(fontSize: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ],

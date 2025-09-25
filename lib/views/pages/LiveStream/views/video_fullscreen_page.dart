@@ -70,7 +70,9 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
     final themeProvider = Provider.of<ModeProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
     final currentLang = languageProvider.currentLanguage ?? 'en';
-    final seedColor = AppColors.seedColors[themeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final seedColor =
+        AppColors.seedColors[themeProvider.currentMode] ??
+        AppColors.seedColors[1]!;
 
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(themeProvider.currentMode),
@@ -82,10 +84,11 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
               onTap: _controller.toggleControls,
               child: Stack(
                 children: [
-                  // Background Gradient
                   Container(
                     decoration: BoxDecoration(
-                      gradient: AppColors.getBodyGradient(themeProvider.currentMode),
+                      gradient: AppColors.getBodyGradient(
+                        themeProvider.currentMode,
+                      ),
                     ),
                   ),
                   if (_controller.errorMessage != null)
@@ -97,15 +100,25 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
                       _controller.chewieController != null)
                     Center(
                       child: AspectRatio(
-                        aspectRatio: _controller.videoController!.value.aspectRatio,
+                        aspectRatio:
+                            _controller.videoController!.value.aspectRatio,
                         child: Chewie(
                           controller: _controller.chewieController!,
                         ),
                       ),
                     ),
-                  _buildControlsOverlay(languageProvider, currentLang, seedColor),
+                  _buildControlsOverlay(
+                    languageProvider,
+                    currentLang,
+                    seedColor,
+                  ),
                   if (_controller.isPlayerReady)
-                    _buildBottomControls(languageProvider, currentLang, themeProvider, seedColor),
+                    _buildBottomControls(
+                      languageProvider,
+                      currentLang,
+                      themeProvider,
+                      seedColor,
+                    ),
                 ],
               ),
             );
@@ -130,17 +143,15 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
               shape: BoxShape.circle,
               color: seedColor.withOpacity(0.1),
             ),
-            child: Icon(
-              Icons.error_outline,
-              color: seedColor,
-              size: 48,
-            ),
+            child: Icon(Icons.error_outline, color: seedColor, size: 48),
           ),
           const SizedBox(height: 16),
           Text(
             _controller.errorMessage!,
             style: GoogleFonts.roboto(
-              color: AppColors.getTextColor(Provider.of<ModeProvider>(context).currentMode),
+              color: AppColors.getTextColor(
+                Provider.of<ModeProvider>(context).currentMode,
+              ),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -150,7 +161,8 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
           ElevatedButton(
             onPressed: () => _controller.initializePlayer(
               widget.streamUrl,
-              widget.channelName ?? Translations.translate('unknown', currentLang),
+              widget.channelName ??
+                  Translations.translate('unknown', currentLang),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: seedColor,
@@ -190,7 +202,9 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
           Text(
             "${Translations.translate('loading', currentLang)} ${widget.channelName ?? Translations.translate('unknown', currentLang)}...",
             style: GoogleFonts.roboto(
-              color: AppColors.getTextColor(Provider.of<ModeProvider>(context).currentMode),
+              color: AppColors.getTextColor(
+                Provider.of<ModeProvider>(context).currentMode,
+              ),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -217,16 +231,32 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
               elevation: 0,
               flexibleSpace: Container(
                 decoration: BoxDecoration(
-                  gradient: AppColors.getAppBarGradient(Provider.of<ModeProvider>(context).currentMode),
+                  gradient: AppColors.getAppBarGradient(
+                    Provider.of<ModeProvider>(context).currentMode,
+                  ),
                 ),
               ),
               leading: IconButton(
                 icon: Icon(Icons.arrow_back, color: AppColors.onPrimaryColor),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () async {
+                  // نوقّف الريكورد إذا مازال يخدم
+                  if (_controller.isRecording) {
+                    await _controller.stopRecording(context);
+                  }
+                  // نحرّر الريسورس متاع الفيديو
+                  _controller.dispose();
+
+                  // نرجع للشاشة السابقة
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
                 tooltip: Translations.translate('quit', currentLang),
               ),
+
               title: Text(
-                widget.channelName ?? Translations.translate('playback_in_progress', currentLang),
+                widget.channelName ??
+                    Translations.translate('playback_in_progress', currentLang),
                 style: GoogleFonts.roboto(
                   color: AppColors.onPrimaryColor,
                   fontSize: 16,
@@ -240,15 +270,13 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.circle,
-                          color: Colors.red,
-                          size: 12,
-                        ),
+                        Icon(Icons.circle, color: Colors.red, size: 12),
                         const SizedBox(width: 8),
                         Text(
                           '${_controller.recordingDuration} s',
-                          style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
+                          style: GoogleFonts.roboto(
+                            color: AppColors.onPrimaryColor,
+                          ),
                         ),
                       ],
                     ),
@@ -312,7 +340,9 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
                     colors: VideoProgressColors(
                       playedColor: seedColor,
                       bufferedColor: AppColors.onPrimaryColor.withOpacity(0.5),
-                      backgroundColor: AppColors.onPrimaryColor.withOpacity(0.2),
+                      backgroundColor: AppColors.onPrimaryColor.withOpacity(
+                        0.2,
+                      ),
                     ),
                   ),
                 ),
@@ -348,24 +378,22 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
                     borderRadius: BorderRadius.circular(12),
                     onTap: () async {
                       if (_controller.isRecording) {
-                        await _controller.stopRecording(context);
-                        if (mounted && _controller.finalVideoPath != null) {
+                        final filePath = await _controller.stopRecording(context);
+                        if (filePath != null) {
+                          _controller.finalVideoPath = filePath; 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                Translations.translate('recording_saved', currentLang),
-                                style: GoogleFonts.roboto(color: AppColors.onPrimaryColor),
-                              ),
-                              backgroundColor: seedColor,
+                              content: Text('تم حفظ التسجيل في: $filePath'),
+                              backgroundColor: Colors.green,
                             ),
                           );
                         }
                       } else {
                         await _controller.startRecording(
                           context,
-                          widget.channelName ?? Translations.translate('unknown', currentLang),
-                          Translations.translate('recording_in_progress', currentLang),
-                          "${Translations.translate('recording', currentLang)} ${widget.channelName}",
+                          widget.channelName ?? 'قناة غير معروفة',
+                          'بدء التسجيل',
+                          'جاري تسجيل البث المباشر...',
                         );
                       }
                     },
@@ -374,7 +402,9 @@ class _VideoFullScreenPageState extends State<VideoFullScreenPage> {
                     child: Padding(
                       padding: const EdgeInsets.all(8),
                       child: Icon(
-                        _controller.isRecording ? Icons.stop_circle : Icons.fiber_manual_record,
+                        _controller.isRecording
+                            ? Icons.stop_circle
+                            : Icons.fiber_manual_record,
                         color: _controller.isRecording ? Colors.red : seedColor,
                         size: 24,
                       ),

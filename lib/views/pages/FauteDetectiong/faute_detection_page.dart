@@ -7,6 +7,7 @@ import 'package:VarXPro/views/pages/FauteDetectiong/controller/foul_detection_co
 import 'package:VarXPro/views/pages/FauteDetectiong/view/csv_viewer.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/view/pdf_viewer.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/view/video_viewer.dart';
+import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -74,6 +75,12 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
     final result = await FilePicker.platform.pickFiles(type: FileType.video, allowMultiple: false);
     if (result != null && result.files.single.path != null) {
       await _controller.analyzeVideo(videoFile: File(result.files.single.path!));
+      // Log to history on successful analysis
+      if (_controller.result != null && _controller.result!.ok) {
+        final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+        final langProvider = Provider.of<LanguageProvider>(context, listen: false);
+        historyProvider.addHistoryItem('Foul Detection', 'Foul detection analysis completed');
+      }
       setState(() {});
     }
   }

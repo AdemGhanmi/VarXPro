@@ -60,6 +60,14 @@ class _DetailArbiterState extends State<DetailArbiter>
     super.dispose();
   }
 
+  String _formatNumber(double value, bool isInt) {
+    if (isInt) {
+      return value.round().toString();
+    } else {
+      return value.toStringAsFixed(2);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final modeProvider = Provider.of<ModeProvider>(context);
@@ -78,7 +86,7 @@ class _DetailArbiterState extends State<DetailArbiter>
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          Translations.getRefereeDetailsText('title', currentLang),
+          '${Translations.getRefereeDetailsText('title', currentLang)} 👨‍⚖️',
           style: TextStyle(
             color: textColor,
             fontWeight: FontWeight.bold,
@@ -94,8 +102,8 @@ class _DetailArbiterState extends State<DetailArbiter>
           indicatorColor: seedColor,
           tabs: [
             Tab(icon: Icon(Icons.info_outline_rounded), text: 'Details'),
-            Tab(icon: Icon(Icons.bar_chart_rounded), text: 'Statistics'),
-            Tab(icon: Icon(Icons.sports_soccer_rounded), text: 'Competitions'),
+            Tab(icon: Icon(Icons.bar_chart_rounded), text: 'Statistics '),
+            Tab(icon: Icon(Icons.sports_soccer_rounded), text: 'Competitions '),
           ],
         ),
         leading: IconButton(
@@ -106,7 +114,6 @@ class _DetailArbiterState extends State<DetailArbiter>
           IconButton(
             icon: Icon(Icons.star, color: Colors.amber),
             onPressed: () {
-              // Toggle favorite or something
             },
           ),
         ],
@@ -176,7 +183,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    widget.referee.details?.worldfootball?.profile?.completeName ?? widget.referee.name,
+                                    '👨‍⚖️ ${widget.referee.details?.worldfootball?.profile?.completeName ?? widget.referee.name}',
                                     style: TextStyle(
                                       color: textColor,
                                       fontWeight: FontWeight.bold,
@@ -187,7 +194,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${widget.referee.country}, ${widget.referee.details?.worldfootball?.profile?.placeOfBirth ?? ''}',
+                                    '🏳️ ${widget.referee.country}, ${widget.referee.details?.worldfootball?.profile?.placeOfBirth ?? ''}',
                                     style: TextStyle(
                                       color: textColor.withOpacity(0.7),
                                       fontSize: isLargeScreen ? 16 : 14,
@@ -197,7 +204,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                       widget.referee.details!.worldfootball!.profile!.born!.isNotEmpty) ...[
                                     const SizedBox(height: 2),
                                     Text(
-                                      'Born: ${widget.referee.details!.worldfootball!.profile!.born}',
+                                      '📅 Born: ${widget.referee.details!.worldfootball!.profile!.born}',
                                       style: TextStyle(
                                         color: textColor.withOpacity(0.7),
                                         fontSize: isLargeScreen ? 14 : 12,
@@ -220,7 +227,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                       }),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${rating.toStringAsFixed(1)} / 5',
+                                        '⭐ ${rating.toStringAsFixed(1)} / 5',
                                         style: TextStyle(
                                           color: textColor.withOpacity(0.7),
                                           fontSize: 14,
@@ -248,10 +255,10 @@ class _DetailArbiterState extends State<DetailArbiter>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  Translations.getRefereeDetailsText(
+                                  '${Translations.getRefereeDetailsText(
                                     'details',
                                     currentLang,
-                                  ),
+                                  )} ℹ️',
                                   style: TextStyle(
                                     color: textColor,
                                     fontWeight: FontWeight.bold,
@@ -260,7 +267,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                 ),
                                 const SizedBox(height: 16),
                                 _buildDetailRow(
-                                  icon: Icons.account_balance_rounded,
+                                  emoji: '🏆',
                                   label: Translations.getRefereeDetailsText(
                                     'confederation',
                                     currentLang,
@@ -270,7 +277,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                 ),
                                 const SizedBox(height: 12),
                                 _buildDetailRow(
-                                  icon: Icons.calendar_month_rounded,
+                                  emoji: '📅',
                                   label: Translations.getRefereeDetailsText(
                                     'since',
                                     currentLang,
@@ -280,9 +287,8 @@ class _DetailArbiterState extends State<DetailArbiter>
                                 ),
                                 const SizedBox(height: 12),
                                 _buildDetailRow(
-                                  icon: widget.referee.gender == 'Male'
-                                      ? Icons.male_rounded
-                                      : Icons.female_rounded,
+                                 
+                                  emoji: widget.referee.gender == 'Male' ? '♂️' : '♀️',
                                   label: Translations.getRefereeDetailsText(
                                     'gender',
                                     currentLang,
@@ -292,7 +298,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  Translations.getRefereeDetailsText('roles', currentLang),
+                                  '${Translations.getRefereeDetailsText('roles', currentLang)} 🎭',
                                   style: TextStyle(
                                     color: textColor,
                                     fontWeight: FontWeight.w600,
@@ -312,6 +318,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                           children: widget.referee.roles
                                               .map(
                                                 (role) => Chip(
+                                                  avatar: Text(_getRoleEmoji(role)),
                                                   label: Text(
                                                     role,
                                                     style: TextStyle(
@@ -347,7 +354,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                 if (widget.referee.roles.isNotEmpty) ...[
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Badges',
+                                    '🏅 Badges',
                                     style: TextStyle(
                                       color: textColor,
                                       fontWeight: FontWeight.bold,
@@ -367,12 +374,11 @@ class _DetailArbiterState extends State<DetailArbiter>
                                             if (widget.referee.roles.any((r) => r.toLowerCase() == 'var'))
                                               Chip(
                                                 avatar: Icon(Icons.videocam, color: Colors.purple),
-                                                label: Text('VAR Expert', style: TextStyle(color: Colors.purple)),
+                                                label: Text('VAR Expert 📹', style: TextStyle(color: Colors.purple)),
                                                 backgroundColor: Colors.purple.withOpacity(0.1),
                                               ),
                                             Chip(
-                                              avatar: Icon(Icons.sports_soccer, color: Colors.green),
-                                              label: Text('Active Referee', style: TextStyle(color: Colors.green)),
+                                              label: Text('Active Referee ⚽', style: TextStyle(color: Colors.green)),
                                               backgroundColor: Colors.green.withOpacity(0.1),
                                             ),
                                           ],
@@ -417,37 +423,45 @@ class _DetailArbiterState extends State<DetailArbiter>
                                               key: ValueKey('stats_row_${_tabController.index}'),
                                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                               children: [
-                                                _buildStatCard(
-                                                  label: 'Matches',
-                                                  value1: widget.referee.details!.worldfootball!.overallTotals!.matches.toString(),
+                                                _buildAnimatedStatCard(
+                                                  label: '⚽ Matches',
+                                                  targetValue: widget.referee.details!.worldfootball!.overallTotals!.matches.toDouble(),
+                                                  isInt: true,
                                                   icon: Icons.sports_soccer,
                                                   iconColor: Colors.green,
                                                   textColor: textColor,
+                                                  animation: _animationController,
                                                 ),
-                                                _buildStatCard(
-                                                  label: 'Yellow Cards',
-                                                  value1: widget.referee.details!.worldfootball!.overallTotals!.yellow.toString(),
+                                                _buildAnimatedStatCard(
+                                                  label: '🟨 Yellow Cards',
+                                                  targetValue: widget.referee.details!.worldfootball!.overallTotals!.yellow.toDouble(),
+                                                  isInt: true,
                                                   icon: Icons.warning_amber_rounded,
                                                   iconColor: Colors.orange,
                                                   textColor: textColor,
+                                                  animation: _animationController,
                                                 ),
-                                                _buildStatCard(
-                                                  label: 'Red Cards',
-                                                  value1: widget.referee.details!.worldfootball!.overallTotals!.red.toString(),
+                                                _buildAnimatedStatCard(
+                                                  label: '🔴 Red Cards',
+                                                  targetValue: widget.referee.details!.worldfootball!.overallTotals!.red.toDouble(),
+                                                  isInt: true,
                                                   icon: Icons.block,
                                                   iconColor: Colors.red,
                                                   textColor: textColor,
+                                                  animation: _animationController,
                                                 ),
                                               ],
                                             ),
                                           ),
                                           const SizedBox(height: 12),
-                                          _buildStatCard(
-                                            label: 'Yellow per Game',
-                                            value1: '${widget.referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
+                                          _buildAnimatedStatCard(
+                                            label: '📈 Yellow per Game',
+                                            targetValue: widget.referee.details!.worldfootball!.overallTotals!.yellowPerGame,
+                                            isInt: false,
                                             icon: Icons.trending_up,
                                             iconColor: Colors.blue,
                                             textColor: textColor,
+                                            animation: _animationController,
                                             isFullWidth: true,
                                           ),
                                           const SizedBox(height: 16),
@@ -524,7 +538,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                               ),
                             )
                           else
-                            const Center(child: Text('No statistics available')),
+                            const Center(child: Text('No statistics available 😔')),
                           // Competitions Tab - Enhanced with GridView for nicer display
                           if (widget.referee.details?.worldfootball?.competitions != null)
                             AnimatedSwitcher(
@@ -536,7 +550,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                   children: [
                                     const SizedBox(height: 16),
                                     Text(
-                                      'Recent Competitions',
+                                      '🏆 Recent Competitions',
                                       style: TextStyle(
                                         color: textColor,
                                         fontWeight: FontWeight.bold,
@@ -596,7 +610,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                                             onTap: () {
                                                               // Navigate to competition details if needed
                                                               ScaffoldMessenger.of(context).showSnackBar(
-                                                                SnackBar(content: Text('Tapped on ${comp.name}')),
+                                                                SnackBar(content: Text('Tapped on ${comp.name} 🎯')),
                                                               );
                                                             },
                                                             child: Padding(
@@ -612,7 +626,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                                       children: [
                                                                         Text(
-                                                                          comp.name,
+                                                                          '🏅 ${comp.name}',
                                                                           style: TextStyle(
                                                                             color: textColor,
                                                                             fontWeight: FontWeight.w700,
@@ -629,7 +643,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                                                                             borderRadius: BorderRadius.circular(12),
                                                                           ),
                                                                           child: Text(
-                                                                            'Total Cards: ${comp.totals.yellow + comp.totals.red + comp.totals.secondYellow}',
+                                                                            '📊 Total Cards: ${comp.totals.yellow + comp.totals.red + comp.totals.secondYellow}',
                                                                             style: TextStyle(
                                                                               color: textColor.withOpacity(0.8),
                                                                               fontSize: isLargeScreen ? 11 : 10, // Smaller font
@@ -646,30 +660,36 @@ class _DetailArbiterState extends State<DetailArbiter>
                                                                     child: Row(
                                                                       children: [
                                                                         Expanded(
-                                                                          child: _buildMiniStat(
-                                                                            'Matches',
-                                                                            comp.totals.matches.toString(),
-                                                                            Icons.sports_soccer,
-                                                                            Colors.green,
-                                                                            textColor,
+                                                                          child: _buildAnimatedMiniStat(
+                                                                            label: '⚽ Matches',
+                                                                            targetValue: comp.totals.matches.toDouble(),
+                                                                            isInt: true,
+                                                                            icon: Icons.sports_soccer,
+                                                                            iconColor: Colors.green,
+                                                                            textColor: textColor,
+                                                                            animation: _animationController,
                                                                           ),
                                                                         ),
                                                                         Expanded(
-                                                                          child: _buildMiniStat(
-                                                                            'Yellow',
-                                                                            comp.totals.yellow.toString(),
-                                                                            Icons.warning_amber_rounded,
-                                                                            Colors.orange,
-                                                                            textColor,
+                                                                          child: _buildAnimatedMiniStat(
+                                                                            label: '🟨 Yellow',
+                                                                            targetValue: comp.totals.yellow.toDouble(),
+                                                                            isInt: true,
+                                                                            icon: Icons.warning_amber_rounded,
+                                                                            iconColor: Colors.orange,
+                                                                            textColor: textColor,
+                                                                            animation: _animationController,
                                                                           ),
                                                                         ),
                                                                         Expanded(
-                                                                          child: _buildMiniStat(
-                                                                            'Red',
-                                                                            (comp.totals.red + comp.totals.secondYellow).toString(),
-                                                                            Icons.block,
-                                                                            Colors.red,
-                                                                            textColor,
+                                                                          child: _buildAnimatedMiniStat(
+                                                                            label: '🔴 Red',
+                                                                            targetValue: (comp.totals.red + comp.totals.secondYellow).toDouble(),
+                                                                            isInt: true,
+                                                                            icon: Icons.block,
+                                                                            iconColor: Colors.red,
+                                                                            textColor: textColor,
+                                                                            animation: _animationController,
                                                                           ),
                                                                         ),
                                                                       ],
@@ -683,12 +703,14 @@ class _DetailArbiterState extends State<DetailArbiter>
                                                                         Row(
                                                                           children: [
                                                                             Expanded(
-                                                                              child: _buildMiniStat(
-                                                                                'YPG',
-                                                                                comp.totals.yellowPerGame.toStringAsFixed(2),
-                                                                                Icons.trending_up,
-                                                                                Colors.blue,
-                                                                                textColor,
+                                                                              child: _buildAnimatedMiniStat(
+                                                                                label: '📈 YPG',
+                                                                                targetValue: comp.totals.yellowPerGame,
+                                                                                isInt: false,
+                                                                                icon: Icons.trending_up,
+                                                                                iconColor: Colors.blue,
+                                                                                textColor: textColor,
+                                                                                animation: _animationController,
                                                                               ),
                                                                             ),
                                                                           ],
@@ -725,7 +747,7 @@ class _DetailArbiterState extends State<DetailArbiter>
                               ),
                             )
                           else
-                            const Center(child: Text('No competitions available')),
+                            const Center(child: Text('No competitions available 😔')),
                         ],
                       ),
                     ),
@@ -754,6 +776,47 @@ class _DetailArbiterState extends State<DetailArbiter>
             ? Colors.blueAccent
             : Colors.pinkAccent,
       ),
+    );
+  }
+
+  Widget _buildAnimatedMiniStat({
+    required String label,
+    required double targetValue,
+    required bool isInt,
+    required IconData icon,
+    required Color iconColor,
+    required Color textColor,
+    required Animation<double> animation,
+  }) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final currentValue = targetValue * animation.value;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: iconColor), // Reduced from 18 to 16
+            const SizedBox(height: 2), // Reduced from 4 to 2
+            Text(
+              _formatNumber(currentValue, isInt),
+              style: TextStyle(
+                color: textColor,
+                fontSize: 11, // Reduced from 12 to 11
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor.withOpacity(0.7),
+                fontSize: 9, // Reduced from 10 to 9
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -822,7 +885,7 @@ class _DetailArbiterState extends State<DetailArbiter>
   }
 
   Widget _buildDetailRow({
-    required IconData icon,
+    required String emoji,
     required String label,
     required String value,
     required Color textColor,
@@ -831,8 +894,9 @@ class _DetailArbiterState extends State<DetailArbiter>
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: textColor.withOpacity(0.7)),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 4),
           Expanded(
             child: RichText(
               text: TextSpan(
@@ -856,6 +920,58 @@ class _DetailArbiterState extends State<DetailArbiter>
         ],
       ),
     );
+  }
+
+  Widget _buildAnimatedStatCard({
+    required String label,
+    required double targetValue,
+    required bool isInt,
+    required IconData icon,
+    required Color iconColor,
+    required Color textColor,
+    required Animation<double> animation,
+    bool isFullWidth = false,
+  }) {
+    final container = AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final currentValue = targetValue * animation.value;
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: iconColor, size: 24),
+              const SizedBox(height: 4),
+              Text(
+                _formatNumber(currentValue, isInt),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: textColor,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: textColor.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (isFullWidth) {
+      return container;
+    } else {
+      return Expanded(child: container);
+    }
   }
 
   Widget _buildStatCard({
@@ -899,6 +1015,21 @@ class _DetailArbiterState extends State<DetailArbiter>
       return container;
     } else {
       return Expanded(child: container);
+    }
+  }
+
+  String _getRoleEmoji(String role) {
+    switch (role.toLowerCase()) {
+      case 'var':
+        return '📹';
+      case 'referee':
+        return '👨‍⚖️';
+      case 'assistant':
+        return '👥';
+      case 'reviewer':
+        return '🔍';
+      default:
+        return '⚽';
     }
   }
 

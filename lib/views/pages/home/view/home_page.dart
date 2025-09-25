@@ -1,5 +1,7 @@
+
 import 'dart:convert';
-import 'package:VarXPro/views/pages/DetailArbiter/view/detail_arbiter.dart';
+
+import 'package:VarXPro/views/pages/home/view/detail_arbiter.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -27,6 +29,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late AnimationController _glowController;
   late AnimationController _scanController;
   late Animation<double> _glowAnimation;
+  late List<AnimationController> _staggerControllers;
 
   @override
   void initState() {
@@ -45,6 +48,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat();
+
+    _staggerControllers = [];
   }
 
   @override
@@ -53,6 +58,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _searchController.dispose();
     _glowController.dispose();
     _scanController.dispose();
+    for (var controller in _staggerControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -360,27 +368,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: isLargeScreen ? 70 : 50,
-                              height: isLargeScreen ? 70 : 50,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.getPrimaryColor(
-                                      seedColor,
-                                      modeProvider.currentMode,
-                                    ).withOpacity(0.3),
-                                    blurRadius: 12,
-                                    spreadRadius: 3,
-                                    offset: const Offset(0, 4),
+                            Hero(
+                              tag: 'app_logo',
+                              child: Container(
+                                width: isLargeScreen ? 70 : 50,
+                                height: isLargeScreen ? 70 : 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.getPrimaryColor(
+                                        seedColor,
+                                        modeProvider.currentMode,
+                                      ).withOpacity(0.3),
+                                      blurRadius: 12,
+                                      spreadRadius: 3,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    'assets/logo.jpg',
+                                    fit: BoxFit.cover,
                                   ),
-                                ],
-                              ),
-                              child: ClipOval(
-                                child: Image.asset(
-                                  'assets/logo.jpg',
-                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
@@ -389,10 +400,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  Translations.getHomeText(
+                                  '${Translations.getHomeText(
                                     'mainTitle',
                                     currentLang,
-                                  ),
+                                  )} ',
                                   style: TextStyle(
                                     color: textColor,
                                     fontWeight: FontWeight.bold,
@@ -466,6 +477,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             Icons.search_rounded,
                             color: textColor.withOpacity(0.7),
                           ),
+                          suffixIcon: Icon(
+                            Icons.sports_soccer,
+                            color: textColor.withOpacity(0.4),
+                            size: 20,
+                          ),
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
@@ -492,7 +508,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       child: Row(
                         children: [
                           _buildFeatureChip(
-                            icon: Icons.smart_toy_rounded, // Updated icon
+                            emoji: '🤖',
                             label: Translations.getRefereeDirectoryText(
                               'aiAnalysis',
                               currentLang,
@@ -503,7 +519,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                           const SizedBox(width: 10),
                           _buildFeatureChip(
-                            icon: Icons.videocam_rounded, // Updated icon
+                            emoji: '📹',
                             label: Translations.getRefereeDirectoryText(
                               'varTechnology',
                               currentLang,
@@ -514,7 +530,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                           const SizedBox(width: 10),
                           _buildFeatureChip(
-                            icon: Icons.dashboard_rounded, // Updated icon
+                            emoji: '📊',
                             label: Translations.getRefereeDirectoryText(
                               'liveDashboard',
                               currentLang,
@@ -525,7 +541,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                           const SizedBox(width: 10),
                           _buildFeatureChip(
-                            icon: Icons.location_pin, // Updated icon
+                            emoji: '🚩',
                             label: Translations.getRefereeDirectoryText(
                               'offsideDetection',
                               currentLang,
@@ -554,10 +570,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          Translations.getRefereeDirectoryText(
+                          '${Translations.getRefereeDirectoryText(
                             'refereesDirectory',
                             currentLang,
-                          ),
+                          )} 👨‍⚖️',
                           style: TextStyle(
                             color: textColor,
                             fontWeight: FontWeight.bold,
@@ -581,6 +597,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           allReferees = snapshot.data!;
+                          _initializeStaggerAnimations(allReferees.length);
                           final filteredReferees = getFilteredReferees();
                           if (filteredReferees.isEmpty) {
                             return _buildEmptyState(textColor, currentLang);
@@ -665,23 +682,41 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   ),
                                   itemBuilder: (context, index) {
                                     final referee = filteredReferees[index];
-                                    return GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => DetailArbiter(
-                                              referee: referee,
-                                            ),
+                                    return AnimatedBuilder(
+                                      animation: _staggerControllers[index],
+                                      builder: (context, child) {
+                                        return Transform.translate(
+                                          offset: Offset(
+                                            0,
+                                            (1 - _staggerControllers[index].value) * 50,
+                                          ),
+                                          child: Opacity(
+                                            opacity: _staggerControllers[index].value,
+                                            child: child,
                                           ),
                                         );
                                       },
-                                      child: _buildRefereeCard(
-                                        referee,
-                                        textColor,
-                                        modeProvider,
-                                        seedColor,
-                                        currentLang,
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(20),
+                                        onTap: () {
+                                          _staggerControllers[index].forward().then((_) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => DetailArbiter(
+                                                  referee: referee,
+                                                ),
+                                              ),
+                                            );
+                                          });
+                                        },
+                                        child: _buildRefereeCard(
+                                          referee,
+                                          textColor,
+                                          modeProvider,
+                                          seedColor,
+                                          currentLang,
+                                        ),
                                       ),
                                     );
                                   },
@@ -705,8 +740,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  void _initializeStaggerAnimations(int count) {
+    _staggerControllers.clear();
+    for (int i = 0; i < count; i++) {
+      final controller = AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 500 + (i * 100)),
+      );
+      controller.forward();
+      _staggerControllers.add(controller);
+    }
+  }
+
   Widget _buildFeatureChip({
-    required IconData icon,
+    required String emoji,
     required String label,
     required Color color,
     required Color textColor,
@@ -728,8 +775,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
+          Text(
+            emoji,
+            style: const TextStyle(fontSize: 18),
+          ),
+          const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
@@ -781,7 +832,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     children: [
                       Expanded(
                         child: Text(
-                          referee.name,
+                          '👨‍⚖️ ${referee.name}',
                           style: TextStyle(
                             color: textColor,
                             fontWeight: FontWeight.bold,
@@ -817,14 +868,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
-                        Icons.flag_rounded,
-                        size: 16,
-                        color: textColor.withOpacity(0.7),
-                      ),
+                    
                       const SizedBox(width: 4),
                       Text(
-                        referee.country,
+                        '🏳️ ${referee.country}',
                         style: TextStyle(
                           color: textColor.withOpacity(0.8),
                           fontSize: 14,
@@ -838,7 +885,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        referee.confed,
+                        '🏆 ${referee.confed}',
                         style: TextStyle(
                           color: textColor.withOpacity(0.8),
                           fontSize: 14,
@@ -866,13 +913,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 color: _getRoleColor(role).withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text(
-                                role,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: _getRoleColor(role),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _getRoleEmoji(role),
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    role,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _getRoleColor(role),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           )
@@ -892,10 +949,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.calendar_month_rounded,
                         size: 14,
-                        color: textColor.withOpacity(0.6),
+                        color: Colors.transparent,
+                      ),
+                      const Text(
+                        '📅',
+                        style: TextStyle(fontSize: 14),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -910,13 +971,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ),
                   if (referee.details?.worldfootball?.overallTotals != null) ...[
                     const SizedBox(height: 4),
-                    Text(
-                      'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: Colors.orange.withOpacity(0.8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Row(
+                      children: [
+                        const Text('🟨', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: Colors.orange.withOpacity(0.8),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -934,6 +1001,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  String _getRoleEmoji(String role) {
+    switch (role.toLowerCase()) {
+      case 'var':
+        return '📹';
+      case 'referee':
+        return '👨‍⚖️';
+      case 'assistant':
+        return '👥';
+      case 'reviewer':
+        return '🔍';
+      default:
+        return '⚽';
+    }
   }
 
   Color _getRoleColor(String role) {
@@ -963,15 +1045,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
           Text(
-            Translations.getRefereeDirectoryText(
+            '${Translations.getRefereeDirectoryText(
               'noRefereesFound',
               currentLang,
-            ),
+            )} 😔',
             style: TextStyle(
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
@@ -980,6 +1063,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               currentLang,
             ),
             style: TextStyle(color: textColor.withOpacity(0.7)),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -998,15 +1082,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
           Text(
-            Translations.getRefereeDirectoryText(
+            '${Translations.getRefereeDirectoryText(
               'failedToLoadReferees',
               currentLang,
-            ),
+            )} ⚠️',
             style: TextStyle(
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
@@ -1015,16 +1100,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               currentLang,
             ),
             style: TextStyle(color: textColor.withOpacity(0.7)),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           ScaleTransition(
             scale: _glowAnimation,
-            child: ElevatedButton(
+            child: ElevatedButton.icon(
               onPressed: () {
                 setState(() {
                   futureReferees = fetchReferees();
                 });
               },
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: Text(
+                Translations.getRefereeDirectoryText('retry', currentLang),
+                style: const TextStyle(color: Colors.white),
+              ),
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1034,10 +1125,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   vertical: 12,
                 ),
                 backgroundColor: Colors.blueAccent,
-              ),
-              child: Text(
-                Translations.getRefereeDirectoryText('retry', currentLang),
-                style: const TextStyle(color: Colors.white),
               ),
             ),
           ),

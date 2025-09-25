@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:VarXPro/lang/translation.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/model/perspective_model.dart';
+import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:VarXPro/lang/translation.dart';
-import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/controller/perspective_controller.dart';
@@ -165,7 +166,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                     ),
                   );
                 }
-          if (state.cleanResponse?.ok == true && !_hasShownCleanSnackBar) {
+                if (state.cleanResponse?.ok == true && !_hasShownCleanSnackBar) {
                   setState(() {
                     _hasShownCleanSnackBar = true;
                   });
@@ -194,8 +195,16 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                     ),
                   );
                 }
-
-
+                // Log to history on successful analysis (e.g., calibration, transform, etc.)
+                if (state.calibrationResponse?.ok == true ||
+                    state.loadCalibrationResponse?.ok == true ||
+                    state.detectLinesResponse?.ok == true ||
+                    state.transformFrameResponse?.ok == true ||
+                    state.transformVideoResponse?.ok == true ||
+                    state.transformPointResponse?.ok == true) {
+                  final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+                  historyProvider.addHistoryItem('Field Lines', 'Field lines analysis completed');
+                }
               },
               builder: (context, state) {
                 return RefreshIndicator(
@@ -205,86 +214,164 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // API Status
-                        _buildStatusCard(state, modeProvider.currentMode, seedColor, currentLang),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // Load Calibration
-                        _buildSectionHeader(Translations.getOffsideText('loadCalibration', currentLang), modeProvider.currentMode, seedColor),
-                        LoadCalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                        ImagePickerWidget(
-                          onImagePicked: (File file) => context.read<PerspectiveBloc>().add(LoadCalibrationByFileEvent(file)),
-                          buttonText: Translations.getOffsideText('selectCalibrationFile', currentLang),
-                          isCalibration: true,
+                        // API Status Section
+                        _buildSectionCard(
+                          emoji: '📡',
+                          title: Translations.getPlayerTrackingText('apiStatus', currentLang),
                           mode: modeProvider.currentMode,
                           seedColor: seedColor,
+                          child: _buildStatusCard(state, modeProvider.currentMode, seedColor, currentLang),
                         ),
-                        if (state.loadCalibrationResponse != null) _buildLoadCalibrationResult(state.loadCalibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
                         SizedBox(height: screenWidth * 0.05),
 
-                        // Detect Field Lines
-                        _buildSectionHeader(Translations.getOffsideText('detectFieldLines', currentLang), modeProvider.currentMode, seedColor),
-                        ImagePickerWidget(
-                          onImagePicked: (File image) => context.read<PerspectiveBloc>().add(DetectLinesEvent(image)),
-                          buttonText: Translations.getOffsideText('selectImageForDetection', currentLang),
+                        // Load Calibration Section
+                        _buildSectionCard(
+                          emoji: '📥',
+                          title: Translations.getOffsideText('loadCalibration', currentLang),
                           mode: modeProvider.currentMode,
                           seedColor: seedColor,
-                        ),
-                        if (state.detectLinesResponse != null) _buildDetectLinesResult(state.detectLinesResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // Set Calibration
-                        _buildSectionHeader(Translations.getOffsideText('setCalibration', currentLang), modeProvider.currentMode, seedColor),
-                        CalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                        if (state.calibrationResponse != null) _buildCalibrationResult(state.calibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // Transform Image
-                        _buildSectionHeader(Translations.getOffsideText('transformImage', currentLang), modeProvider.currentMode, seedColor),
-                        ImagePickerWidget(
-                          onImagePicked: (File image) => context.read<PerspectiveBloc>().add(TransformFrameEvent(image)),
-                          buttonText: Translations.getOffsideText('selectImageToTransform', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                        ),
-                        if (state.transformFrameResponse != null) _buildTransformFrameResult(state.transformFrameResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // Transform Video
-                        _buildSectionHeader(Translations.getOffsideText('transformVideo', currentLang), modeProvider.currentMode, seedColor),
-                        VideoTransformForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                        if (state.isLoading && state.uploadProgress != null)
-                          LinearProgressIndicator(
-                            value: state.uploadProgress,
-                            backgroundColor: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.3),
-                            valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LoadCalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                              ImagePickerWidget(
+                                onImagePicked: (File file) => context.read<PerspectiveBloc>().add(LoadCalibrationByFileEvent(file)),
+                                buttonText: Translations.getOffsideText('selectCalibrationFile', currentLang),
+                                isCalibration: true,
+                                mode: modeProvider.currentMode,
+                                seedColor: seedColor,
+                              ),
+                              if (state.loadCalibrationResponse != null) _buildLoadCalibrationResult(state.loadCalibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
+                            ],
                           ),
-                        if (state.transformVideoResponse != null) _buildTransformVideoResult(state.transformVideoResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                        ),
                         SizedBox(height: screenWidth * 0.05),
 
-                        // Transform Points
-                        _buildSectionHeader(Translations.getOffsideText('transformPoints', currentLang), modeProvider.currentMode, seedColor),
-                        TransformPointForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                        if (state.transformPointResponse != null) _buildTransformPointResult(state.transformPointResponse!, modeProvider.currentMode, seedColor, currentLang),
-                        if (state.inversePointResponse != null) _buildInverseTransformPointResult(state.inversePointResponse!, modeProvider.currentMode, seedColor, currentLang),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // Clean Artifacts
-                        _buildSectionHeader(Translations.getPlayerTrackingText('cleanArtifacts', currentLang), modeProvider.currentMode, seedColor),
-                        ElevatedButton(
-                          onPressed: () => context.read<PerspectiveBloc>().add(CleanEvent()),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        // Detect Field Lines Section
+                        _buildSectionCard(
+                          emoji: '🔍',
+                          title: Translations.getOffsideText('detectFieldLines', currentLang),
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ImagePickerWidget(
+                                onImagePicked: (File image) => context.read<PerspectiveBloc>().add(DetectLinesEvent(image)),
+                                buttonText: Translations.getOffsideText('selectImageForDetection', currentLang),
+                                mode: modeProvider.currentMode,
+                                seedColor: seedColor,
+                              ),
+                              if (state.detectLinesResponse != null) _buildDetectLinesResult(state.detectLinesResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                            ],
                           ),
-                          child: Text(
-                            Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
-                            style: GoogleFonts.roboto(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.getTextColor(modeProvider.currentMode),
-                              fontSize: 14,
+                        ),
+                        SizedBox(height: screenWidth * 0.05),
+
+                        // Set Calibration Section
+                        _buildSectionCard(
+                          emoji: '⚙️',
+                          title: Translations.getOffsideText('setCalibration', currentLang),
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                              if (state.calibrationResponse != null) _buildCalibrationResult(state.calibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: screenWidth * 0.05),
+
+                        // Transform Image Section
+                        _buildSectionCard(
+                          emoji: '🖼️',
+                          title: Translations.getOffsideText('transformImage', currentLang),
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ImagePickerWidget(
+                                onImagePicked: (File image) => context.read<PerspectiveBloc>().add(TransformFrameEvent(image)),
+                                buttonText: Translations.getOffsideText('selectImageToTransform', currentLang),
+                                mode: modeProvider.currentMode,
+                                seedColor: seedColor,
+                              ),
+                              if (state.transformFrameResponse != null) _buildTransformFrameResult(state.transformFrameResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: screenWidth * 0.05),
+
+                        // Transform Video Section
+                        _buildSectionCard(
+                          emoji: '🎥',
+                          title: Translations.getOffsideText('transformVideo', currentLang),
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              VideoTransformForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                              if (state.isLoading && state.uploadProgress != null)
+                                LinearProgressIndicator(
+                                  value: state.uploadProgress,
+                                  backgroundColor: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.3),
+                                  valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)),
+                                ),
+                              if (state.transformVideoResponse != null) _buildTransformVideoResult(state.transformVideoResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: screenWidth * 0.05),
+
+                        // Transform Points Section
+                        _buildSectionCard(
+                          emoji: '📍',
+                          title: Translations.getOffsideText('transformPoints', currentLang),
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              TransformPointForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                              if (state.transformPointResponse != null) _buildTransformPointResult(state.transformPointResponse!, modeProvider.currentMode, seedColor, currentLang),
+                              if (state.inversePointResponse != null) _buildInverseTransformPointResult(state.inversePointResponse!, modeProvider.currentMode, seedColor, currentLang),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: screenWidth * 0.05),
+
+                        // Clean Artifacts Section
+                        _buildSectionCard(
+                          emoji: '🧹',
+                          title: Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
+                          mode: modeProvider.currentMode,
+                          seedColor: seedColor,
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.read<PerspectiveBloc>().add(CleanEvent()),
+                            icon: Text(
+                              '🧹',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: AppColors.getTextColor(modeProvider.currentMode),
+                              ),
+                            ),
+                            label: Text(
+                              Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
+                              style: GoogleFonts.roboto(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.getTextColor(modeProvider.currentMode),
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                           ),
                         ),
@@ -301,7 +388,13 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
     );
   }
 
-  Widget _buildStatusCard(PerspectiveState state, int mode, Color seedColor, String currentLang) {
+  Widget _buildSectionCard({
+    required String emoji,
+    required String title,
+    required int mode,
+    required Color seedColor,
+    required Widget child,
+  }) {
     return Card(
       color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
       elevation: 4,
@@ -311,50 +404,85 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              Translations.getPlayerTrackingText('apiStatus', currentLang),
-              style: GoogleFonts.roboto(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(mode)),
-            ),
-            const SizedBox(height: 8),
             Row(
               children: [
                 Container(
-                  width: 12,
-                  height: 12,
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
                     shape: BoxShape.circle,
+                    color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.2),
+                  ),
+                  child: Text(
+                    emoji,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: AppColors.getTertiaryColor(seedColor, mode),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  state.health?.status == 'ok'
-                      ? Translations.getPlayerTrackingText('connected', currentLang)
-                      : Translations.getPlayerTrackingText('disconnected', currentLang),
-                  style: GoogleFonts.roboto(
-                    fontSize: 16,
-                    color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.roboto(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTextColor(mode),
+                    ),
                   ),
                 ),
               ],
             ),
-            if (state.health != null) ...[
-              _buildStatusItem(Translations.getPlayerTrackingText('status', currentLang), state.health!.status, mode, seedColor),
-              _buildStatusItem('Calibrated', state.health!.calibrated.toString(), mode, seedColor),
-              if (state.health!.dstSize != null)
-                _buildStatusItem('Output Size', '${state.health!.dstSize!['width']}x${state.health!.dstSize!['height']}', mode, seedColor),
-            ],
+            const SizedBox(height: 16),
+            child,
           ],
         ),
       ),
     );
   }
 
+  Widget _buildStatusCard(PerspectiveState state, int mode, Color seedColor, String currentLang) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              state.health?.status == 'ok'
+                  ? Translations.getPlayerTrackingText('connected', currentLang)
+                  : Translations.getPlayerTrackingText('disconnected', currentLang),
+              style: GoogleFonts.roboto(
+                fontSize: 16,
+                color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        if (state.health != null) ...[
+          const SizedBox(height: 8),
+          _buildStatusItem(Translations.getPlayerTrackingText('status', currentLang), state.health!.status, mode, seedColor),
+          _buildStatusItem('Calibrated', state.health!.calibrated.toString(), mode, seedColor),
+          if (state.health!.dstSize != null)
+            _buildStatusItem('Output Size', '${state.health!.dstSize!['width']}x${state.health!.dstSize!['height']}', mode, seedColor),
+        ],
+      ],
+    );
+  }
+
   Widget _buildLoadCalibrationResult(LoadCalibrationResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
-      color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-      elevation: 4,
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -377,8 +505,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Card(
-          color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-          elevation: 4,
+          color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+          elevation: 2,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -442,8 +570,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
 
   Widget _buildCalibrationResult(CalibrationResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
-      color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-      elevation: 4,
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -466,8 +594,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Card(
-          color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-          elevation: 4,
+          color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+          elevation: 2,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -521,8 +649,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Card(
-          color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-          elevation: 4,
+          color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+          elevation: 2,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -554,8 +682,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
 
   Widget _buildTransformPointResult(TransformPointResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
-      color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-      elevation: 4,
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -574,8 +702,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
 
   Widget _buildInverseTransformPointResult(TransformPointResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
-      color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
-      elevation: 4,
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -588,18 +716,6 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
             if (response.error != null) _buildResultItem(Translations.getOffsideText('errorInverse', currentLang), response.error!, true, mode, seedColor),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, int mode, Color seedColor) {
-    return Text(
-      title,
-      style: GoogleFonts.roboto(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.getTextColor(mode),
-        letterSpacing: 0.5,
       ),
     );
   }
@@ -673,9 +789,9 @@ class _FootballGridPainter extends CustomPainter {
     final rect = Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
     canvas.drawRect(rect, fieldPaint);
 
-    final midX = rect.center.dy;
-    canvas.drawLine(Offset(rect.left + rect.width / 2 - 100, midX), Offset(rect.left + rect.width / 2 + 100, midX), fieldPaint);
-    canvas.drawCircle(Offset(rect.left + rect.width / 2, midX), 30, fieldPaint);
+    final midY = rect.top + rect.height / 2;  // Fixed: Use midY for horizontal mid line
+    canvas.drawLine(Offset(rect.left, midY), Offset(rect.right, midY), fieldPaint);
+    canvas.drawCircle(Offset(rect.center.dx, midY), 30, fieldPaint);
   }
 
   @override

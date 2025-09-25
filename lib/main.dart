@@ -1,5 +1,6 @@
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/views/home.dart';
+import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'model/appcolor.dart';
@@ -14,6 +15,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => ModeProvider()),
+        ChangeNotifierProvider(create: (_) => HistoryProvider()), // Add HistoryProvider
       ],
       child: Consumer<ModeProvider>(
         builder: (context, modeProvider, child) {

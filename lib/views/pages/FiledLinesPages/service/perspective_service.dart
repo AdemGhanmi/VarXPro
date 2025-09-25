@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/model/perspective_model.dart';
 
 class PerspectiveService {
-  static const String defaultBaseUrl = 'https://keyfieldlines.varxpro.com';
+  static const String defaultBaseUrl = 'http://192.168.1.18:8001';
   final Dio _dio;
 
   PerspectiveService({String? baseUrl})

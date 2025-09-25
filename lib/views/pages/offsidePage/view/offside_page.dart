@@ -1,3 +1,4 @@
+// Updated file: lib/views/pages/offsidePage/view/offside_page.dart
 import 'dart:io';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
@@ -7,6 +8,7 @@ import 'package:VarXPro/views/pages/offsidePage/controller/offside_controller.da
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
 import 'package:VarXPro/views/pages/offsidePage/widgets/OffsideForm.dart';
+import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -23,7 +25,8 @@ class OffsidePage extends StatefulWidget {
   _OffsidePageState createState() => _OffsidePageState();
 }
 
-class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin {
+class _OffsidePageState extends State<OffsidePage>
+    with TickerProviderStateMixin {
   bool _showSplash = true;
   late AnimationController _glowController;
   late AnimationController _scanController;
@@ -67,9 +70,12 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     final langProvider = Provider.of<LanguageProvider>(context);
     final modeProvider = Provider.of<ModeProvider>(context);
     final currentLang = langProvider.currentLanguage;
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final seedColor =
+        AppColors.seedColors[modeProvider.currentMode] ??
+        AppColors.seedColors[1]!;
     final screenWidth = MediaQuery.of(context).size.width;
-    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
 
     if (_showSplash) {
       return Scaffold(
@@ -81,7 +87,9 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                 painter: _FootballGridPainter(modeProvider.currentMode),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: AppColors.getBodyGradient(modeProvider.currentMode),
+                    gradient: AppColors.getBodyGradient(
+                      modeProvider.currentMode,
+                    ),
                   ),
                 ),
               ),
@@ -115,7 +123,8 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     }
 
     return BlocProvider(
-      create: (context) => OffsideBloc(context.read<OffsideService>())..add(PingEvent()),
+      create: (context) =>
+          OffsideBloc(context.read<OffsideService>())..add(PingEvent()),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Stack(
@@ -125,7 +134,9 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                 painter: _FootballGridPainter(modeProvider.currentMode),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: AppColors.getBodyGradient(modeProvider.currentMode),
+                    gradient: AppColors.getBodyGradient(
+                      modeProvider.currentMode,
+                    ),
                   ),
                 ),
               ),
@@ -151,7 +162,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                   return Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation(
-                        AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                        AppColors.getTertiaryColor(
+                          seedColor,
+                          modeProvider.currentMode,
+                        ),
                       ),
                     ),
                   );
@@ -163,7 +177,9 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                         content: Text(
                           '${Translations.getOffsideText('error', currentLang)}: ${state.error}',
                           style: GoogleFonts.roboto(
-                            color: AppColors.getTextColor(modeProvider.currentMode),
+                            color: AppColors.getTextColor(
+                              modeProvider.currentMode,
+                            ),
                             fontSize: 14,
                           ),
                         ),
@@ -184,20 +200,29 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Card(
-                            color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
+                            color: AppColors.getSurfaceColor(
+                              modeProvider.currentMode,
+                            ).withOpacity(0.8),
                             elevation: 4,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    Translations.getOffsideText('apiStatus', currentLang),
+                                    Translations.getOffsideText(
+                                      'apiStatus',
+                                      currentLang,
+                                    ),
                                     style: GoogleFonts.roboto(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.getTextColor(modeProvider.currentMode),
+                                      color: AppColors.getTextColor(
+                                        modeProvider.currentMode,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
@@ -207,21 +232,38 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                         width: 12,
                                         height: 12,
                                         decoration: BoxDecoration(
-                                          color: state.pingResponse != null && state.pingResponse!.ok
-                                              ? AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                                          color:
+                                              state.pingResponse != null &&
+                                                  state.pingResponse!.ok
+                                              ? AppColors.getTertiaryColor(
+                                                  seedColor,
+                                                  modeProvider.currentMode,
+                                                )
                                               : Colors.red,
                                           shape: BoxShape.circle,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
-                                        state.pingResponse != null && state.pingResponse!.ok
-                                            ? Translations.getOffsideText('connected', currentLang)
-                                            : Translations.getOffsideText('disconnected', currentLang),
+                                        state.pingResponse != null &&
+                                                state.pingResponse!.ok
+                                            ? Translations.getOffsideText(
+                                                'connected',
+                                                currentLang,
+                                              )
+                                            : Translations.getOffsideText(
+                                                'disconnected',
+                                                currentLang,
+                                              ),
                                         style: GoogleFonts.roboto(
                                           fontSize: 16,
-                                          color: state.pingResponse != null && state.pingResponse!.ok
-                                              ? AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                                          color:
+                                              state.pingResponse != null &&
+                                                  state.pingResponse!.ok
+                                              ? AppColors.getTertiaryColor(
+                                                  seedColor,
+                                                  modeProvider.currentMode,
+                                                )
                                               : Colors.redAccent,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -231,13 +273,19 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                   const SizedBox(height: 8),
                                   if (state.pingResponse != null) ...[
                                     _buildStatusItem(
-                                      Translations.getOffsideText('model', currentLang),
+                                      Translations.getOffsideText(
+                                        'model',
+                                        currentLang,
+                                      ),
                                       state.pingResponse!.model ?? "Unknown",
                                       modeProvider.currentMode,
                                       seedColor,
                                     ),
                                     _buildStatusItem(
-                                      Translations.getOffsideText('opencv', currentLang),
+                                      Translations.getOffsideText(
+                                        'opencv',
+                                        currentLang,
+                                      ),
                                       state.pingResponse!.opencv ?? "Unknown",
                                       modeProvider.currentMode,
                                       seedColor,
@@ -249,7 +297,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           ),
                           SizedBox(height: constraints.maxWidth * 0.05),
                           _buildSectionHeader(
-                            Translations.getOffsideText('singleFrameDetection', currentLang),
+                            Translations.getOffsideText(
+                              'singleFrameDetection',
+                              currentLang,
+                            ),
                             modeProvider.currentMode,
                             seedColor,
                           ),
@@ -263,44 +314,77 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           if (state.offsideFrameResponse != null) ...[
                             SizedBox(height: constraints.maxWidth * 0.05),
                             Card(
-                              color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
+                              color: AppColors.getSurfaceColor(
+                                modeProvider.currentMode,
+                              ).withOpacity(0.8),
                               elevation: 4,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildResultItem(
-                                      Translations.getOffsideText('offside', currentLang),
+                                      Translations.getOffsideText(
+                                        'offside',
+                                        currentLang,
+                                      ),
                                       state.offsideFrameResponse!.offside
-                                          ? Translations.getOffsideText('offside', currentLang).toUpperCase()
+                                          ? Translations.getOffsideText(
+                                              'offside',
+                                              currentLang,
+                                            ).toUpperCase()
                                           : 'NO',
                                       state.offsideFrameResponse!.offside,
                                       modeProvider.currentMode,
                                       seedColor,
                                     ),
-                                    if (state.offsideFrameResponse!.stats.isNotEmpty)
+                                    if (state
+                                        .offsideFrameResponse!
+                                        .stats
+                                        .isNotEmpty)
                                       _buildResultItem(
-                                        Translations.getOffsideText('stats', currentLang),
-                                        state.offsideFrameResponse!.stats.entries
+                                        Translations.getOffsideText(
+                                          'stats',
+                                          currentLang,
+                                        ),
+                                        state
+                                            .offsideFrameResponse!
+                                            .stats
+                                            .entries
                                             .map((e) => '${e.key}: ${e.value}')
                                             .join(', '),
                                         false,
                                         modeProvider.currentMode,
                                         seedColor,
                                       ),
-                                    if (state.offsideFrameResponse!.attackDirection != null)
+                                    if (state
+                                            .offsideFrameResponse!
+                                            .attackDirection !=
+                                        null)
                                       _buildResultItem(
-                                        Translations.getOffsideText('attackDirection', currentLang),
-                                        state.offsideFrameResponse!.attackDirection!,
+                                        Translations.getOffsideText(
+                                          'attackDirection',
+                                          currentLang,
+                                        ),
+                                        state
+                                            .offsideFrameResponse!
+                                            .attackDirection!,
                                         false,
                                         modeProvider.currentMode,
                                         seedColor,
                                       ),
-                                    if (state.offsideFrameResponse!.linePoints != null)
+                                    if (state
+                                            .offsideFrameResponse!
+                                            .linePoints !=
+                                        null)
                                       _buildResultItem(
-                                        Translations.getOffsideText('linePoints', currentLang),
+                                        Translations.getOffsideText(
+                                          'linePoints',
+                                          currentLang,
+                                        ),
                                         'Start: ${state.offsideFrameResponse!.linePoints!['start']}, End: ${state.offsideFrameResponse!.linePoints!['end']}',
                                         false,
                                         modeProvider.currentMode,
@@ -309,10 +393,15 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                     if (state.pickedImage != null) ...[
                                       const SizedBox(height: 12),
                                       Text(
-                                        Translations.getOffsideText('pickedImage', currentLang),
+                                        Translations.getOffsideText(
+                                          'pickedImage',
+                                          currentLang,
+                                        ),
                                         style: GoogleFonts.roboto(
                                           fontWeight: FontWeight.w600,
-                                          color: AppColors.getTextColor(modeProvider.currentMode),
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -322,38 +411,62 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                           maxWidth: constraints.maxWidth * 0.9,
                                         ),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
-                                            color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
+                                            color: AppColors.getTertiaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ).withOpacity(0.3),
                                             width: 1,
                                           ),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           child: Image.file(
                                             state.pickedImage!,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => Container(
-                                              color: AppColors.getSurfaceColor(modeProvider.currentMode),
-                                              child: Center(
-                                                child: Icon(
-                                                  Icons.error_outline,
-                                                  color: Colors.redAccent,
-                                                  size: 40,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Container(
+                                                  color:
+                                                      AppColors.getSurfaceColor(
+                                                        modeProvider
+                                                            .currentMode,
+                                                      ),
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons.error_outline,
+                                                      color: Colors.redAccent,
+                                                      size: 40,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
                                           ),
                                         ),
                                       ),
                                     ],
-                                    if (state.offsideFrameResponse!.annotatedImageUrl != null) ...[
+                                    if (state
+                                            .offsideFrameResponse!
+                                            .annotatedImageUrl !=
+                                        null) ...[
                                       const SizedBox(height: 12),
                                       Text(
-                                        Translations.getOffsideText('annotatedImage', currentLang),
+                                        Translations.getOffsideText(
+                                          'annotatedImage',
+                                          currentLang,
+                                        ),
                                         style: GoogleFonts.roboto(
                                           fontWeight: FontWeight.w600,
-                                          color: AppColors.getTextColor(modeProvider.currentMode),
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 8),
@@ -363,38 +476,67 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                           maxWidth: constraints.maxWidth * 0.9,
                                         ),
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
-                                            color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
+                                            color: AppColors.getTertiaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ).withOpacity(0.3),
                                             width: 1,
                                           ),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           child: Image.network(
-                                            state.offsideFrameResponse!.annotatedImageUrl!,
+                                            state
+                                                .offsideFrameResponse!
+                                                .annotatedImageUrl!,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => Container(
-                                              color: AppColors.getSurfaceColor(modeProvider.currentMode),
-                                              child: Center(
-                                                child: Icon(
-                                                  Icons.error_outline,
-                                                  color: Colors.redAccent,
-                                                  size: 40,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Container(
+                                                  color:
+                                                      AppColors.getSurfaceColor(
+                                                        modeProvider
+                                                            .currentMode,
+                                                      ),
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons.error_outline,
+                                                      color: Colors.redAccent,
+                                                      size: 40,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                            ),
                                             loadingBuilder: (context, child, loadingProgress) {
-                                              if (loadingProgress == null) return child;
+                                              if (loadingProgress == null)
+                                                return child;
                                               return Center(
                                                 child: CircularProgressIndicator(
-                                                  value: loadingProgress.expectedTotalBytes != null
-                                                      ? loadingProgress.cumulativeBytesLoaded /
-                                                          loadingProgress.expectedTotalBytes!
+                                                  value:
+                                                      loadingProgress
+                                                              .expectedTotalBytes !=
+                                                          null
+                                                      ? loadingProgress
+                                                                .cumulativeBytesLoaded /
+                                                            loadingProgress
+                                                                .expectedTotalBytes!
                                                       : null,
-                                                  valueColor: AlwaysStoppedAnimation(
-                                                    AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
-                                                  ),
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation(
+                                                        AppColors.getTertiaryColor(
+                                                          seedColor,
+                                                          modeProvider
+                                                              .currentMode,
+                                                        ),
+                                                      ),
                                                 ),
                                               );
                                             },
@@ -407,9 +549,29 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                               ),
                             ),
                           ],
+                          if (state.offsideFrameResponse != null &&
+                              state.offsideFrameResponse!.offside != null)
+                            Builder(
+                              builder: (context) {
+                                final historyProvider =
+                                    Provider.of<HistoryProvider>(
+                                      context,
+                                      listen: false,
+                                    );
+                                historyProvider.addHistoryItem(
+                                  'Offside Detection',
+                                  'Offside analysis completed',
+                                );
+                                return const SizedBox.shrink();
+                              },
+                            ),
+
                           SizedBox(height: constraints.maxWidth * 0.05),
                           _buildSectionHeader(
-                            Translations.getOffsideText('batchDetection', currentLang),
+                            Translations.getOffsideText(
+                              'batchDetection',
+                              currentLang,
+                            ),
                             modeProvider.currentMode,
                             seedColor,
                           ),
@@ -419,28 +581,52 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
-                                    final result = await FilePicker.platform.pickFiles(
-                                      allowMultiple: true,
-                                      type: FileType.image,
-                                    );
+                                    final result = await FilePicker.platform
+                                        .pickFiles(
+                                          allowMultiple: true,
+                                          type: FileType.image,
+                                        );
                                     if (result != null) {
-                                      final files = result.files.map((file) => File(file.path!)).toList();
-                                      context.read<OffsideBloc>().add(DetectOffsideBatchEvent(images: files));
+                                      final files = result.files
+                                          .map((file) => File(file.path!))
+                                          .toList();
+                                      context.read<OffsideBloc>().add(
+                                        DetectOffsideBatchEvent(images: files),
+                                      );
                                     }
                                   },
-                                  icon: Icon(Icons.photo_library, size: 20, color: AppColors.getTextColor(modeProvider.currentMode)),
+                                  icon: Icon(
+                                    Icons.photo_library,
+                                    size: 20,
+                                    color: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                  ),
                                   label: Text(
-                                    Translations.getOffsideText('pickImages', currentLang),
+                                    Translations.getOffsideText(
+                                      'pickImages',
+                                      currentLang,
+                                    ),
                                     style: GoogleFonts.roboto(
-                                      color: AppColors.getTextColor(modeProvider.currentMode),
+                                      color: AppColors.getTextColor(
+                                        modeProvider.currentMode,
+                                      ),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.getSecondaryColor(seedColor, modeProvider.currentMode),
-                                    foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    backgroundColor:
+                                        AppColors.getSecondaryColor(
+                                          seedColor,
+                                          modeProvider.currentMode,
+                                        ),
+                                    foregroundColor: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -451,29 +637,54 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () async {
-                                    final result = await FilePicker.platform.pickFiles(
-                                      type: FileType.custom,
-                                      allowedExtensions: ['zip'],
-                                    );
-                                    if (result != null && result.files.single.path != null) {
+                                    final result = await FilePicker.platform
+                                        .pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: ['zip'],
+                                        );
+                                    if (result != null &&
+                                        result.files.single.path != null) {
                                       context.read<OffsideBloc>().add(
-                                            DetectOffsideBatchEvent(zipFile: File(result.files.single.path!)),
-                                          );
+                                        DetectOffsideBatchEvent(
+                                          zipFile: File(
+                                            result.files.single.path!,
+                                          ),
+                                        ),
+                                      );
                                     }
                                   },
-                                  icon: Icon(Icons.archive, size: 20, color: AppColors.getTextColor(modeProvider.currentMode)),
+                                  icon: Icon(
+                                    Icons.archive,
+                                    size: 20,
+                                    color: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                  ),
                                   label: Text(
-                                    Translations.getOffsideText('pickZip', currentLang),
+                                    Translations.getOffsideText(
+                                      'pickZip',
+                                      currentLang,
+                                    ),
                                     style: GoogleFonts.roboto(
-                                      color: AppColors.getTextColor(modeProvider.currentMode),
+                                      color: AppColors.getTextColor(
+                                        modeProvider.currentMode,
+                                      ),
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.getSecondaryColor(seedColor, modeProvider.currentMode),
-                                    foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    backgroundColor:
+                                        AppColors.getSecondaryColor(
+                                          seedColor,
+                                          modeProvider.currentMode,
+                                        ),
+                                    foregroundColor: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -485,32 +696,50 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           if (state.offsideBatchResponse != null) ...[
                             SizedBox(height: constraints.maxWidth * 0.05),
                             Card(
-                              color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
+                              color: AppColors.getSurfaceColor(
+                                modeProvider.currentMode,
+                              ).withOpacity(0.8),
                               elevation: 4,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildResultItem(
-                                      Translations.getOffsideText('processedFrames', currentLang),
-                                      state.offsideBatchResponse!.count.toString(),
+                                      Translations.getOffsideText(
+                                        'processedFrames',
+                                        currentLang,
+                                      ),
+                                      state.offsideBatchResponse!.count
+                                          .toString(),
                                       false,
                                       modeProvider.currentMode,
                                       seedColor,
                                     ),
-                                    if (state.offsideBatchResponse!.resultsJsonUrl != null)
+                                    if (state
+                                            .offsideBatchResponse!
+                                            .resultsJsonUrl !=
+                                        null)
                                       _buildResultItem(
-                                        Translations.getOffsideText('resultsJson', currentLang),
+                                        Translations.getOffsideText(
+                                          'resultsJson',
+                                          currentLang,
+                                        ),
                                         'Available',
                                         false,
                                         modeProvider.currentMode,
                                         seedColor,
                                       ),
-                                    if (state.offsideBatchResponse!.zipUrl != null)
+                                    if (state.offsideBatchResponse!.zipUrl !=
+                                        null)
                                       _buildResultItem(
-                                        Translations.getOffsideText('annotatedZip', currentLang),
+                                        Translations.getOffsideText(
+                                          'annotatedZip',
+                                          currentLang,
+                                        ),
                                         'Available',
                                         false,
                                         modeProvider.currentMode,
@@ -527,7 +756,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                             children: [
                               Flexible(
                                 child: _buildSectionHeader(
-                                  Translations.getOffsideText('previousRuns', currentLang),
+                                  Translations.getOffsideText(
+                                    'previousRuns',
+                                    currentLang,
+                                  ),
                                   modeProvider.currentMode,
                                   seedColor,
                                 ),
@@ -538,40 +770,92 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                   children: [
                                     ElevatedButton.icon(
                                       onPressed: () {
-                                        context.read<OffsideBloc>().add(ListRunsEvent());
+                                        context.read<OffsideBloc>().add(
+                                          ListRunsEvent(),
+                                        );
                                       },
-                                      icon: Icon(Icons.refresh, size: 18, color: AppColors.getTextColor(modeProvider.currentMode)),
+                                      icon: Icon(
+                                        Icons.refresh,
+                                        size: 18,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                      ),
                                       label: Text(
-                                        Translations.getOffsideText('refresh', currentLang),
+                                        Translations.getOffsideText(
+                                          'refresh',
+                                          currentLang,
+                                        ),
                                         style: GoogleFonts.roboto(
-                                          color: AppColors.getTextColor(modeProvider.currentMode),
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ),
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode).withOpacity(0.2),
-                                        foregroundColor: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                        backgroundColor:
+                                            AppColors.getTertiaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ).withOpacity(0.2),
+                                        foregroundColor:
+                                            AppColors.getTertiaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
                                         ),
-                                        minimumSize: Size(constraints.maxWidth * 0.2, 36),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        minimumSize: Size(
+                                          constraints.maxWidth * 0.2,
+                                          36,
+                                        ),
                                       ),
                                     ),
-                                    SizedBox(width: constraints.maxWidth * 0.02),
+                                    SizedBox(
+                                      width: constraints.maxWidth * 0.02,
+                                    ),
                                   ],
                                 ),
                               ),
                             ],
                           ),
                           SizedBox(height: constraints.maxWidth * 0.03),
-                          if (state.runsResponse != null && state.runsResponse!.runs.isNotEmpty)
-                            _buildRunsList(state.runsResponse!.runs, constraints, currentLang, modeProvider.currentMode, seedColor)
+                          if (state.runsResponse != null &&
+                              state.runsResponse!.runs.isNotEmpty)
+                            _buildRunsList(
+                              state.runsResponse!.runs,
+                              constraints,
+                              currentLang,
+                              modeProvider.currentMode,
+                              seedColor,
+                            )
                           else if (state.runsResponse != null)
-                            _buildEmptyState(Translations.getOffsideText('noRuns', currentLang), modeProvider.currentMode, seedColor)
+                            _buildEmptyState(
+                              Translations.getOffsideText(
+                                'noRuns',
+                                currentLang,
+                              ),
+                              modeProvider.currentMode,
+                              seedColor,
+                            )
                           else
-                            _buildEmptyState(Translations.getOffsideText('pressRefresh', currentLang), modeProvider.currentMode, seedColor),
+                            _buildEmptyState(
+                              Translations.getOffsideText(
+                                'pressRefresh',
+                                currentLang,
+                              ),
+                              modeProvider.currentMode,
+                              seedColor,
+                            ),
                         ],
                       ),
                     );
@@ -585,7 +869,12 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildStatusItem(String label, String value, int mode, Color seedColor) {
+  Widget _buildStatusItem(
+    String label,
+    String value,
+    int mode,
+    Color seedColor,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -625,7 +914,13 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildResultItem(String label, String value, bool isOffside, int mode, Color seedColor) {
+  Widget _buildResultItem(
+    String label,
+    String value,
+    bool isOffside,
+    int mode,
+    Color seedColor,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -656,7 +951,13 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildRunsList(List<Run> runs, BoxConstraints constraints, String currentLang, int mode, Color seedColor) {
+  Widget _buildRunsList(
+    List<Run> runs,
+    BoxConstraints constraints,
+    String currentLang,
+    int mode,
+    Color seedColor,
+  ) {
     final validRuns = runs.where((run) {
       final jsonContent = run.resultsJsonContent as Map<String, dynamic>?;
       return jsonContent != null &&
@@ -666,7 +967,11 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     }).toList();
 
     if (validRuns.isEmpty) {
-      return _buildEmptyState(Translations.getOffsideText('noValidRuns', currentLang), mode, seedColor);
+      return _buildEmptyState(
+        Translations.getOffsideText('noValidRuns', currentLang),
+        mode,
+        seedColor,
+      );
     }
 
     return Column(
@@ -674,14 +979,22 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
         final date = _parseRunDate(run.run);
         final jsonContent = run.resultsJsonContent as Map<String, dynamic>;
         final baseUrl = run.resultsJson != null
-            ? run.resultsJson!.substring(0, run.resultsJson!.lastIndexOf('/') + 1)
+            ? run.resultsJson!.substring(
+                0,
+                run.resultsJson!.lastIndexOf('/') + 1,
+              )
             : '';
         return Card(
           color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
           margin: EdgeInsets.symmetric(vertical: constraints.maxWidth * 0.02),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: ExpansionTile(
-            leading: Icon(Icons.analytics, color: AppColors.getTertiaryColor(seedColor, mode)),
+            leading: Icon(
+              Icons.analytics,
+              color: AppColors.getTertiaryColor(seedColor, mode),
+            ),
             title: Text(
               date ?? run.run,
               style: GoogleFonts.roboto(
@@ -715,7 +1028,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                     ),
                     const SizedBox(height: 8),
                     _buildResultItem(
-                      Translations.getOffsideText('attackDirection', currentLang),
+                      Translations.getOffsideText(
+                        'attackDirection',
+                        currentLang,
+                      ),
                       jsonContent['attack_direction']?.toString() ?? 'Unknown',
                       false,
                       mode,
@@ -747,7 +1063,9 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           Text(
                             '- $frame:',
                             style: GoogleFonts.roboto(
-                              color: AppColors.getTextColor(mode).withOpacity(0.8),
+                              color: AppColors.getTextColor(
+                                mode,
+                              ).withOpacity(0.8),
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -756,7 +1074,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           _buildResultItem(
                             Translations.getOffsideText('offside', currentLang),
                             data['offside'] == true
-                                ? Translations.getOffsideText('offside', currentLang).toUpperCase()
+                                ? Translations.getOffsideText(
+                                    'offside',
+                                    currentLang,
+                                  ).toUpperCase()
                                 : 'NO',
                             data['offside'] == true,
                             mode,
@@ -765,14 +1086,19 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           if (data['stats'] != null)
                             _buildResultItem(
                               Translations.getOffsideText('stats', currentLang),
-                              (data['stats'] as Map).entries.map((e) => '${e.key}: ${e.value}').join(', '),
+                              (data['stats'] as Map).entries
+                                  .map((e) => '${e.key}: ${e.value}')
+                                  .join(', '),
                               false,
                               mode,
                               seedColor,
                             ),
                           if (data['line_points'] != null)
                             _buildResultItem(
-                              Translations.getOffsideText('linePoints', currentLang),
+                              Translations.getOffsideText(
+                                'linePoints',
+                                currentLang,
+                              ),
                               'Start: ${data['line_points']['start']}, End: ${data['line_points']['end']}',
                               false,
                               mode,
@@ -781,7 +1107,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                           if (data['annotated_image'] != null) ...[
                             const SizedBox(height: 12),
                             Text(
-                              Translations.getOffsideText('annotatedImage', currentLang),
+                              Translations.getOffsideText(
+                                'annotatedImage',
+                                currentLang,
+                              ),
                               style: GoogleFonts.roboto(
                                 color: AppColors.getTextColor(mode),
                                 fontWeight: FontWeight.w600,
@@ -796,7 +1125,10 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                                  color: AppColors.getTertiaryColor(
+                                    seedColor,
+                                    mode,
+                                  ).withOpacity(0.3),
                                   width: 1,
                                 ),
                               ),
@@ -805,30 +1137,41 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                 child: Image.network(
                                   '$baseUrl/annotated/${data['annotated_image']}',
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: AppColors.getSurfaceColor(mode),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.error_outline,
-                                        color: Colors.redAccent,
-                                        size: 40,
-                                      ),
-                                    ),
-                                  ),
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return Center(
-                                      child: CircularProgressIndicator(
-                                        value: loadingProgress.expectedTotalBytes != null
-                                            ? loadingProgress.cumulativeBytesLoaded /
-                                                loadingProgress.expectedTotalBytes!
-                                            : null,
-                                        valueColor: AlwaysStoppedAnimation(
-                                          AppColors.getTertiaryColor(seedColor, mode),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                        color: AppColors.getSurfaceColor(mode),
+                                        child: Center(
+                                          child: Icon(
+                                            Icons.error_outline,
+                                            color: Colors.redAccent,
+                                            size: 40,
+                                          ),
                                         ),
                                       ),
-                                    );
-                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null)
+                                          return child;
+                                        return Center(
+                                          child: CircularProgressIndicator(
+                                            value:
+                                                loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                : null,
+                                            valueColor: AlwaysStoppedAnimation(
+                                              AppColors.getTertiaryColor(
+                                                seedColor,
+                                                mode,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
                                 ),
                               ),
                             ),
@@ -917,11 +1260,20 @@ class _FootballGridPainter extends CustomPainter {
       ..strokeWidth = 1.0;
 
     final inset = 40.0;
-    final rect = Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
+    final rect = Rect.fromLTWH(
+      inset,
+      inset * 2,
+      size.width - inset * 2,
+      size.height - inset * 4,
+    );
     canvas.drawRect(rect, fieldPaint);
 
     final midX = rect.center.dy;
-    canvas.drawLine(Offset(rect.left + rect.width / 2 - 100, midX), Offset(rect.left + rect.width / 2 + 100, midX), fieldPaint);
+    canvas.drawLine(
+      Offset(rect.left + rect.width / 2 - 100, midX),
+      Offset(rect.left + rect.width / 2 + 100, midX),
+      fieldPaint,
+    );
     canvas.drawCircle(Offset(rect.left + rect.width / 2, midX), 30, fieldPaint);
   }
 
@@ -934,7 +1286,11 @@ class _ScanLinePainter extends CustomPainter {
   final int mode;
   final Color seedColor;
 
-  _ScanLinePainter({required this.progress, required this.mode, required this.seedColor});
+  _ScanLinePainter({
+    required this.progress,
+    required this.mode,
+    required this.seedColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -955,15 +1311,18 @@ class _ScanLinePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
 
     final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width / 2, y),
-        radius: size.width * 0.25,
-      ));
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width / 2, y),
+              radius: size.width * 0.25,
+            ),
+          );
 
     canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
   }

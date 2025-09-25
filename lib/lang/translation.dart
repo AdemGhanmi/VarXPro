@@ -1,17 +1,28 @@
+// Updated lib/lang/translation.dart (add historyPage and getHistoryText)
 import 'package:flutter/material.dart';
 
 class Translations {
   static const Map<String, Map<String, dynamic>> pageTitles = {
     'en': {
       'titles': [
-        'Player Tracking',
+        'Referee Tracking',
         'Fault Detection',
         'Field Lines',
         'Offside',
-        'Referee Tracking',
+        'Player Tracking',
         'Live Streaming',
         'Home',
       ],
+      'settingsPage': {
+        'settingsTitle': 'Settings',
+        'languageSection': 'Language',
+        'modeSection': 'Mode',
+        'logoutButton': 'Logout',
+        'logoutConfirmTitle': 'Confirm Logout',
+        'logoutConfirmMessage': 'Are you sure you want to logout?',
+        'cancel': 'Cancel',
+        'logout': 'Logout',
+      },
       'refereeDirectory': {
         'searchReferees': 'Search Referees',
         'aiAnalysis': 'AI Analysis',
@@ -30,6 +41,26 @@ class Translations {
         'na': 'N/A',
         'allConfederations': 'All Confederations',
         'allCountries': 'All Countries',
+      },
+
+      'loginPage': {
+        'loginTitle': 'Login',
+        'registerTitle': 'Register',
+        'welcomeMessage': 'Securely access your account',
+        'email': 'Email',
+        'password': 'Password',
+        'confirmPassword': 'Confirm Password',
+        'forgotPassword': 'Forgot Password?',
+        'loginButton': 'LOGIN',
+        'registerButton': 'REGISTER',
+        'noAccountRegister': 'No account? Register',
+        'hasAccountLogin': 'Have account? Login',
+        'emailRequired': 'Email is required',
+        'invalidEmail': 'Enter a valid email',
+        'passwordRequired': 'Password is required',
+        'passwordMinLength': 'Password must be at least 6 characters',
+        'confirmPasswordRequired': 'Confirm password is required',
+        'passwordsDoNotMatch': 'Passwords do not match',
       },
       'refereeDetails': {
         'title': 'Referee Details',
@@ -78,31 +109,38 @@ class Translations {
         'Reset Game': 'Reset Game',
         'Analysis complete! View results.': 'Analysis complete! View results.',
         'Unknown': 'Unknown',
+        // New keys added for this page
+        'Summary': 'Summary',
+        'Downloads': 'Downloads',
+        'Visualizations': 'Visualizations',
+        'Clean Files': 'Clean Files',
+        'Tic-Tac-Toe': 'Tic-Tac-Toe',
       },
-'homePage': {
-      'subtitle': 'AI-Powered Football Video Analytics',
-      'playerTrackingTitle': 'Player Tracking',
-      'playerTrackingDesc':
-          'Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.',
-      'foulDetectionTitle': 'Foul Detection',
-      'foulDetectionDesc':
-          'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
-      'keyFieldLinesTitle': 'Key Field Lines',
-      'keyFieldLinesDesc':
-          'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
-      'offsideTitle': 'Offside Detection',
-      'offsideDesc':
-          'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
-      'refereeTrackingTitle': 'Referee Tracking',
-      'refereeTrackingDesc':
-          'Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.',
-      'aiInsightsTitle': 'AI Insights',
-      'aiInsightsDesc':
-          'Get the best AI-powered solutions for your football analysis problems, including tracking, verification, and more.',
-      'enterApp': 'Enter the App',
-      'mainTitle': 'Advanced VAR Technology',
-    },
-          'navLabels': [
+
+      'homePage': {
+        'subtitle': 'AI-Powered Football Video Analytics',
+        'playerTrackingTitle': 'Player Tracking',
+        'playerTrackingDesc':
+            'Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.',
+        'foulDetectionTitle': 'Foul Detection',
+        'foulDetectionDesc':
+            'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
+        'keyFieldLinesTitle': 'Key Field Lines',
+        'keyFieldLinesDesc':
+            'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
+        'offsideTitle': 'Offside Detection',
+        'offsideDesc':
+            'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
+        'refereeTrackingTitle': 'Referee Tracking',
+        'refereeTrackingDesc':
+            'Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.',
+        'aiInsightsTitle': 'AI Insights',
+        'aiInsightsDesc':
+            'Get the best AI-powered solutions for your football analysis problems, including tracking, verification, and more.',
+        'enterApp': 'Enter the App',
+        'mainTitle': 'Advanced VAR Technology',
+      },
+      'navLabels': [
         'Tracking',
         'Faults',
         'Lines',
@@ -242,6 +280,13 @@ class Translations {
         "fieldLinesDetected": "Field lines detected",
         "noFieldLinesDetected": "No field lines detected",
       },
+      'historyPage': {  // New section for History Page
+        'title': 'History',
+        'viewHistory': 'View History',
+        'cleanHistory': 'Clean History',
+        'historyCleared': 'History cleared successfully',
+        'noHistory': 'No history available',
+      },
       'foulDetectionPage': {
         'error': 'Error',
         'uploadAndAnalyze': 'Upload & Analyze',
@@ -311,11 +356,11 @@ class Translations {
       },
       'playerTrackingPage': {
         'error': 'Error',
-        'apiStatus': 'API Status',
-        'status': 'Status',
-        'modelLoaded': 'Model Loaded',
-        'yes': 'Yes',
-        'no': 'No',
+        'artifactsCleaned': 'Temporary Files Cleaned Successfully',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyzing video... This may take 10-30 minutes or longer.',
+        'Play Tic-Tac-Toe while waiting!': 'Play Tic-Tac-Toe while waiting!',
+        'Analysis complete! View results.': 'Analysis complete! View results.',
         'analysisConfiguration': 'Analysis Configuration',
         'pickAndAnalyzeVideo': 'Pick and Analyze Video',
         'detectionConfidence': 'Detection Confidence (0-1)',
@@ -331,20 +376,12 @@ class Translations {
         'rightY': 'Right Y',
         'framesProcessed': 'Frames Processed',
         'playerCount': 'Player Count',
-        'analysisPlot': 'Analysis Plot:',
-        'metricsChart': 'Metrics Chart:',
-        'resultsTable': 'Results Table:',
-        'cleanArtifacts': 'Clean Temporary Files',
-        'artifactsCleaned': 'Temporary Files Cleaned Successfully',
-        'fileAccessDenied':
-            'Please grant file access permission to select files',
-        'fileAccessPermanentlyDenied':
-            'File access denied. Enable it in settings.',
-        'noFileSelected': 'No file selected',
-        'settings': 'Settings',
-        'connected': 'Connected',
-        'disconnected': 'Disconnected',
         'processedVideo': 'Processed Video',
+        'analysisPlot': 'Analysis Plot',
+        'metricsChart': 'Metrics Chart',
+        'resultsTable': 'Results Table',
+        'cleanArtifacts': 'Clean Temporary Files',
+        'Analysis Results': 'Analysis Results',
         'failedToLoadImage': 'Failed to Load Image',
         'failedToLoadChart': 'Failed to Load Chart',
         'errorLoadingResults': 'Error Loading Results',
@@ -353,6 +390,20 @@ class Translations {
         'showMore': 'Show More',
         'showLess': 'Show Less',
         'showAll': 'Show All',
+        'Tic-Tac-Toe': 'Tic-Tac-Toe',
+        "It's a draw!": "It's a draw!",
+        ' wins!': ' wins!',
+        'Reset Game': 'Reset Game',
+        // Validator strings (hardcoded in code, but recommended to translate as keys)
+        'required': 'Required',
+        'detectionConfidenceRange': 'Must be between 0 and 1',
+        'enterTrailLength': 'Enter trail length',
+        'enterXCoordinate': 'Enter X coordinate',
+        'enterYCoordinate': 'Enter Y coordinate',
+        'apiStatus': 'API Status',
+        'connected': 'Connected',
+        'disconnected': 'Disconnected',
+        'status': 'Status',
       },
 
       'live_streaming': 'Live Streaming',
@@ -416,7 +467,16 @@ class Translations {
         'Diffusion en Direct',
         'Home',
       ],
-
+      'settingsPage': {
+        'settingsTitle': 'Paramètres',
+        'languageSection': 'Langue',
+        'modeSection': 'Mode',
+        'logoutButton': 'Déconnexion',
+        'logoutConfirmTitle': 'Confirmer la Déconnexion',
+        'logoutConfirmMessage': 'Êtes-vous sûr de vouloir vous déconnecter ?',
+        'cancel': 'Annuler',
+        'logout': 'Déconnexion',
+      },
       'refereeDirectory': {
         'searchReferees': 'Rechercher des arbitres',
         'aiAnalysis': 'Analyse IA',
@@ -426,8 +486,7 @@ class Translations {
         'refereesDirectory': 'Répertoire des arbitres',
         'referees': 'Arbitres',
         'noRefereesFound': 'Aucun arbitre trouvé',
-        'adjustSearchOrFilters':
-            'Ajustez votre recherche ou vos filtres',
+        'adjustSearchOrFilters': 'Ajustez votre recherche ou vos filtres',
         'failedToLoadReferees': 'Échec du chargement des arbitres',
         'checkConnection': 'Vérifiez votre connexion',
         'retry': 'Réessayer',
@@ -436,6 +495,27 @@ class Translations {
         'na': 'N/D',
         'allConfederations': 'Toutes les confédérations',
         'allCountries': 'Tous les pays',
+      },
+
+      'loginPage': {
+        'loginTitle': 'Connexion',
+        'registerTitle': 'Inscription',
+        'welcomeMessage': 'Accédez en toute sécurité à votre compte',
+        'email': 'Email',
+        'password': 'Mot de passe',
+        'confirmPassword': 'Confirmer le mot de passe',
+        'forgotPassword': 'Mot de passe oublié ?',
+        'loginButton': 'CONNEXION',
+        'registerButton': 'INSCRIRE',
+        'noAccountRegister': 'Pas de compte ? Inscrivez-vous',
+        'hasAccountLogin': 'Avez-vous un compte ? Connectez-vous',
+        'emailRequired': 'L\'email est requis',
+        'invalidEmail': 'Entrez un email valide',
+        'passwordRequired': 'Le mot de passe est requis',
+        'passwordMinLength': 'Le mot de passe doit faire au moins 6 caractères',
+        'confirmPasswordRequired':
+            'La confirmation du mot de passe est requise',
+        'passwordsDoNotMatch': 'Les mots de passe ne correspondent pas',
       },
       'refereeDetails': {
         'title': 'Détails de l\'arbitre',
@@ -486,30 +566,37 @@ class Translations {
         'Analysis complete! View results.':
             'Analyse terminée ! Voir les résultats.',
         'Unknown': 'Inconnu',
+        // New keys added for this page
+        'Summary': 'Résumé',
+        'Downloads': 'Téléchargements',
+        'Visualisations': 'Visualisations',
+        'Clean Files': 'Nettoyer les fichiers',
+        'Tic-Tac-Toe': 'Morpion',
       },
-    'homePage': {
-      'subtitle': 'Analyse vidéo de football propulsée par l\'IA',
-      'playerTrackingTitle': 'Suivi des joueurs',
-      'playerTrackingDesc':
-          'Système avancé d\'IA pour suivre les joueurs et analyser les buts dans les vidéos de football, fournissant des informations sur les mouvements, les vitesses et les opportunités de but.',
-      'foulDetectionTitle': 'Détection de fautes',
-      'foulDetectionDesc':
-          'Détecter et analyser les fautes en utilisant l\'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.',
-      'keyFieldLinesTitle': 'Lignes de terrain clés',
-      'keyFieldLinesDesc':
-          'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
-      'offsideTitle': 'Détection de hors-jeu',
-      'offsideDesc':
-          'Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d\'attaque.',
-      'refereeTrackingTitle': 'Suivi de l\'arbitre',
-      'refereeTrackingDesc':
-          'Suivre les mouvements de l\'arbitre, calculer les distances, les vitesses et générer des cartes de chaleur, des graphiques de vitesse et une analyse de proximité.',
-      'aiInsightsTitle': 'Perspectives IA',
-      'aiInsightsDesc':
-          'Obtenez les meilleures solutions basées sur l\'IA pour vos problèmes d\'analyse de football, y compris le suivi, la vérification, et plus encore.',
-      'enterApp': 'Entrer dans l\'application',
-      'mainTitle': 'Technologie VAR avancée',
-    },
+
+      'homePage': {
+        'subtitle': 'Analyse vidéo de football propulsée par l\'IA',
+        'playerTrackingTitle': 'Suivi des joueurs',
+        'playerTrackingDesc':
+            'Système avancé d\'IA pour suivre les joueurs et analyser les buts dans les vidéos de football, fournissant des informations sur les mouvements, les vitesses et les opportunités de but.',
+        'foulDetectionTitle': 'Détection de fautes',
+        'foulDetectionDesc':
+            'Détecter et analyser les fautes en utilisant l\'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.',
+        'keyFieldLinesTitle': 'Lignes de terrain clés',
+        'keyFieldLinesDesc':
+            'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
+        'offsideTitle': 'Détection de hors-jeu',
+        'offsideDesc':
+            'Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d\'attaque.',
+        'refereeTrackingTitle': 'Suivi de l\'arbitre',
+        'refereeTrackingDesc':
+            'Suivre les mouvements de l\'arbitre, calculer les distances, les vitesses et générer des cartes de chaleur, des graphiques de vitesse et une analyse de proximité.',
+        'aiInsightsTitle': 'Perspectives IA',
+        'aiInsightsDesc':
+            'Obtenez les meilleures solutions basées sur l\'IA pour vos problèmes d\'analyse de football, y compris le suivi, la vérification, et plus encore.',
+        'enterApp': 'Entrer dans l\'application',
+        'mainTitle': 'Technologie VAR avancée',
+      },
       'navLabels': ['Suivi', 'Fautes', 'Lignes', 'Hors-jeu', 'Arbitre', 'Live'],
       'chooseLanguage': 'Choisir la Langue',
       'chooseMode': 'Choisir le Mode',
@@ -646,6 +733,13 @@ class Translations {
         "fieldLinesDetected": "Lignes du terrain détectées",
         "noFieldLinesDetected": "Aucune ligne détectée",
       },
+      'historyPage': {  // New section for History Page (French)
+        'title': 'Historique',
+        'viewHistory': 'Voir l\'Historique',
+        'cleanHistory': 'Nettoyer l\'Historique',
+        'historyCleared': 'Historique nettoyé avec succès',
+        'noHistory': 'Aucun historique disponible',
+      },
       'foulDetectionPage': {
         'error': 'Erreur',
         'uploadAndAnalyze': 'Télécharger et Analyser',
@@ -717,11 +811,12 @@ class Translations {
       },
       'playerTrackingPage': {
         'error': 'Erreur',
-        'apiStatus': 'Statut de l\'API',
-        'status': 'Statut',
-        'modelLoaded': 'Modèle chargé',
-        'yes': 'Oui',
-        'no': 'Non',
+        'artifactsCleaned': 'Fichiers temporaires nettoyés avec succès',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyse de la vidéo en cours... Cela peut prendre 10-30 minutes ou plus.',
+        'Play Tic-Tac-Toe while waiting!': 'Jouez au Morpion en attendant !',
+        'Analysis complete! View results.':
+            'Analyse terminée ! Voir les résultats.',
         'analysisConfiguration': 'Configuration de l\'analyse',
         'pickAndAnalyzeVideo': 'Choisir et analyser la vidéo',
         'detectionConfidence': 'Confiance de détection (0-1)',
@@ -737,20 +832,12 @@ class Translations {
         'rightY': 'Y droite',
         'framesProcessed': 'Images traitées',
         'playerCount': 'Nombre de joueurs',
-        'analysisPlot': 'Graphique d\'analyse :',
-        'metricsChart': 'Graphique des métriques :',
-        'resultsTable': 'Tableau des résultats :',
-        'cleanArtifacts': 'Nettoyer les fichiers temporaires',
-        'artifactsCleaned': 'Fichiers temporaires nettoyés avec succès',
-        'fileAccessDenied':
-            'Veuillez autoriser l\'accès aux fichiers pour sélectionner des fichiers',
-        'fileAccessPermanentlyDenied':
-            'Accès aux fichiers refusé. Activez-le dans les paramètres.',
-        'noFileSelected': 'Aucun fichier sélectionné',
-        'settings': 'Paramètres',
-        'connected': 'Connecté',
-        'disconnected': 'Déconnecté',
         'processedVideo': 'Vidéo traitée',
+        'analysisPlot': 'Graphique d\'analyse',
+        'metricsChart': 'Graphique des métriques',
+        'resultsTable': 'Tableau des résultats',
+        'cleanArtifacts': 'Nettoyer les fichiers temporaires',
+        'Analysis Results': 'Résultats de l\'analyse',
         'failedToLoadImage': 'Échec du chargement de l\'image',
         'failedToLoadChart': 'Échec du chargement du graphique',
         'errorLoadingResults': 'Erreur lors du chargement des résultats',
@@ -759,6 +846,20 @@ class Translations {
         'showMore': 'Afficher plus',
         'showLess': 'Afficher moins',
         'showAll': 'Tout afficher',
+        'Tic-Tac-Toe': 'Morpion',
+        "It's a draw!": 'C\'est un match nul !',
+        ' wins!': ' gagne !',
+        'Reset Game': 'Réinitialiser le jeu',
+        // Validator strings (hardcoded in code, but recommended to translate as keys)
+        'required': 'Requis',
+        'detectionConfidenceRange': 'Doit être entre 0 et 1',
+        'enterTrailLength': 'Entrez la longueur de la trajectoire',
+        'enterXCoordinate': 'Entrez la coordonnée X',
+        'enterYCoordinate': 'Entrez la coordonnée Y',
+        'apiStatus': 'Statut de l\'API',
+        'connected': 'Connecté',
+        'disconnected': 'Déconnecté',
+        'status': 'Statut',
       },
 
       // New translations for live stream pages
@@ -824,7 +925,16 @@ class Translations {
         'البث المباشر',
         'بيت',
       ],
-
+      'settingsPage': {
+        'settingsTitle': 'الإعدادات',
+        'languageSection': 'اللغة',
+        'modeSection': 'الوضع',
+        'logoutButton': 'تسجيل الخروج',
+        'logoutConfirmTitle': 'تأكيد تسجيل الخروج',
+        'logoutConfirmMessage': 'هل أنت متأكد من تسجيل الخروج؟',
+        'cancel': 'إلغاء',
+        'logout': 'تسجيل الخروج',
+      },
       'refereeDirectory': {
         'searchReferees': 'البحث عن الحكام',
         'aiAnalysis': 'تحليل الذكاء الاصطناعي',
@@ -844,6 +954,26 @@ class Translations {
         'allConfederations': 'جميع الاتحادات',
         'allCountries': 'جميع الدول',
       },
+      'loginPage': {
+        'loginTitle': 'تسجيل الدخول',
+        'registerTitle': 'التسجيل',
+        'welcomeMessage': 'الوصول بأمان إلى حسابك',
+        'email': 'البريد الإلكتروني',
+        'password': 'كلمة المرور',
+        'confirmPassword': 'تأكيد كلمة المرور',
+        'forgotPassword': 'نسيت كلمة المرور؟',
+        'loginButton': 'تسجيل الدخول',
+        'registerButton': 'التسجيل',
+        'noAccountRegister': 'لا يوجد حساب؟ سجل',
+        'hasAccountLogin': 'لديك حساب؟ تسجيل الدخول',
+        'emailRequired': 'البريد الإلكتروني مطلوب',
+        'invalidEmail': 'أدخل بريد إلكتروني صالح',
+        'passwordRequired': 'كلمة المرور مطلوبة',
+        'passwordMinLength': 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
+        'confirmPasswordRequired': 'تأكيد كلمة المرور مطلوب',
+        'passwordsDoNotMatch': 'كلمات المرور غير متطابقة',
+      },
+
       'refereeDetails': {
         'title': 'تفاصيل الحكم',
         'details': 'التفاصيل',
@@ -891,31 +1021,37 @@ class Translations {
         'Reset Game': 'إعادة اللعبة',
         'Analysis complete! View results.': 'اكتمل التحليل! عرض النتائج.',
         'Unknown': 'غير معروف',
+        // New keys added for this page
+        'Summary': 'ملخص',
+        'Downloads': 'التنزيلات',
+        'Visualizations': 'التصورات',
+        'Clean Files': 'تنظيف الملفات',
+        'Tic-Tac-Toe': 'تيك تاك تو',
       },
 
-     'homePage': {
-      'subtitle': 'تحليل فيديو كرة القدم باستخدام الذكاء الاصطناعي',
-      'playerTrackingTitle': 'تتبع اللاعبين',
-      'playerTrackingDesc':
-          'نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، مع توفير رؤى حول الحركات والسرعات وفرص التسجيل.',
-      'foulDetectionTitle': 'كشف الأخطاء',
-      'foulDetectionDesc':
-          'كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.',
-      'keyFieldLinesTitle': 'خطوط الملعب الرئيسية',
-      'keyFieldLinesDesc':
-          'تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
-      'offsideTitle': 'كشف التسلل',
-      'offsideDesc':
-          'كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.',
-      'refereeTrackingTitle': 'تتبع الحكم',
-      'refereeTrackingDesc':
-          'تتبع حركات الحكم، وحساب المسافات والسرعات، وإنشاء خرائط حرارة ورسوم سرعات وتحليل القرب.',
-      'aiInsightsTitle': 'رؤى الذكاء الاصطناعي',
-      'aiInsightsDesc':
-          'احصل على أفضل الحلول المدعومة بالذكاء الاصطناعي لمشاكل تحليل كرة القدم، بما في ذلك التتبع والتحقق والمزيد.',
-      'enterApp': 'دخول التطبيق',
-      'mainTitle': 'تقنية VAR المتقدمة',
-    },
+      'homePage': {
+        'subtitle': 'تحليل فيديو كرة القدم باستخدام الذكاء الاصطناعي',
+        'playerTrackingTitle': 'تتبع اللاعبين',
+        'playerTrackingDesc':
+            'نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، مع توفير رؤى حول الحركات والسرعات وفرص التسجيل.',
+        'foulDetectionTitle': 'كشف الأخطاء',
+        'foulDetectionDesc':
+            'كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.',
+        'keyFieldLinesTitle': 'خطوط الملعب الرئيسية',
+        'keyFieldLinesDesc':
+            'تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
+        'offsideTitle': 'كشف التسلل',
+        'offsideDesc':
+            'كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.',
+        'refereeTrackingTitle': 'تتبع الحكم',
+        'refereeTrackingDesc':
+            'تتبع حركات الحكم، وحساب المسافات والسرعات، وإنشاء خرائط حرارة ورسوم سرعات وتحليل القرب.',
+        'aiInsightsTitle': 'رؤى الذكاء الاصطناعي',
+        'aiInsightsDesc':
+            'احصل على أفضل الحلول المدعومة بالذكاء الاصطناعي لمشاكل تحليل كرة القدم، بما في ذلك التتبع والتحقق والمزيد.',
+        'enterApp': 'دخول التطبيق',
+        'mainTitle': 'تقنية VAR المتقدمة',
+      },
       'navLabels': ['تتبع', 'أخطاء', 'خطوط', 'تسلل', 'حكم', 'البث المباشر'],
       'chooseLanguage': 'اختر اللغة',
       'chooseMode': 'اختر الوضع',
@@ -1049,6 +1185,13 @@ class Translations {
         "fieldLinesDetected": "تم اكتشاف خطوط الملعب",
         "noFieldLinesDetected": "لم يتم اكتشاف أي خطوط",
       },
+      'historyPage': {  // New section for History Page (Arabic)
+        'title': 'التاريخ',
+        'viewHistory': 'عرض التاريخ',
+        'cleanHistory': 'تنظيف التاريخ',
+        'historyCleared': 'تم تنظيف التاريخ بنجاح',
+        'noHistory': 'لا يوجد تاريخ متاح',
+      },
       'foulDetectionPage': {
         'error': 'خطأ',
         'uploadAndAnalyze': 'رفع وتحليل',
@@ -1118,11 +1261,11 @@ class Translations {
       },
       'playerTrackingPage': {
         'error': 'خطأ',
-        'apiStatus': 'حالة واجهة برمجة التطبيقات',
-        'status': 'الحالة',
-        'modelLoaded': 'النموذج المحمل',
-        'yes': 'نعم',
-        'no': 'لا',
+        'artifactsCleaned': 'تم تنظيف الملفات المؤقتة بنجاح',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'جاري تحليل الفيديو... قد يستغرق ذلك 10-30 دقيقة أو أكثر.',
+        'Play Tic-Tac-Toe while waiting!': 'العب تيك تاك تو أثناء الانتظار!',
+        'Analysis complete! View results.': 'اكتمل التحليل! عرض النتائج.',
         'analysisConfiguration': 'تكوين التحليل',
         'pickAndAnalyzeVideo': 'اختيار وتحليل الفيديو',
         'detectionConfidence': 'ثقة الكشف (0-1)',
@@ -1138,19 +1281,12 @@ class Translations {
         'rightY': 'يمين Y',
         'framesProcessed': 'الإطارات المعالجة',
         'playerCount': 'عدد اللاعبين',
-        'analysisPlot': 'رسم التحليل:',
-        'metricsChart': 'رسم المقاييس:',
-        'resultsTable': 'جدول النتائج:',
-        'cleanArtifacts': 'تنظيف الملفات المؤقتة',
-        'artifactsCleaned': 'تم تنظيف الملفات المؤقتة بنجاح',
-        'fileAccessDenied': 'يرجى منح إذن الوصول إلى الملفات لاختيار الملفات',
-        'fileAccessPermanentlyDenied':
-            'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
-        'noFileSelected': 'لم يتم اختيار ملف',
-        'settings': 'الإعدادات',
-        'connected': 'متصل',
-        'disconnected': 'غير متصل',
         'processedVideo': 'الفيديو المعالج',
+        'analysisPlot': 'رسم التحليل',
+        'metricsChart': 'رسم المقاييس',
+        'resultsTable': 'جدول النتائج',
+        'cleanArtifacts': 'تنظيف الملفات المؤقتة',
+        'Analysis Results': 'نتائج التحليل',
         'failedToLoadImage': 'فشل تحميل الصورة',
         'failedToLoadChart': 'فشل تحميل الرسم البياني',
         'errorLoadingResults': 'حدث خطأ أثناء تحميل النتائج',
@@ -1159,8 +1295,21 @@ class Translations {
         'showMore': 'عرض المزيد',
         'showLess': 'عرض أقل',
         'showAll': 'عرض الكل',
+        'Tic-Tac-Toe': 'تيك تاك تو',
+        "It's a draw!": 'إنه تعادل!',
+        ' wins!': ' يفوز!',
+        'Reset Game': 'إعادة اللعبة',
+        // Validator strings (hardcoded in code, but recommended to translate as keys)
+        'required': 'مطلوب',
+        'detectionConfidenceRange': 'يجب أن يكون بين 0 و 1',
+        'enterTrailLength': 'أدخل طول المسار',
+        'enterXCoordinate': 'أدخل إحداثي X',
+        'enterYCoordinate': 'أدخل إحداثي Y',
+        'apiStatus': 'حالة واجهة برمجة التطبيقات',
+        'connected': 'متصل',
+        'disconnected': 'غير متصل',
+        'status': 'الحالة',
       },
-
       // New translations for live stream pages
       'live_streaming': 'البث المباشر',
       'explore_channels': 'استكشف القنوات والتدفقات المباشرة',
@@ -1214,86 +1363,108 @@ class Translations {
     },
   };
 
-
-
-  
   static String getRefereeDetailsText(String key, String lang) {
     final validLang = ['en', 'fr', 'ar'].contains(lang) ? lang : 'en';
-    final translation = pageTitles[validLang]?['refereeDetails']?[key] ??
+    final translation =
+        pageTitles[validLang]?['refereeDetails']?[key] ??
         pageTitles['en']?['refereeDetails']?[key] ??
-        'Missing translation for $key';
-    if (translation == null) {
-      debugPrint('Translation error: key=$key, lang=$lang, validLang=$validLang');
-      return 'Translation not found';
-    }
-    return translation;
+        key;  // Default to key if not found
+    return translation ?? 'Missing translation for $key';
+  }
+
+  static String getSettingsText(String key, String lang) {
+    return pageTitles[lang]?['settingsPage']?[key] ??
+        pageTitles['en']?['settingsPage']?[key] ??
+        key;
+  }
+
+  static String getHistoryText(String key, String lang) {  // New method for History
+    return pageTitles[lang]?['historyPage']?[key] ??
+        pageTitles['en']?['historyPage']?[key] ??
+        key;
   }
 
   static String translate(String key, String lang) {
-    return pageTitles[lang]?[key] ?? pageTitles['en']![key] ?? key;
+    return pageTitles[lang]?[key] ?? pageTitles['en']?[key] ?? key;
   }
 
   static String getTitle(int index, String lang) {
-    return pageTitles[lang]?['titles']?[index] ??
-        pageTitles['en']!['titles']![index];
+    final titles = pageTitles[lang]?['titles'] ?? pageTitles['en']?['titles'];
+    return titles != null && index < titles.length ? titles[index] : 'Title $index';
   }
 
   static String getNavLabel(int index, String lang) {
-    return pageTitles[lang]?['navLabels']?[index] ??
-        pageTitles['en']!['navLabels']![index];
+    final labels = pageTitles[lang]?['navLabels'] ?? pageTitles['en']?['navLabels'];
+    return labels != null && index < labels.length ? labels[index] : 'Nav $index';
   }
 
   static String getChooseLanguage(String lang) {
     return pageTitles[lang]?['chooseLanguage'] ??
-        pageTitles['en']!['chooseLanguage'];
+        pageTitles['en']?['chooseLanguage'] ??
+        'Choose Language';
   }
 
   static String getChooseMode(String lang) {
-    return pageTitles[lang]?['chooseMode'] ?? pageTitles['en']!['chooseMode'];
+    return pageTitles[lang]?['chooseMode'] ?? pageTitles['en']?['chooseMode'] ?? 'Choose Mode';
   }
 
   static List<String> getLanguages(String lang) {
     return List<String>.from(
-      pageTitles[lang]?['languages'] ?? pageTitles['en']!['languages'],
+      pageTitles[lang]?['languages'] ?? pageTitles['en']?['languages'] ?? [],
     );
   }
 
   static List<String> getModes(String lang) {
     return List<String>.from(
-      pageTitles[lang]?['modes'] ?? pageTitles['en']!['modes'],
+      pageTitles[lang]?['modes'] ?? pageTitles['en']?['modes'] ?? [],
     );
   }
 
   static String getOffsideText(String key, String lang) {
     return pageTitles[lang]?['offsidePage']?[key] ??
-        pageTitles['en']!['offsidePage']![key];
+        pageTitles['en']?['offsidePage']?[key] ??
+        key;
   }
 
   static String getFoulDetectionText(String key, String lang) {
     return pageTitles[lang]?['foulDetectionPage']?[key] ??
-        pageTitles['en']!['foulDetectionPage']![key];
+        pageTitles['en']?['foulDetectionPage']?[key] ??
+        key;
   }
 
   static String getRefereeTrackingText(String key, String lang) {
     return pageTitles[lang]?['refereeTrackingPage']?[key] ??
-        pageTitles['en']!['refereeTrackingPage']![key];
+        pageTitles['en']?['refereeTrackingPage']?[key] ??
+        key;
   }
 
   static String getPlayerTrackingText(String key, String lang) {
     return pageTitles[lang]?['playerTrackingPage']?[key] ??
-        pageTitles['en']!['playerTrackingPage']![key];
+        pageTitles['en']?['playerTrackingPage']?[key] ??
+        key;
   }
 
   static String getHomeText(String key, String lang) {
     return pageTitles[lang]?['homePage']?[key] ??
-        pageTitles['en']!['homePage']![key];
+        pageTitles['en']?['homePage']?[key] ??
+        key;
   }
-static String getRefereeDirectoryText(String key, String lang) {
-    return pageTitles[lang]?['refereeDirectoryPage']?[key] ??
-        pageTitles['en']!['refereeDirectoryPage']![key];
+
+  static String getRefereeDirectoryText(String key, String lang) {
+    return pageTitles[lang]?['refereeDirectory']?[key] ??
+        pageTitles['en']?['refereeDirectory']?[key] ??
+        key;
   }
+
+  static String getLoginText(String key, String lang) {
+    return pageTitles[lang]?['loginPage']?[key] ??
+        pageTitles['en']?['loginPage']?[key] ??
+        key;
+  }
+
   static String getTranslation(String key, String lang) {
     return pageTitles[lang]?['Referpage']?[key] ??
-        pageTitles['en']!['Referpage']![key];
+        pageTitles['en']?['Referpage']?[key] ??
+        key;
   }
 }
