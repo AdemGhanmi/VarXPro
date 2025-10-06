@@ -1,7 +1,6 @@
-
+// lib/views/pages/home/view/home_page.dart (updated fetchReferees to match IDs)
 import 'dart:convert';
-
-import 'package:VarXPro/views/pages/home/view/detail_arbiter.dart';
+import 'package:VarXPro/views/pages/home/view/details_arbiter/detail_arbiter.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -66,33 +65,42 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Future<List<Referee>> fetchReferees() async {
     try {
-      final response = await http.get(
-        Uri.parse('https://refereelistdetail.varxpro.com/json'),
-      );
+      final listResponse = await http.get(Uri.parse('https://refereelist.varxpro.com/referees'));
+      final detailsResponse = await http.get(Uri.parse('https://refereelistdetail.varxpro.com/json'));
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((dynamic jsonObj) {
-          final Map<String, dynamic> json = jsonObj as Map<String, dynamic>;
-          try {
-            return Referee.fromJson(json);
-          } catch (e) {
-            // Create partial referee without details for error cases
-            return Referee(
-              confed: json['confed'] ?? '',
-              country: json['country'] ?? '',
-              details: null,
-              gender: json['gender'] ?? '',
-              lastEnriched: json['last_enriched'] ?? 0,
-              name: json['name'] ?? '',
-              roles: json['roles'] != null ? List<String>.from(json['roles']) : <String>[],
-              since: json['since'] ?? 0,
-              year: json['year'],
-            );
+      if (listResponse.statusCode == 200 && detailsResponse.statusCode == 200) {
+        final listData = json.decode(listResponse.body);
+        final List<dynamic> listJson = listData['results'] ?? []; // Handle possible structure
+
+        final detailsJson = json.decode(detailsResponse.body) as List<dynamic>;
+
+        // Create name to id map (assuming names are unique, normalize to lower case)
+        final Map<String, String> nameToId = {};
+        for (var ref in listJson) {
+          final name = ref['name'] as String?;
+          final id = ref['_id'] as String?;
+          if (name != null && id != null) {
+            nameToId[name.toLowerCase().trim()] = id;
           }
-        }).toList();
+        }
+
+        // Parse details and assign id if match (normalize name)
+        final referees = <Referee>[];
+        for (var det in detailsJson) {
+          String id = '';
+          final name = det['name'] as String?;
+          if (name != null && nameToId.containsKey(name.toLowerCase().trim())) {
+            id = nameToId[name.toLowerCase().trim()]!;
+          }
+          final refereeJson = Map<String, dynamic>.from(det);
+          refereeJson['id'] = id; // Add id to json for parsing
+          final referee = Referee.fromJson(refereeJson);
+          referees.add(referee);
+        }
+
+        return referees;
       } else {
-        throw Exception('Failed to load referees: ${response.statusCode}');
+        throw Exception('Failed to load referees: List ${listResponse.statusCode}, Details ${detailsResponse.statusCode}');
       }
     } catch (e) {
       debugPrint('Error fetching referees: $e');
@@ -103,8 +111,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   List<Referee> getFilteredReferees() {
     return allReferees.where((referee) {
       final nameMatch = referee.name.toLowerCase().contains(
-            _searchController.text.toLowerCase(),
-          );
+        _searchController.text.toLowerCase(),
+      );
       final confedMatch =
           selectedConfed == null || referee.confed == selectedConfed;
       final countryMatch =
@@ -133,10 +141,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.getSurfaceColor(modeProvider.currentMode)
-                    .withOpacity(0.98),
-                AppColors.getSurfaceColor(modeProvider.currentMode)
-                    .withOpacity(0.92),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.98),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.92),
               ],
             ),
             boxShadow: [
@@ -160,43 +170,50 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 24),
-              ...Translations.getLanguages(currentLang).asMap().entries.map(
-                    (entry) {
-                  int idx = entry.key;
-                  String lang = entry.value;
-                  String code = idx == 0 ? 'en' : idx == 1 ? 'fr' : 'ar';
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      tileColor: AppColors.getTertiaryColor(
-                        AppColors.seedColors[modeProvider.currentMode] ??
-                            AppColors.seedColors[1]!,
-                        modeProvider.currentMode,
-                      ).withOpacity(0.2),
-                      title: Text(
-                        lang,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.getTextColor(modeProvider.currentMode),
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      onTap: () {
-                        langProvider.changeLanguage(code);
-                        Navigator.pop(ctx);
-                      },
+              ...Translations.getLanguages(currentLang).asMap().entries.map((
+                entry,
+              ) {
+                int idx = entry.key;
+                String lang = entry.value;
+                String code = idx == 0
+                    ? 'en'
+                    : idx == 1
+                    ? 'fr'
+                    : 'ar';
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
                     ),
-                  );
-                },
-              ).toList(),
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(
+                            12,
+                          ),
+                    ),
+                    tileColor: AppColors.getTertiaryColor(
+                      AppColors.seedColors[modeProvider.currentMode] ??
+                          AppColors.seedColors[1]!,
+                      modeProvider.currentMode,
+                    ).withOpacity(0.2),
+                    title: Text(
+                      lang,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(modeProvider.currentMode),
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () {
+                      langProvider.changeLanguage(code);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                );
+              }).toList(),
             ],
           ),
         ),
@@ -236,10 +253,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.getSurfaceColor(modeProvider.currentMode)
-                    .withOpacity(0.98),
-                AppColors.getSurfaceColor(modeProvider.currentMode)
-                    .withOpacity(0.92),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.98),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.92),
               ],
             ),
             boxShadow: [
@@ -313,11 +332,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final modeProvider = Provider.of<ModeProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
-    final currentLang = langProvider.currentLanguage ?? 'en'; // Fallback to 'en'
-    debugPrint('Current language: $currentLang'); // Debug log
+    final currentLang = langProvider.currentLanguage ?? 'en';
+    debugPrint('Current language: $currentLang');
     final textColor = AppColors.getTextColor(modeProvider.currentMode);
     final seedColor =
-        AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+        AppColors.seedColors[modeProvider.currentMode] ??
+        AppColors.seedColors[1]!;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
 
@@ -400,10 +420,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${Translations.getHomeText(
-                                    'mainTitle',
-                                    currentLang,
-                                  )} ',
+                                  '${Translations.getHomeText('mainTitle', currentLang)} ',
                                   style: TextStyle(
                                     color: textColor,
                                     fontWeight: FontWeight.bold,
@@ -434,7 +451,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ),
                           ],
                         ),
-                        
+                      
                       ],
                     ),
                   ),
@@ -452,7 +469,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                        color: AppColors.getSurfaceColor(
+                          modeProvider.currentMode,
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -570,10 +589,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${Translations.getRefereeDirectoryText(
-                            'refereesDirectory',
-                            currentLang,
-                          )} 👨‍⚖️',
+                          '${Translations.getRefereeDirectoryText('refereesDirectory', currentLang)} 👨‍⚖️',
                           style: TextStyle(
                             color: textColor,
                             fontWeight: FontWeight.bold,
@@ -645,20 +661,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                           currentLang,
                                         ),
                                       ),
-                                      items: (selectedConfed == null
-                                              ? allReferees
-                                              : allReferees.where(
-                                                  (r) => r.confed == selectedConfed,
-                                                ))
-                                          .map((ref) => ref.country)
-                                          .toSet()
-                                          .map(
-                                            (country) => DropdownMenuItem(
-                                              value: country,
-                                              child: Text(country),
-                                            ),
-                                          )
-                                          .toList(),
+                                      items:
+                                          (selectedConfed == null
+                                                  ? allReferees
+                                                  : allReferees.where(
+                                                      (r) =>
+                                                          r.confed ==
+                                                          selectedConfed,
+                                                    ))
+                                              .map((ref) => ref.country)
+                                              .toSet()
+                                              .map(
+                                                (country) => DropdownMenuItem(
+                                                  value: country,
+                                                  child: Text(country),
+                                                ),
+                                              )
+                                              .toList(),
                                       onChanged: (val) {
                                         setState(() {
                                           selectedCountry = val;
@@ -675,11 +694,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   itemCount: filteredReferees.length,
                                   gridDelegate:
                                       const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 1,
-                                    mainAxisSpacing: 16,
-                                    crossAxisSpacing: 16,
-                                    childAspectRatio: 1.5,
-                                  ),
+                                        crossAxisCount: 1,
+                                        mainAxisSpacing: 16,
+                                        crossAxisSpacing: 16,
+                                        childAspectRatio: 1.5,
+                                      ),
                                   itemBuilder: (context, index) {
                                     final referee = filteredReferees[index];
                                     return AnimatedBuilder(
@@ -688,10 +707,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         return Transform.translate(
                                           offset: Offset(
                                             0,
-                                            (1 - _staggerControllers[index].value) * 50,
+                                            (1 -
+                                                    _staggerControllers[index]
+                                                        .value) *
+                                                50,
                                           ),
                                           child: Opacity(
-                                            opacity: _staggerControllers[index].value,
+                                            opacity: _staggerControllers[index]
+                                                .value,
                                             child: child,
                                           ),
                                         );
@@ -699,11 +722,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                       child: InkWell(
                                         borderRadius: BorderRadius.circular(20),
                                         onTap: () {
-                                          _staggerControllers[index].forward().then((_) {
+                                          _staggerControllers[index]
+                                              .forward()
+                                              .then((_) {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => DetailArbiter(
+                                                builder: (context) =>
+                                                    DetailArbiter(
                                                   referee: referee,
                                                 ),
                                               ),
@@ -762,7 +788,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.getSurfaceColor(modeProvider.currentMode),
+        color: AppColors.getSurfaceColor(
+          modeProvider.currentMode,
+        ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -776,10 +804,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(width: 4),
-          Text(
-            emoji,
-            style: const TextStyle(fontSize: 18),
-          ),
+          Text(emoji, style: const TextStyle(fontSize: 18)),
           const SizedBox(width: 4),
           Text(
             label,
@@ -804,8 +829,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      shadowColor: AppColors.getShadowColor(seedColor, modeProvider.currentMode)
-          .withOpacity(0.4),
+      shadowColor: AppColors.getShadowColor(
+        seedColor,
+        modeProvider.currentMode,
+      ).withOpacity(0.4),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -814,7 +841,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             end: Alignment.bottomRight,
             colors: [
               AppColors.getSurfaceColor(modeProvider.currentMode),
-              AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
+              AppColors.getSurfaceColor(
+                modeProvider.currentMode,
+              ).withOpacity(0.8),
             ],
           ),
         ),
@@ -868,7 +897,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                    
                       const SizedBox(width: 4),
                       Text(
                         '🏳️ ${referee.country}',
@@ -954,10 +982,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         size: 14,
                         color: Colors.transparent,
                       ),
-                      const Text(
-                        '📅',
-                        style: TextStyle(fontSize: 14),
-                      ),
+                      const Text('📅', style: TextStyle(fontSize: 14)),
                       const SizedBox(width: 4),
                       Text(
                         '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since}',
@@ -969,7 +994,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  if (referee.details?.worldfootball?.overallTotals != null) ...[
+                  if (referee.details?.worldfootball?.overallTotals !=
+                      null) ...[
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -1045,10 +1071,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
           Text(
-            '${Translations.getRefereeDirectoryText(
-              'noRefereesFound',
-              currentLang,
-            )} 😔',
+            '${Translations.getRefereeDirectoryText('noRefereesFound', currentLang)} 😔',
             style: TextStyle(
               color: textColor,
               fontSize: 18,
@@ -1082,10 +1105,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 16),
           Text(
-            '${Translations.getRefereeDirectoryText(
-              'failedToLoadReferees',
-              currentLang,
-            )} ⚠️',
+            '${Translations.getRefereeDirectoryText('failedToLoadReferees', currentLang)} ⚠️',
             style: TextStyle(
               color: textColor,
               fontSize: 18,
@@ -1138,7 +1158,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
       child: ListView.builder(
-        itemCount: 5, // Placeholder count
+        itemCount: 5,
         itemBuilder: (context, index) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
           child: Container(
@@ -1230,17 +1250,18 @@ class _ScanLinePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
 
     final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
-          Colors.transparent,
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width / 2, y),
-          radius: size.width * 0.25,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            colors: [
+              AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
+              Colors.transparent,
+            ],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width / 2, y),
+              radius: size.width * 0.25,
+            ),
+          );
 
     canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
   }

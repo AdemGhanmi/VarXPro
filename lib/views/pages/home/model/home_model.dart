@@ -1,4 +1,5 @@
 class Referee {
+  final String id; 
   final String confed;
   final String country;
   late final Details? details;
@@ -10,6 +11,7 @@ class Referee {
   final dynamic year;
 
   Referee({
+    required this.id,
     required this.confed,
     required this.country,
     this.details,
@@ -23,9 +25,15 @@ class Referee {
 
   factory Referee.fromJson(Map<String, dynamic> json) {
     return Referee(
+      id:
+          json['id']?.toString() ??
+          json['_id']?.toString() ??
+          '', // Support both
       confed: json['confed'] ?? '',
       country: json['country'] ?? '',
-      details: json['details'] != null ? Details.fromJson(json['details']) : null,
+      details: json['details'] != null
+          ? Details.fromJson(json['details'])
+          : null,
       gender: json['gender'] ?? '',
       lastEnriched: json['last_enriched'] ?? 0,
       name: json['name'] ?? '',
@@ -36,6 +44,8 @@ class Referee {
   }
 }
 
+// Rest of model unchanged
+// Rest of model unchanged (Details, WorldFootball, etc.)
 class Details {
   final WorldFootball? worldfootball;
 
@@ -67,8 +77,26 @@ class WorldFootball {
 
   factory WorldFootball.fromJson(Map<String, dynamic> json) {
     if (json['error'] != null) {
-      // Handle not_found case
-      throw Exception('Referee details not found');
+      print('Referee details not found: ${json['error']}'); // Debug
+      return WorldFootball(
+        competitions: [],
+        overallTotals: OverallTotals(
+          matches: 0,
+          red: 0,
+          secondYellow: 0,
+          yellow: 0,
+          yellowPerGame: 0.0,
+        ),
+        profile: Profile(
+          completeName: 'Not Found',
+          name: 'N/A',
+          nationality: '',
+          born: null,
+          placeOfBirth: null,
+        ),
+        scrapedAt: 0,
+        source: Source(site: '', url: ''),
+      );
     }
     final List<dynamic> compsJson = json['competitions'] ?? [];
     return WorldFootball(
@@ -180,9 +208,6 @@ class Source {
   Source({required this.site, required this.url});
 
   factory Source.fromJson(Map<String, dynamic> json) {
-    return Source(
-      site: json['site'] ?? '',
-      url: json['url'] ?? '',
-    );
+    return Source(site: json['site'] ?? '', url: json['url'] ?? '');
   }
 }

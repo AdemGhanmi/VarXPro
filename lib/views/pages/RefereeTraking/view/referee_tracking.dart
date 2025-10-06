@@ -76,6 +76,9 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
         AppColors.seedColors[modeProvider.currentMode] ??
         AppColors.seedColors[1]!;
     final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isLargeScreen = screenWidth > 600;
+    final isMediumScreen = screenWidth > 400 && screenWidth <= 600;
 
     if (_showSplash) {
       return Scaffold(
@@ -113,7 +116,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
               child: Lottie.asset(
                 'assets/lotties/refere.json',
                 width: screenWidth * 0.8,
-                height: MediaQuery.of(context).size.height * 0.5,
+                height: screenHeight * 0.5,
                 fit: BoxFit.contain,
               ),
             ),
@@ -127,6 +130,25 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
           RefereeBloc(context.read<RefereeService>())..add(CheckHealthEvent()),
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(
+            'Referee Tracking System',
+            style: GoogleFonts.roboto(
+              fontSize: isLargeScreen ? 24 : 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(modeProvider.currentMode),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back,
+              color: AppColors.getTextColor(modeProvider.currentMode),
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
         body: Stack(
           children: [
             Positioned.fill(
@@ -183,7 +205,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                       ),
                       action: SnackBarAction(
                         label: Translations.getTranslation(
-                            'Retry', languageProvider.currentLanguage),  // Fixed: No emoji in key
+                            'Retry', languageProvider.currentLanguage),
                         textColor: Colors.white,
                         onPressed: () {
                           context.read<RefereeBloc>().add(CheckHealthEvent());
@@ -207,7 +229,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(Translations.getTranslation(
-                                'Analysis complete! View results.',  // Fixed: No emoji in key
+                                'Analysis complete! View results.',
                                 languageProvider.currentLanguage)),
                           ),
                         ],
@@ -247,7 +269,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16.0),
                               child: Text(
-                                Translations.getTranslation(  // Fixed: No emoji in key
+                                Translations.getTranslation(
                                     'Analyzing video... This may take 10-30 minutes or longer.',
                                     languageProvider.currentLanguage),
                                 style: GoogleFonts.roboto(
@@ -261,7 +283,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             ),
                             const SizedBox(height: 20),
                             Text(
-                              Translations.getTranslation(  // Fixed: No emoji in key
+                              Translations.getTranslation(
                                   'Play Tic-Tac-Toe while waiting!',
                                   languageProvider.currentLanguage),
                               style: GoogleFonts.roboto(
@@ -273,8 +295,11 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                               ),
                             ),
                             const SizedBox(height: 10),
-                            TicTacToeGame(
-                                currentLanguage: languageProvider.currentLanguage),
+                            SizedBox(
+                              width: isLargeScreen ? screenWidth * 0.6 : screenWidth * 0.8,
+                              child: TicTacToeGame(
+                                  currentLanguage: languageProvider.currentLanguage),
+                            ),
                           ],
                         ),
                       ),
@@ -292,443 +317,75 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                       children: [
                         const SizedBox(height: 10),
                         // Health Status
-                        Card(
-                          color: AppColors.getSurfaceColor(
-                            modeProvider.currentMode,
-                          ).withOpacity(0.8),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        _buildResponsiveCard(
+                          context,
+                          isLargeScreen,
+                          isMediumScreen,
+                          modeProvider.currentMode,
+                          seedColor,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Text('🩺', style: GoogleFonts.roboto(fontSize: 24)),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                          'API Status', languageProvider.currentLanguage)}',
-                                      style: GoogleFonts.roboto(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.getTextColor(
-                                          modeProvider.currentMode,
-                                        ),
+                                Text('🩺', style: GoogleFonts.roboto(fontSize: 24)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${Translations.getTranslation(
+                                        'API Status', languageProvider.currentLanguage)}',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.getTextColor(
+                                        modeProvider.currentMode,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: state.health?.status == 'ok'
-                                            ? AppColors.getTertiaryColor(
-                                                seedColor,
-                                                modeProvider.currentMode,
-                                              )
-                                            : Colors.redAccent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      state.health?.status ??
-                                          Translations.getTranslation(
-                                              'Unknown',
-                                              languageProvider.currentLanguage),
-                                      style: GoogleFonts.roboto(
-                                        fontSize: 16,
-                                        color: state.health?.status == 'ok'
-                                            ? AppColors.getTertiaryColor(
-                                                seedColor,
-                                                modeProvider.currentMode,
-                                              )
-                                            : Colors.redAccent,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text('🤖', style: GoogleFonts.roboto(fontSize: 16)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${Translations.getTranslation('Model Loaded: ', languageProvider.currentLanguage)}${state.health?.modelLoaded ?? false}',
-                                      style: GoogleFonts.roboto(
-                                        color: AppColors.getTextColor(
-                                          modeProvider.currentMode,
-                                        ),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (state.health?.classes != null)
-                                  Row(
-                                    children: [
-                                      Text('📚', style: GoogleFonts.roboto(fontSize: 16)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${Translations.getTranslation('Classes: ', languageProvider.currentLanguage)}${state.health!.classes!.values.join(", ")}',
-                                        style: GoogleFonts.roboto(
-                                          color: AppColors.getTextColor(
-                                            modeProvider.currentMode,
-                                          ),
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
                                   ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Video Picker
-                        Card(
-                          color: AppColors.getSurfaceColor(
-                            modeProvider.currentMode,
-                          ).withOpacity(0.8),
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text('📹', style: GoogleFonts.roboto(fontSize: 24)),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                          'Upload Video for Analysis', languageProvider.currentLanguage)}',
-                                      style: GoogleFonts.roboto(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.getTextColor(
-                                          modeProvider.currentMode,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                FilePickerWidget(
-                                  onFilePicked: (File file) {
-                                    setState(() {
-                                      _analysisCompleted = false;
-                                    });
-                                    context.read<RefereeBloc>().add(
-                                          AnalyzeVideoEvent(video: file),
-                                        );
-                                  },
-                                  buttonText: '🎥 ${Translations.getTranslation(  // Fixed: Emoji outside key
-                                      'Upload Video for Analysis', languageProvider.currentLanguage)}',  // Reuse key for consistency
-                                  allowedExtensions: ['mp4'],
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-
-                        // Analysis Results
-                        if (state.analyzeResponse != null &&
-                            state.analyzeResponse!.ok) ...[
-                          const SizedBox(height: 20),
-                          Row(
-                            children: [
-                              Text('📊', style: GoogleFonts.roboto(fontSize: 24)),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                    'Analysis Results', languageProvider.currentLanguage)}',
-                                style: GoogleFonts.roboto(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.getTextColor(
-                                    modeProvider.currentMode,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Summary
-                          Card(
-                            color: AppColors.getSurfaceColor(
-                              modeProvider.currentMode,
-                            ).withOpacity(0.8),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text('📈', style: GoogleFonts.roboto(fontSize: 20)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                            'Summary', languageProvider.currentLanguage)}',
-                                        style: GoogleFonts.roboto(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.getTextColor(
-                                            modeProvider.currentMode,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _buildSummaryItem(
-                                    '🏃 ${Translations.getTranslation('Total Distance',
-                                        languageProvider.currentLanguage)}',
-                                    '${state.analyzeResponse!.summary.totalDistanceKm.toStringAsFixed(2)} km',
-                                    modeProvider.currentMode,
-                                    seedColor,
-                                  ),
-                                  _buildSummaryItem(
-                                    '⚡ ${Translations.getTranslation('Average Speed',
-                                        languageProvider.currentLanguage)}',
-                                    '${state.analyzeResponse!.summary.avgSpeedKmH.toStringAsFixed(2)} km/h',
-                                    modeProvider.currentMode,
-                                    seedColor,
-                                  ),
-                                  _buildSummaryItem(
-                                    '🚀 ${Translations.getTranslation('Max Speed',
-                                        languageProvider.currentLanguage)}',
-                                    '${state.analyzeResponse!.summary.maxSpeedKmH.toStringAsFixed(2)} km/h',
-                                    modeProvider.currentMode,
-                                    seedColor,
-                                  ),
-                                  _buildSummaryItem(
-                                    '💨 ${Translations.getTranslation(
-                                        'Sprints', languageProvider.currentLanguage)}',
-                                    '${state.analyzeResponse!.summary.sprints}',
-                                    modeProvider.currentMode,
-                                    seedColor,
-                                  ),
-                                  _buildSummaryItem(
-                                    '⏰ ${Translations.getTranslation(
-                                        'First Half Distance',
-                                        languageProvider.currentLanguage)}',
-                                    '${state.analyzeResponse!.summary.distanceFirstHalfKm.toStringAsFixed(2)} km',
-                                    modeProvider.currentMode,
-                                    seedColor,
-                                  ),
-                                  _buildSummaryItem(
-                                    '🏁 ${Translations.getTranslation(
-                                        'Second Half Distance',
-                                        languageProvider.currentLanguage)}',
-                                    '${state.analyzeResponse!.summary.distanceSecondHalfKm.toStringAsFixed(2)} km',
-                                    modeProvider.currentMode,
-                                    seedColor,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Download Buttons
-                          Card(
-                            color: AppColors.getSurfaceColor(
-                              modeProvider.currentMode,
-                            ).withOpacity(0.8),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text('📥', style: GoogleFonts.roboto(fontSize: 20)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                            'Downloads', languageProvider.currentLanguage)}',
-                                        style: GoogleFonts.roboto(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.getTextColor(
-                                            modeProvider.currentMode,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  LayoutBuilder(
-                                    builder: (context, constraints) {
-                                      if (constraints.maxWidth < 600) {
-                                        return Column(
-                                          children: [
-                                            _buildDownloadButton(
-                                              '📄',
-                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                                  'Download Report TXT', languageProvider.currentLanguage)}',
-                                              () async {
-                                                final url =
-                                                    '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
-                                                if (await canLaunchUrl(Uri.parse(url))) {
-                                                  await launchUrl(Uri.parse(url));
-                                                } else {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        Translations.getTranslation(
-                                                            'Could not open report',
-                                                            languageProvider.currentLanguage),
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              modeProvider.currentMode,
-                                              seedColor,
-                                            ),
-                                            const SizedBox(height: 10),
-                                            _buildDownloadButton(
-                                              '📊',
-                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                                  'Download Metrics CSV', languageProvider.currentLanguage)}',
-                                              () async {
-                                                final url =
-                                                    '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
-                                                if (await canLaunchUrl(Uri.parse(url))) {
-                                                  await launchUrl(Uri.parse(url));
-                                                } else {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        Translations.getTranslation(
-                                                            'Could not open metrics CSV',
-                                                            languageProvider.currentLanguage),
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              modeProvider.currentMode,
-                                              seedColor,
-                                            ),
-                                          ],
-                                        );
-                                      } else {
-                                        return Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            _buildDownloadButton(
-                                              '📄',
-                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                                  'Download Report TXT', languageProvider.currentLanguage)}',
-                                              () async {
-                                                final url =
-                                                    '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
-                                                if (await canLaunchUrl(Uri.parse(url))) {
-                                                  await launchUrl(Uri.parse(url));
-                                                } else {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        Translations.getTranslation(
-                                                            'Could not open report',
-                                                            languageProvider.currentLanguage),
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              modeProvider.currentMode,
-                                              seedColor,
-                                            ),
-                                            _buildDownloadButton(
-                                              '📊',
-                                              '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                                  'Download Metrics CSV', languageProvider.currentLanguage)}',
-                                              () async {
-                                                final url =
-                                                    '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
-                                                if (await canLaunchUrl(Uri.parse(url))) {
-                                                  await launchUrl(Uri.parse(url));
-                                                } else {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        Translations.getTranslation(
-                                                            'Could not open metrics CSV',
-                                                            languageProvider.currentLanguage),
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              },
-                                              modeProvider.currentMode,
-                                              seedColor,
-                                            ),
-                                          ],
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // Report Text
-                          Card(
-                            color: AppColors.getSurfaceColor(
-                              modeProvider.currentMode,
-                            ).withOpacity(0.8),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: ExpansionTile(
-                              leading: Text('📖', style: GoogleFonts.roboto(fontSize: 24, color: Colors.brown)),
-                              title: Text(
-                                '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                    'Full Report', languageProvider.currentLanguage)}',
-                                style: GoogleFonts.roboto(
-                                  color: AppColors.getTextColor(
-                                    modeProvider.currentMode,
-                                  ),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                            const SizedBox(height: 8),
+                            Row(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: SelectableText(
-                                    state.reportText ??
-                                        Translations.getTranslation(
-                                            'No report available',
-                                            languageProvider.currentLanguage),
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: state.health?.status == 'ok'
+                                        ? AppColors.getTertiaryColor(
+                                            seedColor,
+                                            modeProvider.currentMode,
+                                          )
+                                        : Colors.redAccent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  state.health?.status ??
+                                      Translations.getTranslation(
+                                          'Unknown',
+                                          languageProvider.currentLanguage),
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 16,
+                                    color: state.health?.status == 'ok'
+                                        ? AppColors.getTertiaryColor(
+                                            seedColor,
+                                            modeProvider.currentMode,
+                                          )
+                                        : Colors.redAccent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text('🤖', style: GoogleFonts.roboto(fontSize: 16)),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    '${Translations.getTranslation('Model Loaded: ', languageProvider.currentLanguage)}${state.health?.modelLoaded ?? false}',
                                     style: GoogleFonts.roboto(
                                       color: AppColors.getTextColor(
                                         modeProvider.currentMode,
@@ -739,6 +396,356 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                                 ),
                               ],
                             ),
+                            if (state.health?.classes != null)
+                              Row(
+                                children: [
+                                  Text('📚', style: GoogleFonts.roboto(fontSize: 16)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${Translations.getTranslation('Classes: ', languageProvider.currentLanguage)}${state.health!.classes!.values.join(", ")}',
+                                      style: GoogleFonts.roboto(
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Video Picker
+                        _buildResponsiveCard(
+                          context,
+                          isLargeScreen,
+                          isMediumScreen,
+                          modeProvider.currentMode,
+                          seedColor,
+                          children: [
+                            Row(
+                              children: [
+                                Text('📹', style: GoogleFonts.roboto(fontSize: 24)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${Translations.getTranslation(
+                                        'Upload Video for Analysis', languageProvider.currentLanguage)}',
+                                    style: GoogleFonts.roboto(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.getTextColor(
+                                        modeProvider.currentMode,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            FilePickerWidget(
+                              onFilePicked: (File file) {
+                                setState(() {
+                                  _analysisCompleted = false;
+                                });
+                                context.read<RefereeBloc>().add(
+                                      AnalyzeVideoEvent(video: file),
+                                    );
+                              },
+                              buttonText: '🎥 ${Translations.getTranslation(
+                                  'Upload Video for Analysis', languageProvider.currentLanguage)}',
+                              allowedExtensions: ['mp4'],
+                            ),
+                          ],
+                        ),
+
+                        // Analysis Results
+                        if (state.analyzeResponse != null &&
+                            state.analyzeResponse!.ok) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Text('📊', style: GoogleFonts.roboto(fontSize: 24)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${Translations.getTranslation(
+                                      'Analysis Results', languageProvider.currentLanguage)}',
+                                  style: GoogleFonts.roboto(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Summary
+                          _buildResponsiveCard(
+                            context,
+                            isLargeScreen,
+                            isMediumScreen,
+                            modeProvider.currentMode,
+                            seedColor,
+                            children: [
+                              Row(
+                                children: [
+                                  Text('📈', style: GoogleFonts.roboto(fontSize: 20)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${Translations.getTranslation(
+                                          'Summary', languageProvider.currentLanguage)}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildSummaryItem(
+                                '🏃 ${Translations.getTranslation('Total Distance',
+                                    languageProvider.currentLanguage)}',
+                                '${state.analyzeResponse!.summary.totalDistanceKm.toStringAsFixed(2)} km',
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
+                              _buildSummaryItem(
+                                '⚡ ${Translations.getTranslation('Average Speed',
+                                    languageProvider.currentLanguage)}',
+                                '${state.analyzeResponse!.summary.avgSpeedKmH.toStringAsFixed(2)} km/h',
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
+                              _buildSummaryItem(
+                                '🚀 ${Translations.getTranslation('Max Speed',
+                                    languageProvider.currentLanguage)}',
+                                '${state.analyzeResponse!.summary.maxSpeedKmH.toStringAsFixed(2)} km/h',
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
+                              _buildSummaryItem(
+                                '💨 ${Translations.getTranslation(
+                                    'Sprints', languageProvider.currentLanguage)}',
+                                '${state.analyzeResponse!.summary.sprints}',
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
+                              _buildSummaryItem(
+                                '⏰ ${Translations.getTranslation(
+                                    'First Half Distance',
+                                    languageProvider.currentLanguage)}',
+                                '${state.analyzeResponse!.summary.distanceFirstHalfKm.toStringAsFixed(2)} km',
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
+                              _buildSummaryItem(
+                                '🏁 ${Translations.getTranslation(
+                                    'Second Half Distance',
+                                    languageProvider.currentLanguage)}',
+                                '${state.analyzeResponse!.summary.distanceSecondHalfKm.toStringAsFixed(2)} km',
+                                modeProvider.currentMode,
+                                seedColor,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Download Buttons
+                          _buildResponsiveCard(
+                            context,
+                            isLargeScreen,
+                            isMediumScreen,
+                            modeProvider.currentMode,
+                            seedColor,
+                            children: [
+                              Row(
+                                children: [
+                                  Text('📥', style: GoogleFonts.roboto(fontSize: 20)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${Translations.getTranslation(
+                                          'Downloads', languageProvider.currentLanguage)}',
+                                      style: GoogleFonts.roboto(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  if (constraints.maxWidth < 600) {
+                                    return Column(
+                                      children: [
+                                        _buildDownloadButton(
+                                          '📄',
+                                          '${Translations.getTranslation(
+                                              'Download Report TXT', languageProvider.currentLanguage)}',
+                                          () async {
+                                            final url =
+                                                '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
+                                            if (await canLaunchUrl(Uri.parse(url))) {
+                                              await launchUrl(Uri.parse(url));
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    Translations.getTranslation(
+                                                        'Could not open report',
+                                                        languageProvider.currentLanguage),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          modeProvider.currentMode,
+                                          seedColor,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        _buildDownloadButton(
+                                          '📊',
+                                          '${Translations.getTranslation(
+                                              'Download Metrics CSV', languageProvider.currentLanguage)}',
+                                          () async {
+                                            final url =
+                                                '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
+                                            if (await canLaunchUrl(Uri.parse(url))) {
+                                              await launchUrl(Uri.parse(url));
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    Translations.getTranslation(
+                                                        'Could not open metrics CSV',
+                                                        languageProvider.currentLanguage),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          modeProvider.currentMode,
+                                          seedColor,
+                                        ),
+                                      ],
+                                    );
+                                  } else {
+                                    return Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        _buildDownloadButton(
+                                          '📄',
+                                          '${Translations.getTranslation(
+                                              'Download Report TXT', languageProvider.currentLanguage)}',
+                                          () async {
+                                            final url =
+                                                '$baseUrl${state.analyzeResponse!.artifacts.reportUrl}';
+                                            if (await canLaunchUrl(Uri.parse(url))) {
+                                              await launchUrl(Uri.parse(url));
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    Translations.getTranslation(
+                                                        'Could not open report',
+                                                        languageProvider.currentLanguage),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          modeProvider.currentMode,
+                                          seedColor,
+                                        ),
+                                        _buildDownloadButton(
+                                          '📊',
+                                          '${Translations.getTranslation(
+                                              'Download Metrics CSV', languageProvider.currentLanguage)}',
+                                          () async {
+                                            final url =
+                                                '$baseUrl${state.analyzeResponse!.artifacts.metricsUrl}';
+                                            if (await canLaunchUrl(Uri.parse(url))) {
+                                              await launchUrl(Uri.parse(url));
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    Translations.getTranslation(
+                                                        'Could not open metrics CSV',
+                                                        languageProvider.currentLanguage),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          modeProvider.currentMode,
+                                          seedColor,
+                                        ),
+                                      ],
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+
+                          // Report Text
+                          _buildResponsiveCard(
+                            context,
+                            isLargeScreen,
+                            isMediumScreen,
+                            modeProvider.currentMode,
+                            seedColor,
+                            children: [
+                              ExpansionTile(
+                                leading: Text('📖', style: GoogleFonts.roboto(fontSize: 24, color: Colors.brown)),
+                                title: Text(
+                                  '${Translations.getTranslation(
+                                      'Full Report', languageProvider.currentLanguage)}',
+                                  style: GoogleFonts.roboto(
+                                    color: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: SelectableText(
+                                      state.reportText ??
+                                          Translations.getTranslation(
+                                              'No report available',
+                                              languageProvider.currentLanguage),
+                                      style: GoogleFonts.roboto(
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
 
                           // Visualizations
@@ -747,15 +754,17 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                             children: [
                               Text('👁️', style: GoogleFonts.roboto(fontSize: 20)),
                               const SizedBox(width: 4),
-                              Text(
-                                '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                    'Visualizations', languageProvider.currentLanguage)}',
-                                style: GoogleFonts.roboto(
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.getTextColor(
-                                    modeProvider.currentMode,
+                              Expanded(
+                                child: Text(
+                                  '${Translations.getTranslation(
+                                      'Visualizations', languageProvider.currentLanguage)}',
+                                  style: GoogleFonts.roboto(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ),
+                                    fontSize: 16,
                                   ),
-                                  fontSize: 16,
                                 ),
                               ),
                             ],
@@ -787,23 +796,20 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
 
                           // Output Video
                           const SizedBox(height: 20),
-                          Card(
-                            color: AppColors.getSurfaceColor(
-                              modeProvider.currentMode,
-                            ).withOpacity(0.8),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text('▶️', style: GoogleFonts.roboto(fontSize: 20, color: Colors.red)),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${Translations.getTranslation(  // Fixed: Emoji outside key
+                          _buildResponsiveCard(
+                            context,
+                            isLargeScreen,
+                            isMediumScreen,
+                            modeProvider.currentMode,
+                            seedColor,
+                            children: [
+                              Row(
+                                children: [
+                                  Text('▶️', style: GoogleFonts.roboto(fontSize: 20, color: Colors.red)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${Translations.getTranslation(
                                           'Output Video', languageProvider.currentLanguage)}',
                                       style: GoogleFonts.roboto(
                                         fontWeight: FontWeight.bold,
@@ -813,38 +819,38 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                                         fontSize: 16,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                VideoPlayerWidget(
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                height: isLargeScreen ? 300 : 200,
+                                child: VideoPlayerWidget(
                                   videoUrl:
                                       '$baseUrl${state.analyzeResponse!.artifacts.outputVideoUrl}',
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
 
                           // Sample Frames
                           if (state.analyzeResponse!.artifacts.sampleFramesUrls
                               .isNotEmpty) ...[
                             const SizedBox(height: 20),
-                            Card(
-                              color: AppColors.getSurfaceColor(
-                                modeProvider.currentMode,
-                              ).withOpacity(0.8),
-                              elevation: 4,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text('📸', style: GoogleFonts.roboto(fontSize: 20, color: Colors.orange)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
+                            _buildResponsiveCard(
+                              context,
+                              isLargeScreen,
+                              isMediumScreen,
+                              modeProvider.currentMode,
+                              seedColor,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('📸', style: GoogleFonts.roboto(fontSize: 20, color: Colors.orange)),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        '${Translations.getTranslation(
                                             'Sample Frames', languageProvider.currentLanguage)}',
                                         style: GoogleFonts.roboto(
                                           fontWeight: FontWeight.bold,
@@ -854,184 +860,205 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                                           fontSize: 16,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  SizedBox(
-                                    height: 200,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: state
-                                          .analyzeResponse!.artifacts.sampleFramesUrls.length,
-                                      itemBuilder: (context, index) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(right: 8.0),
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (context) => Dialog(
-                                                  child: Image.network(
-                                                    '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
-                                                    fit: BoxFit.contain,
-                                                    errorBuilder: (context, error, stackTrace) =>
-                                                        Text(
-                                                      Translations.getTranslation(
-                                                          'Failed to load frame',
-                                                          languageProvider.currentLanguage),
-                                                      style: GoogleFonts.roboto(
-                                                        color: AppColors.getTextColor(
-                                                          modeProvider.currentMode,
-                                                        ),
-                                                        fontSize: 14,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: isLargeScreen ? 250 : 150,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: state
+                                        .analyzeResponse!.artifacts.sampleFramesUrls.length,
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(right: 8.0),
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => Dialog(
+                                                child: Image.network(
+                                                  '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (context, error, stackTrace) =>
+                                                      Text(
+                                                    Translations.getTranslation(
+                                                        'Failed to load frame',
+                                                        languageProvider.currentLanguage),
+                                                    style: GoogleFonts.roboto(
+                                                      color: AppColors.getTextColor(
+                                                        modeProvider.currentMode,
                                                       ),
+                                                      fontSize: 14,
                                                     ),
                                                   ),
                                                 ),
-                                              );
-                                            },
-                                            child: Container(
-                                              constraints: const BoxConstraints(
-                                                maxWidth: 150,
                                               ),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: AppColors.getTertiaryColor(
-                                                    seedColor,
-                                                    modeProvider.currentMode,
-                                                  ).withOpacity(0.3),
-                                                  width: 1,
+                                            );
+                                          },
+                                          child: Container(
+                                            constraints: BoxConstraints(
+                                              maxWidth: isLargeScreen ? 200 : 150,
+                                              maxHeight: isLargeScreen ? 250 : 150,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              borderRadius: BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: AppColors.getTertiaryColor(
+                                                  seedColor,
+                                                  modeProvider.currentMode,
+                                                ).withOpacity(0.3),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(12),
+                                              child: Image.network(
+                                                '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
+                                                fit: BoxFit.contain,
+                                                errorBuilder:
+                                                    (context, error, stackTrace) => Container(
+                                                  color: Colors.grey[300],
+                                                  child: Text('❌', style: GoogleFonts.roboto(fontSize: 50, color: Colors.red)),
                                                 ),
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(12),
-                                                child: Image.network(
-                                                  '$baseUrl${state.analyzeResponse!.artifacts.sampleFramesUrls[index]}',
-                                                  width: 150,
-                                                  fit: BoxFit.contain,
-                                                  errorBuilder:
-                                                      (context, error, stackTrace) => Container(
-                                                    width: 150,
-                                                    height: 150,
-                                                    color: Colors.grey[300],
-                                                    child: Text('❌', style: GoogleFonts.roboto(fontSize: 50, color: Colors.red)),
-                                                  ),
-                                                  loadingBuilder:
-                                                      (context, child, loadingProgress) {
-                                                    if (loadingProgress == null) return child;
-                                                    return Center(
-                                                      child: CircularProgressIndicator(
-                                                        value: loadingProgress
-                                                                .expectedTotalBytes !=
-                                                            null
-                                                            ? loadingProgress
-                                                                    .cumulativeBytesLoaded /
-                                                                (loadingProgress
-                                                                        .expectedTotalBytes ??
-                                                                    1)
-                                                            : null,
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation(
-                                                          AppColors.getTertiaryColor(
-                                                            seedColor,
-                                                            modeProvider.currentMode,
-                                                          ),
+                                                loadingBuilder:
+                                                    (context, child, loadingProgress) {
+                                                  if (loadingProgress == null) return child;
+                                                  return Center(
+                                                    child: CircularProgressIndicator(
+                                                      value: loadingProgress
+                                                              .expectedTotalBytes !=
+                                                          null
+                                                          ? loadingProgress
+                                                                  .cumulativeBytesLoaded /
+                                                              (loadingProgress
+                                                                      .expectedTotalBytes ??
+                                                                  1)
+                                                          : null,
+                                                      valueColor:
+                                                          AlwaysStoppedAnimation(
+                                                        AppColors.getTertiaryColor(
+                                                          seedColor,
+                                                          modeProvider.currentMode,
                                                         ),
                                                       ),
-                                                    );
-                                                  },
-                                                ),
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
                                           ),
-                                        );
-                                      },
-                                    ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ],
 
                           // Clean Button
                           const SizedBox(height: 20),
-                          Card(
-                            color: AppColors.getSurfaceColor(
-                              modeProvider.currentMode,
-                            ).withOpacity(0.8),
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          _buildResponsiveCard(
+                            context,
+                            isLargeScreen,
+                            isMediumScreen,
+                            modeProvider.currentMode,
+                            seedColor,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
+                                  Text('🧹', style: GoogleFonts.roboto(fontSize: 20, color: Colors.red)),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      '${Translations.getTranslation(
+                                          'Clean Server Files', languageProvider.currentLanguage)}',
+                                      style: GoogleFonts.roboto(
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(
+                                          modeProvider.currentMode,
+                                        ),
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () =>
+                                      context.read<RefereeBloc>().add(CleanFilesEvent()),
+                                  icon: Text('🗑️', style: GoogleFonts.roboto(fontSize: 18, color: Colors.white)),
+                                  label: Text('${Translations.getTranslation(
+                                      'Clean Files', languageProvider.currentLanguage)}'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.redAccent,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              if (state.cleanResponse != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Row(
                                     children: [
-                                      Text('🧹', style: GoogleFonts.roboto(fontSize: 20, color: Colors.red)),
+                                      Text('✅', style: GoogleFonts.roboto(fontSize: 16, color: Colors.green)),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        '${Translations.getTranslation(  // Fixed: Emoji outside key
-                                            'Clean Server Files', languageProvider.currentLanguage)}',
-                                        style: GoogleFonts.roboto(
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.getTextColor(
-                                            modeProvider.currentMode,
+                                      Expanded(
+                                        child: Text(
+                                          '${Translations.getTranslation('Cleaned ', languageProvider.currentLanguage)}${state.cleanResponse!.removed}${Translations.getTranslation(' files', languageProvider.currentLanguage)}',
+                                          style: GoogleFonts.roboto(
+                                            color: AppColors.getTextColor(
+                                              modeProvider.currentMode,
+                                            ),
+                                            fontSize: 14,
                                           ),
-                                          fontSize: 16,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton.icon(
-                                    onPressed: () =>
-                                        context.read<RefereeBloc>().add(CleanFilesEvent()),
-                                    icon: Text('🗑️', style: GoogleFonts.roboto(fontSize: 18, color: Colors.white)),
-                                    label: Text('${Translations.getTranslation(  // Fixed: Emoji outside key
-                                        'Clean Files', languageProvider.currentLanguage)}'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.redAccent,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  ),
-                                  if (state.cleanResponse != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Row(
-                                        children: [
-                                          Text('✅', style: GoogleFonts.roboto(fontSize: 16, color: Colors.green)),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${Translations.getTranslation('Cleaned ', languageProvider.currentLanguage)}${state.cleanResponse!.removed}${Translations.getTranslation(' files', languageProvider.currentLanguage)}',
-                                            style: GoogleFonts.roboto(
-                                              color: AppColors.getTextColor(
-                                                modeProvider.currentMode,
-                                              ),
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                ),
+                            ],
                           ),
                         ],
-                        ],
-                      ),
+                      ],
                     ),
-                  );
+                  ),
+                );
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResponsiveCard(
+    BuildContext context,
+    bool isLargeScreen,
+    bool isMediumScreen,
+    int mode,
+    Color seedColor, {
+    required List<Widget> children,
+  }) {
+    return Card(
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(isLargeScreen ? 24.0 : (isMediumScreen ? 20.0 : 16.0)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
         ),
       ),
     );
@@ -1088,23 +1115,26 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
     int mode,
     Color seedColor,
   ) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Text(iconEmoji, style: GoogleFonts.roboto(fontSize: 18)),
-      label: Text(
-        label,
-        style: GoogleFonts.roboto(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Text(iconEmoji, style: GoogleFonts.roboto(fontSize: 18)),
+        label: Text(
+          label,
+          style: GoogleFonts.roboto(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.getTertiaryColor(seedColor, mode),
-        foregroundColor: AppColors.getTextColor(mode),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.getTertiaryColor(seedColor, mode),
+          foregroundColor: AppColors.getTextColor(mode),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );
   }
@@ -1117,6 +1147,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
     String currentLanguage,
     String title,
   ) {
+    final isLargeScreen = screenWidth > 600;
     return Card(
       color: AppColors.getSurfaceColor(
         mode,
@@ -1126,7 +1157,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isLargeScreen ? 20.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1134,14 +1165,16 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
               children: [
                 Text('🖼️', style: GoogleFonts.roboto(fontSize: 20, color: Colors.teal)),
                 const SizedBox(width: 4),
-                Text(
-                  title,
-                  style: GoogleFonts.roboto(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.getTextColor(
-                      mode,
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.roboto(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTextColor(
+                        mode,
+                      ),
+                      fontSize: 16,
                     ),
-                    fontSize: 16,
                   ),
                 ),
               ],
@@ -1156,7 +1189,7 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                     url,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => Text(
-                      Translations.getTranslation('Failed to load image', currentLanguage),  // Fixed: No emoji in key
+                      Translations.getTranslation('Failed to load image', currentLanguage),
                       style: GoogleFonts.roboto(
                         color: AppColors.getTextColor(mode),
                         fontSize: 14,
@@ -1223,7 +1256,7 @@ class _FootballGridPainter extends CustomPainter {
       ..color = AppColors.getTextColor(mode).withOpacity(0.04)
       ..strokeWidth = 0.5;
 
-    const step = 50.0;
+    final step = size.width > 600 ? 60.0 : 50.0;
     for (double x = 0; x <= size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
@@ -1236,7 +1269,7 @@ class _FootballGridPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    final inset = 40.0;
+    final inset = size.width > 600 ? 50.0 : 40.0;
     final rect = Rect.fromLTWH(
       inset,
       inset * 2,
@@ -1491,8 +1524,10 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
     final seedColor =
         AppColors.seedColors[modeProvider.currentMode] ??
         AppColors.seedColors[1]!;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > 600;
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(isLargeScreen ? 20.0 : 16.0),
       decoration: BoxDecoration(
         color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
         borderRadius: BorderRadius.circular(12),
@@ -1505,52 +1540,57 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
           Row(
             children: [
               const SizedBox(width: 4),
-              Text(
-                '🎮 ${Translations.getTranslation(  
-                    'Tic-Tac-Toe', widget.currentLanguage)}',
-                style: GoogleFonts.roboto(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.getTextColor(modeProvider.currentMode),
+              Expanded(
+                child: Text(
+                  '🎮 ${Translations.getTranslation(
+                      'Tic-Tac-Toe', widget.currentLanguage)}',
+                  style: GoogleFonts.roboto(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.getTextColor(modeProvider.currentMode),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 1,
-            ),
-            itemCount: 9,
-            itemBuilder: (context, index) {
-              final row = index ~/ 3;
-              final col = index % 3;
-              return GestureDetector(
-                onTap: () => makeMove(row, col),
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
-                          .withOpacity(0.5),
+          SizedBox(
+            width: isLargeScreen ? 300 : screenWidth * 0.8,
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 1,
+              ),
+              itemCount: 9,
+              itemBuilder: (context, index) {
+                final row = index ~/ 3;
+                final col = index % 3;
+                return GestureDetector(
+                  onTap: () => makeMove(row, col),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
+                            .withOpacity(0.5),
+                      ),
+                      color: AppColors.getBackgroundColor(modeProvider.currentMode),
                     ),
-                    color: AppColors.getBackgroundColor(modeProvider.currentMode),
-                  ),
-                  child: Center(
-                    child: Text(
-                      board[row][col],
-                      style: GoogleFonts.roboto(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.getTextColor(modeProvider.currentMode),
+                    child: Center(
+                      child: Text(
+                        board[row][col],
+                        style: GoogleFonts.roboto(
+                          fontSize: isLargeScreen ? 50 : 40,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.getTextColor(modeProvider.currentMode),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
           if (gameOver)
             Padding(
@@ -1566,36 +1606,40 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
                       style: GoogleFonts.roboto(fontSize: 20, color: winner == 'X' ? Colors.green : Colors.red),
                     ),
                   const SizedBox(width: 8),
-                  Text(
-                    winner == 'Draw'
-                        ? '🤝 ${Translations.getTranslation(  // Fixed: Emoji outside key
-                            "It's a draw!", widget.currentLanguage)}'
-                        : '$winner${Translations.getTranslation(  // Fixed: Emoji outside key
-                            ' wins!', widget.currentLanguage)} 🏆',
-                    style: GoogleFonts.roboto(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                  Expanded(
+                    child: Text(
+                      winner == 'Draw'
+                          ? '🤝 ${Translations.getTranslation("It's a draw!", widget.currentLanguage)}'
+                          : '$winner${Translations.getTranslation(' wins!', widget.currentLanguage)} 🏆',
+                      style: GoogleFonts.roboto(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
               ),
             ),
           const SizedBox(height: 10),
-          ElevatedButton.icon(
-            onPressed: resetGame,
-            icon: Text('🔄', style: GoogleFonts.roboto(fontSize: 18)),
-            label: Text(
-              '${Translations.getTranslation( 
-                  'Reset Game', widget.currentLanguage)}',
-              style: GoogleFonts.roboto(fontSize: 16),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
-              foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: resetGame,
+              icon: Text('🔄', style: GoogleFonts.roboto(fontSize: 18)),
+              label: Text(
+                '${Translations.getTranslation(
+                    'Reset Game', widget.currentLanguage)}',
+                style: GoogleFonts.roboto(fontSize: 16),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),

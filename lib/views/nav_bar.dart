@@ -1,26 +1,33 @@
-// Updated file: lib/views/nav_bar.dart
+// lib/views/nav/nav_page.dart (fixed: add back arrow leading for visitor only; ensure settings always visible; center single nav item; remove dots under emojis; only show emojis)
+import 'dart:ui' show ImageFilter;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:VarXPro/views/setting/views/settings_page.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:VarXPro/views/pages/LiveStream/controller/live_stream_controller.dart';
-import 'package:VarXPro/views/pages/LiveStream/views/live_stream_dashboard.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
-import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
-import 'package:VarXPro/views/pages/FauteDetectiong/service/FoulDetectionService.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/view/key_field_lines_page.dart';
+import 'package:VarXPro/views/connexion/providers/auth_provider.dart'; // Add auth provider
+
+// PAGES
+import 'package:VarXPro/views/pages/home/view/home_page.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/service/referee_api_service.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/view/referee_tracking.dart';
-import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/service/tracking_service.dart';
-import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/view/tracking_page.dart';
+import 'package:VarXPro/views/pages/FauteDetectiong/service/FoulDetectionService.dart';
+import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
+import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
+import 'package:VarXPro/views/pages/FiledLinesPages/view/key_field_lines_page.dart';
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/view/offside_page.dart';
-import 'package:VarXPro/views/pages/home/view/home_page.dart';
+import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/service/tracking_service.dart';
+import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/view/tracking_page.dart';
+import 'package:VarXPro/views/pages/LiveStream/controller/live_stream_controller.dart';
+import 'package:VarXPro/views/pages/LiveStream/views/live_stream_dashboard.dart';
 
 class NavPage extends StatefulWidget {
   const NavPage({super.key});
@@ -31,529 +38,390 @@ class NavPage extends StatefulWidget {
 
 class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
   int _selectedIndex = 0;
-  late AnimationController _glowController;
-  late AnimationController _bubbleController;
 
-  final List<Widget> _pages = [
-    const HomePage(),
-    RepositoryProvider(
-      create: (context) => RefereeService(),
-      child: const RefereeTrackingSystemPage(),
-    ),
-    RepositoryProvider(
-      create: (context) => FoulDetectionService(),
-      child: const FoulDetectionPage(),
-    ),
-    RepositoryProvider(
-      create: (context) => PerspectiveService(),
-      child: const KeyFieldLinesPage(),
-    ),
-    RepositoryProvider(
-      create: (context) => OffsideService(),
-      child: const OffsidePage(),
-    ),
-    RepositoryProvider(
-      create: (context) => TrackingService(),
-      child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage(),
-    ),
-    RepositoryProvider(
-      create: (context) => LiveStreamController(),
-      child: const LiveStreamDashboard(),
-    ),
-  ];
+  late List<_NavItem> _navItems;
+  late final List<Widget> _pages;
 
-  final List<Map<String, dynamic>> _modes = [
-    {"name": "Classic Mode", "emoji": "⚽", "color": Colors.green},
-    {"name": "Light Mode", "emoji": "☀️", "color": Colors.yellow},
-    {"name": "Pro Analysis Mode", "emoji": "📊", "color": Colors.blue},
-    {"name": "VAR Vision Mode", "emoji": "📹", "color": Colors.purple},
-    {"name": "Referee Mode", "emoji": "👨‍⚖️", "color": Colors.red},
-  ];
+  // Anim “pill” sélectionné
+  late final AnimationController _pillController;
+  late Animation<double> _pillScale;
 
   @override
   void initState() {
     super.initState();
-    _selectedIndex = 0;
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1600),
-      lowerBound: 0.8,
-      upperBound: 1.0,
-    )..repeat(reverse: true);
+    _pages = [
+      const HomePage(),
+      RepositoryProvider(create: (_) => RefereeService(), child: const RefereeTrackingSystemPage()),
+      RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()),
+      RepositoryProvider(create: (_) => PerspectiveService(), child: const KeyFieldLinesPage()),
+      RepositoryProvider(create: (_) => OffsideService(), child: const OffsidePage()),
+      RepositoryProvider(create: (_) => TrackingService(), child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage()),
+      RepositoryProvider(create: (_) => LiveStreamController(), child: const LiveStreamDashboard()),
+    ];
 
-    _bubbleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
+    _pillController = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
+    _pillScale = Tween<double>(begin: .92, end: 1.0)
+        .animate(CurvedAnimation(parent: _pillController, curve: Curves.easeOutBack));
+    _pillController.forward();
   }
 
   @override
   void dispose() {
-    _glowController.dispose();
-    _bubbleController.dispose();
+    _pillController.dispose();
     super.dispose();
   }
 
-  void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
-    _bubbleController.forward(from: 0.0);
+  void _onTapNav(int i) {
+    final target = _navItems[i].pageIndex;
+    if (target == _selectedIndex) return;
+    HapticFeedback.lightImpact();
+    setState(() => _selectedIndex = target);
+    _pillController..reset()..forward();
+  }
+
+  Future<bool> _showExitDialog() async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App?'),
+        content: const Text('Are you sure you want to exit VAR X PRO?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Exit')),
+        ],
+      ),
+    );
+    if (shouldExit == true) {
+      SystemNavigator.pop(); // Exit app
+    }
+    return shouldExit ?? false;
+  }
+
+  String _titleForIndex(int pageIndex, String lang) {
+    if (pageIndex == 0) return 'Home';
+    // mapping selon Translations.getTitle(index)
+    final mapToOld = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5};
+    return Translations.getTitle(mapToOld[pageIndex] ?? 0, lang);
+  }
+
+  String _emojiForIndex(int pageIndex) {
+    switch (pageIndex) {
+      case 0: return '🏠';
+      case 1: return '🧑‍⚖️';
+      case 2: return '🛑';
+      case 3: return '🗺️';
+      case 4: return '🚩';
+      case 5: return '📊';
+      case 6: return '📡';
+      default: return '⚽';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
     final modeProvider = Provider.of<ModeProvider>(context);
-    final historyProvider = Provider.of<HistoryProvider>(context); // Add this
-    final currentLang = langProvider.currentLanguage;
-    final seedColor =
-        AppColors.seedColors[modeProvider.currentMode] ??
-        AppColors.seedColors[1]!;
+    final historyProvider = Provider.of<HistoryProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context); // Add auth check
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 400;
-    final isLightMode = modeProvider.currentMode == 1; // Assuming index 1 is Light Mode
+    final currentLang = (langProvider.currentLanguage);
+    final seed = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final w = MediaQuery.sizeOf(context).width;
+    final isCompact = w < 360;
 
-    return Scaffold(
-      backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
-      appBar: AppBar(
-        // Removed leading language button
-        title: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          child: Text(
-            _selectedIndex == 0
-                ? 'Home'
-                : Translations.getTitle(_selectedIndex - 1, currentLang),
-            key: ValueKey<String>(
-              _selectedIndex == 0
-                  ? 'Home'
-                  : Translations.getTitle(_selectedIndex - 1, currentLang),
-            ),
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: isSmallScreen ? 20 : 24,
-              color: Colors.white,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          // Settings button with badge
-          Stack(
-            children: [
-              IconButton(
-                icon: Icon(Icons.settings, color: Colors.white, size: isSmallScreen ? 24 : 28),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => SettingsPage(
-                        langProvider: langProvider,
-                        modeProvider: modeProvider,
-                        currentLang: currentLang ?? 'en',
-                      ),
-                    ),
-                  );
-                },
-              ),
-              if (historyProvider.historyCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
-                    child: Text(
-                      '${historyProvider.historyCount}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-        backgroundColor: AppColors.getPrimaryColor(
-          seedColor,
-          modeProvider.currentMode,
-        ),
-        elevation: 4,
-        shadowColor: AppColors.getShadowColor(
-          seedColor,
-          modeProvider.currentMode,
-        ).withOpacity(0.5),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: AppColors.getAppBarGradient(modeProvider.currentMode),
-          ),
-        ),
-      ),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 600),
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          final offsetAnimation = Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(animation);
-          return SlideTransition(
-            position: offsetAnimation,
-            child: FadeTransition(opacity: animation, child: child),
-          );
-        },
-        child: Container(
-          key: ValueKey<int>(_selectedIndex),
-          decoration: BoxDecoration(
-            gradient: AppColors.getBodyGradient(modeProvider.currentMode),
-          ),
-          child: _pages[_selectedIndex],
-        ),
-      ),
-      bottomNavigationBar: _buildResponsiveBottomNavBar(
-        langProvider,
-        modeProvider,
-        currentLang,
-        seedColor,
-        isSmallScreen,
-        isLightMode,
-      ),
-    );
-  }
+    final title = _titleForIndex(_selectedIndex, currentLang);
+    final emoji = _emojiForIndex(_selectedIndex);
 
-  Widget _buildResponsiveBottomNavBar(
-    LanguageProvider langProvider,
-    ModeProvider modeProvider,
-    String currentLang,
-    Color seedColor,
-    bool isSmallScreen,
-    bool isLightMode,
-  ) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // Dynamic navbar height based on screen size
-    final navBarHeight = screenWidth < 360 ? 60.0 : screenWidth < 600 ? 70.0 : 80.0;
-    // Dynamic icon size based on screen width
-    final iconSize = screenWidth < 360 ? 20.0 : screenWidth < 600 ? 24.0 : 28.0;
-    // Dynamic padding for navbar items
-    final itemPadding = screenWidth < 360 ? 6.0 : screenWidth < 600 ? 8.0 : 10.0;
+    // Check if visitor - show only Home
+    final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
+    _navItems = isVisitor 
+        ? const [_NavItem(emoji: '🏠', pageIndex: 0)] // Only Home for visitor
+        : const [
+            _NavItem(emoji: '🏠', pageIndex: 0),
+            _NavItem(emoji: '🧑‍⚖️', pageIndex: 1),
+            _NavItem(emoji: '🗺️', pageIndex: 3),
+            _NavItem(emoji: '🚩', pageIndex: 4),
+            _NavItem(emoji: '📊', pageIndex: 5),
+            _NavItem(emoji: '📡', pageIndex: 6),
+          ];
 
-    return SafeArea(
-      child: Container(
-        height: navBarHeight,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.95),
-              AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 15,
-              spreadRadius: 5,
-              offset: const Offset(0, -5),
-            ),
-          ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Use spaceEvenly to prevent overflow
-          children: [
-            _buildResponsiveNavItem(
-              "⚽",
-              Translations.getNavLabel(4, currentLang),
-              1,
-              seedColor,
-              isSmallScreen,
-              iconSize,
-              itemPadding,
-              isLightMode,
-            ),
-            _buildResponsiveNavItem(
-              "⚠️",
-              Translations.getNavLabel(1, currentLang),
-              2,
-              seedColor,
-              isSmallScreen,
-              iconSize,
-              itemPadding,
-              isLightMode,
-            ),
-            _buildResponsiveNavItem(
-              "📏",
-              Translations.getNavLabel(2, currentLang),
-              3,
-              seedColor,
-              isSmallScreen,
-              iconSize,
-              itemPadding,
-              isLightMode,
-            ),
-            _buildResponsiveHomeNavItem(seedColor, isSmallScreen, iconSize, itemPadding, isLightMode),
-            _buildResponsiveNavItem(
-              "🚩",
-              Translations.getNavLabel(3, currentLang),
-              4,
-              seedColor,
-              isSmallScreen,
-              iconSize,
-              itemPadding,
-              isLightMode,
-            ),
-            _buildResponsiveNavItem(
-              "📈",
-              Translations.getNavLabel(0, currentLang),
-              5,
-              seedColor,
-              isSmallScreen,
-              iconSize,
-              itemPadding,
-              isLightMode,
-            ),
-            _buildResponsiveNavItem(
-              "📺",
-              Translations.getNavLabel(5, currentLang),
-              6,
-              seedColor,
-              isSmallScreen,
-              iconSize,
-              itemPadding,
-              isLightMode,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    return WillPopScope( // Fix back behavior: For visitor, confirm before exit; for auth, stay
+      onWillPop: () async {
+        return await _showExitDialog();
+      },
+      child: Scaffold(
+        extendBody: true, // pour voir le blur sous la nav bar
+        backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
 
-  Widget _buildResponsiveHomeNavItem(
-    Color seedColor,
-    bool isSmallScreen,
-    double iconSize,
-    double itemPadding,
-    bool isLightMode,
-  ) {
-    final isSelected = _selectedIndex == 0;
-    final modeProvider = Provider.of<ModeProvider>(context);
-
-    // Adjusted text/icon color for light mode visibility
-    Color textColor = isLightMode
-        ? (isSelected ? Colors.black : Colors.grey[800]!)
-        : (isSelected
-            ? Colors.white
-            : AppColors.getPrimaryColor(seedColor, modeProvider.currentMode));
-
-    return GestureDetector(
-      onTap: () => _onItemTapped(0),
-      child: AnimatedBuilder(
-        animation: _glowController,
-        builder: (context, child) {
-          return Transform.translate(
-            offset: Offset(0, isSmallScreen ? -6 : -8), // Adjusted for better alignment
-            child: Transform.scale(
-              scale: _glowController.value,
-              child: Container(
-                padding: EdgeInsets.all(itemPadding),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      isSelected
-                          ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
-                          : AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
-                              .withOpacity(0.8),
-                      isSelected
-                          ? AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
-                          : AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.9),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isSelected
-                          ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
-                              .withOpacity(0.4)
-                          : Colors.black.withOpacity(0.2),
-                      blurRadius: isSmallScreen ? 6 : 8,
-                      spreadRadius: isSmallScreen ? 1 : 2,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
-                            .withOpacity(0.5),
-                    width: isSmallScreen ? 1.0 : 1.5,
-                  ),
-                ),
-                child: Icon(
-                  Icons.home,
-                  size: iconSize,
-                  color: textColor,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildResponsiveNavItem(
-    String emojiIcon, // Changed to String for emoji
-    String label,
-    int index,
-    Color seedColor,
-    bool isSmallScreen,
-    double iconSize,
-    double itemPadding,
-    bool isLightMode,
-  ) {
-    final isSelected = _selectedIndex == index;
-    final modeProvider = Provider.of<ModeProvider>(context);
-
-    // Adjusted text/icon color for light mode visibility
-    Color iconTextColor = isLightMode
-        ? (isSelected ? Colors.black : Colors.grey[700]!)
-        : (isSelected
-            ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
-            : AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
-                .withOpacity(0.8));
-
-    Color labelColor = isLightMode
-        ? (isSelected ? Colors.black : Colors.grey[600]!)
-        : (isSelected
-            ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
-            : AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)
-                .withOpacity(0.8));
-
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: Tooltip(
-        message: label, // Show label as tooltip on small screens
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          padding: EdgeInsets.symmetric(
-            horizontal: itemPadding,
-            vertical: itemPadding / 1.5, // Reduced vertical padding for better alignment
-          ),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode).withOpacity(0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
-                          .withOpacity(0.2),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    ),
-                  ]
-                : [],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedBuilder(
-                animation: _bubbleController,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: isSelected ? 1.1 : 1.0,
-                    child: Stack(
-                      alignment: Alignment.center,
+        // APP BAR modernisée
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(72),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Gradient + blur subtil
+                Container(decoration: BoxDecoration(gradient: AppColors.getAppBarGradient(modeProvider.currentMode))),
+                BackdropFilter(filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4), child: Container(color: Colors.transparent)),
+                AppBar(
+                  elevation: 0,
+                  centerTitle: true,
+                  backgroundColor: Colors.transparent,
+                  automaticallyImplyLeading: false, // Hide implied back arrow
+                  leading: isVisitor // Show back arrow only for visitor
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () async {
+                            await _showExitDialog();
+                          },
+                        )
+                      : null,
+                  title: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Row(
+                      key: ValueKey<String>(title),
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          emojiIcon,
-                          style: TextStyle(
-                            fontSize: iconSize,
-                            fontWeight: FontWeight.bold,
-                            color: iconTextColor,
+                        Text(emoji, style: TextStyle(fontSize: isCompact ? 18 : 22)),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: isCompact ? 18 : 22,
+                              color: Colors.white,
+                              letterSpacing: .5,
+                            ),
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                        if (isSelected)
-                          Positioned(
-                            top: -2,
-                            right: -2,
-                            child: ScaleTransition(
-                              scale: _bubbleController,
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    // bouton settings + badge historique (always visible, even for visitor)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        alignment: Alignment.center,
+                        children: [
+                          IconButton(
+                            tooltip: 'Settings',
+                            icon: Text('⚙️', style: TextStyle(fontSize: isCompact ? 18 : 22, color: Colors.white)), // Ensure white color for visibility
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => SettingsPage(
+                                    langProvider: langProvider,
+                                    modeProvider: modeProvider,
+                                    currentLang: currentLang,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          if (historyProvider.historyCount > 0)
+                            Positioned(
+                              right: 6,
+                              top: 8,
                               child: Container(
-                                width: isSmallScreen ? 5 : 6,
-                                height: isSmallScreen ? 5 : 6,
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.getPrimaryColor(
-                                      seedColor, modeProvider.currentMode),
-                                  shape: BoxShape.circle,
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(999),
+                                  boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(.45), blurRadius: 8, offset: const Offset(0, 2))],
+                                ),
+                                child: Text(
+                                  '${historyProvider.historyCount}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  );
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: isSmallScreen ? 8 : 9,
-                    color: labelColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+        ),
+
+        // BODY - Show selected page
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (child, anim) {
+            final slide = Tween<Offset>(begin: const Offset(.04, 0), end: Offset.zero)
+                .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
+            return FadeTransition(opacity: anim, child: SlideTransition(position: slide, child: child));
+          },
+          child: Container(
+            key: ValueKey<int>(_selectedIndex),
+            decoration: BoxDecoration(gradient: AppColors.getBodyGradient(modeProvider.currentMode)),
+            child: _pages[_selectedIndex],
+          ),
+        ),
+
+        // NAV BAR — emojis only (filtered for visitor)
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+            child: _EmojiOnlyNavBar(
+              items: _navItems,
+              seedColor: seed,
+              isCompact: isCompact,
+              currentPageIndex: _selectedIndex,
+              onTapItem: _onTapNav,
+              pillScale: _pillScale,
+              mode: modeProvider.currentMode,
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  void _showSuccessSnackbar(BuildContext context, String message, int mode) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.getPrimaryColor(
-          AppColors.seedColors[mode] ?? AppColors.seedColors[1]!, 
-          mode
+/* ---------------------------------------------------------------------------
+ *  MODELES & WIDGETS PRIVÉS
+ * ------------------------------------------------------------------------- */
+
+class _NavItem {
+  final String emoji;
+  final int pageIndex;
+  const _NavItem({required this.emoji, required this.pageIndex});
+}
+
+class _EmojiOnlyNavBar extends StatelessWidget {
+  final List<_NavItem> items;
+  final Color seedColor;
+  final bool isCompact;
+  final int currentPageIndex;
+  final void Function(int itemPos) onTapItem;
+  final Animation<double> pillScale;
+  final int mode;
+
+  const _EmojiOnlyNavBar({
+    super.key,
+    required this.items,
+    required this.seedColor,
+    required this.isCompact,
+    required this.currentPageIndex,
+    required this.onTapItem,
+    required this.pillScale,
+    required this.mode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pill = seedColor.withOpacity(.16);
+    final glow = seedColor.withOpacity(.35);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
+          decoration: BoxDecoration(
+            color: AppColors.getSurfaceColor(mode).withOpacity(.74),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white.withOpacity(.08), width: 1),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(.12), blurRadius: 22, offset: const Offset(0, 10))],
+          ),
+          child: items.length == 1
+              ? _SingleNavItem( // Custom for single item to center
+                  item: items[0],
+                  seedColor: seedColor,
+                  isCompact: isCompact,
+                  pillScale: pillScale,
+                  mode: mode,
+                )
+              : Row(
+                  children: List.generate(items.length, (i) {
+                    final it = items[i];
+                    final selected = it.pageIndex == currentPageIndex;
+
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: isCompact ? 2 : 4),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => onTapItem(i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
+                            decoration: BoxDecoration(
+                              color: selected ? pill : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: selected
+                                  ? [BoxShadow(color: glow, blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 3))]
+                                  : [],
+                            ),
+                            child: ScaleTransition(
+                              scale: selected ? pillScale : const AlwaysStoppedAnimation(1.0),
+                              child: Text(
+                                it.emoji,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: isCompact ? 18 : 20),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
         ),
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class _SingleNavItem extends StatelessWidget {
+  final _NavItem item;
+  final Color seedColor;
+  final bool isCompact;
+  final Animation<double> pillScale;
+  final int mode;
+
+  const _SingleNavItem({
+    required this.item,
+    required this.seedColor,
+    required this.isCompact,
+    required this.pillScale,
+    required this.mode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pill = seedColor.withOpacity(.16);
+    final glow = seedColor.withOpacity(.35);
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {}, // No other items, so no action
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
+        decoration: BoxDecoration(
+          color: pill, // Always "selected" style
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: glow, blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 3))],
         ),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: ScaleTransition(
+          scale: pillScale,
+          child: Text(
+            item.emoji,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: isCompact ? 18 : 20),
+          ),
+        ),
       ),
     );
   }

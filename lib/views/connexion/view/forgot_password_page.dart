@@ -1,34 +1,54 @@
-// lib/views/connexion/view/login_page.dart
+// lib/views/connexion/view/forgot_password_page.dart
 import 'package:VarXPro/views/connexion/providers/auth_provider.dart';
-import 'package:VarXPro/views/connexion/view/forgot_password_page.dart';
-import 'package:VarXPro/views/connexion/view/register_page.dart';
+import 'package:VarXPro/views/connexion/view/login_page.dart';
+import 'package:VarXPro/views/connexion/view/otp_verifier_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
-import 'package:VarXPro/views/nav_bar.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class ForgotPasswordPage extends StatefulWidget {
+  const ForgotPasswordPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool _obscurePassword = true;
   bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showSuccessSnackbar(BuildContext context, String message, int mode) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.getPrimaryColor(AppColors.seedColors[mode] ?? AppColors.seedColors[1]!, mode),
+        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(BuildContext context, String message, int mode) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   void _showLanguageDialog(BuildContext context, LanguageProvider langProvider, ModeProvider modeProvider, String currentLang) {
@@ -148,31 +168,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _showSuccessSnackbar(BuildContext context, String message, int mode) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.getPrimaryColor(AppColors.seedColors[mode] ?? AppColors.seedColors[1]!, mode),
-        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  void _showErrorSnackbar(BuildContext context, String message, int mode) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.red,
-        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  Future<void> _login() async {
+  Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
@@ -181,36 +177,14 @@ class _LoginPageState extends State<LoginPage> {
     final currentLang = langProvider.currentLanguage ?? 'en';
     final modeProvider = Provider.of<ModeProvider>(context, listen: false);
 
-    final response = await authProvider.login(_emailController.text, _passwordController.text);
+    final result = await authProvider.sendForgotPasswordOtp(_emailController.text);
     setState(() => _isLoading = false);
 
-    if (response.success) {
-      _showSuccessSnackbar(context, Translations.getLoginText('loginSuccess', currentLang) ?? 'Login successful!', modeProvider.currentMode);
-      _navigateToNavPage(useReplacement: true); // Use replacement for all to prevent back to login
+    if (result['success']) {
+      _showSuccessSnackbar(context, Translations.getLoginText('otpSent', currentLang) ?? 'OTP sent to your email', modeProvider.currentMode);
+      Navigator.push(context, MaterialPageRoute(builder: (_) => OtpVerifierPage(email: _emailController.text, isForPasswordReset: true)));
     } else {
-      _showErrorSnackbar(context, response.error ?? 'Login failed', modeProvider.currentMode);
-    }
-  }
-
-  void _continueAsVisitor() {
-    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
-    final currentLang = langProvider.currentLanguage ?? 'en';
-    final modeProvider = Provider.of<ModeProvider>(context, listen: false);
-    Provider.of<AuthProvider>(context, listen: false).setAsVisitor();
-    _showSuccessSnackbar(context, Translations.getLoginText('visitorMode', currentLang) ?? 'Continuing as Visitor', modeProvider.currentMode);
-    _navigateToNavPage(useReplacement: true); // Use replacement for visitor to prevent back to login
-  }
-
-  void _navigateToNavPage({required bool useReplacement}) {
-    final route = PageRouteBuilder(
-      transitionDuration: const Duration(milliseconds: 800),
-      pageBuilder: (_, __, ___) => const NavPage(),
-      transitionsBuilder: (_, anim, __, child) => FadeTransition(opacity: anim, child: child),
-    );
-    if (useReplacement) {
-      Navigator.of(context).pushReplacement(route);
-    } else {
-      Navigator.of(context).push(route);
+      _showErrorSnackbar(context, result['error'] ?? 'Failed to send OTP', modeProvider.currentMode);
     }
   }
 
@@ -222,18 +196,6 @@ class _LoginPageState extends State<LoginPage> {
     }
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
       return Translations.getLoginText('invalidEmail', currentLang) ?? 'Enter a valid email';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
-    final currentLang = langProvider.currentLanguage ?? 'en';
-    if (value == null || value.isEmpty) {
-      return Translations.getLoginText('passwordRequired', currentLang) ?? 'Password is required';
-    }
-    if (value.length < 6) {
-      return Translations.getLoginText('passwordMinLength', currentLang) ?? 'Password must be at least 6 characters';
     }
     return null;
   }
@@ -286,9 +248,9 @@ class _LoginPageState extends State<LoginPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  Text(Translations.getLoginText('loginTitle', currentLang) ?? 'Welcome Back', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.getTextColor(modeProvider.currentMode))),
+                  Text(Translations.getLoginText('forgotPassword', currentLang) ?? 'Forgot Password', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.getTextColor(modeProvider.currentMode))),
                   const SizedBox(height: 8),
-                  Text(Translations.getLoginText('welcomeMessage', currentLang) ?? 'Sign in to your account', style: TextStyle(fontSize: 14, color: AppColors.getTextColor(modeProvider.currentMode).withOpacity(0.7))),
+                  Text(Translations.getLoginText('forgotMessage', currentLang) ?? 'Enter your email to reset password', style: TextStyle(fontSize: 14, color: AppColors.getTextColor(modeProvider.currentMode).withOpacity(0.7))),
                   const SizedBox(height: 40),
                   _CustomTextField(
                     controller: _emailController,
@@ -298,35 +260,13 @@ class _LoginPageState extends State<LoginPage> {
                     seedColor: seedColor,
                     mode: modeProvider.currentMode,
                   ),
-                  const SizedBox(height: 20),
-                  _CustomTextField(
-                    controller: _passwordController,
-                    label: Translations.getLoginText('password', currentLang) ?? 'Password',
-                    obscureText: _obscurePassword,
-                    validator: _validatePassword,
-                    prefixEmoji: '🔒',
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                    seedColor: seedColor,
-                    mode: modeProvider.currentMode,
-                  ),
-                  const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordPage())),
-                      child: Text(Translations.getLoginText('forgotPassword', currentLang) ?? 'Forgot Password?', style: TextStyle(color: seedColor, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
                   const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
-                      icon: const Text('👤', style: TextStyle(fontSize: 20)),
-                      label: Text(Translations.getLoginText('noAccountRegister', currentLang) ?? 'No account? Register here', style: TextStyle(color: seedColor, fontWeight: FontWeight.w600)),
+                      onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                      icon: Icon(Icons.arrow_back, color: seedColor),
+                      label: Text(Translations.getLoginText('backToLogin', currentLang) ?? 'Back to Login', style: TextStyle(color: seedColor, fontWeight: FontWeight.w600)),
                       style: OutlinedButton.styleFrom(side: BorderSide(color: seedColor), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                     ),
                   ),
@@ -338,32 +278,17 @@ class _LoginPageState extends State<LoginPage> {
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _login,
-                  icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))) : const Text('🔑', style: TextStyle(fontSize: 22)),
-                  label: Text(
-                    _isLoading ? (Translations.getLoginText('loading', currentLang) ?? 'Loading...') : (Translations.getLoginText('loginButton', currentLang) ?? 'SIGN IN'),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(backgroundColor: seedColor, padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 8),
-                ),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _sendOtp,
+              icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))) : const Text('📨', style: TextStyle(fontSize: 22)),
+              label: Text(
+                _isLoading ? (Translations.getLoginText('loading', currentLang) ?? 'Loading...') : (Translations.getLoginText('sendOtp', currentLang) ?? 'Send OTP'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _continueAsVisitor,
-                  icon: const Icon(Icons.visibility),
-                  label: Text(Translations.getLoginText('continueAsVisitor', currentLang) ?? 'Continue as Visitor', style: TextStyle(color: seedColor, fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(side: BorderSide(color: seedColor), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                ),
-              ),
-            ],
+              style: ElevatedButton.styleFrom(backgroundColor: seedColor, padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 8),
+            ),
           ),
         ),
       ),
@@ -376,8 +301,6 @@ class _CustomTextField extends StatelessWidget {
   final String label;
   final String? Function(String?)? validator;
   final String? prefixEmoji;
-  final Widget? suffixIcon;
-  final bool obscureText;
   final Color seedColor;
   final int mode;
 
@@ -386,8 +309,6 @@ class _CustomTextField extends StatelessWidget {
     required this.label,
     this.validator,
     this.prefixEmoji,
-    this.suffixIcon,
-    this.obscureText = false,
     required this.seedColor,
     required this.mode,
   });
@@ -396,12 +317,10 @@ class _CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      obscureText: obscureText,
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: prefixEmoji != null ? Padding(padding: const EdgeInsets.all(12), child: Text(prefixEmoji!, style: const TextStyle(fontSize: 20))) : null,
-        suffixIcon: suffixIcon,
         filled: true,
         fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.5),
         labelStyle: TextStyle(color: AppColors.getTextColor(mode).withOpacity(0.7)),
