@@ -1,4 +1,4 @@
-// lib/views/pages/home/service/evaluations_service.dart (fixed: delete now uses http.delete, improved error parsing for 403/405, better debug logs)
+// lib/views/pages/home/service/evaluations_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:VarXPro/views/connexion/service/auth_service.dart';
@@ -6,6 +6,36 @@ import 'package:VarXPro/views/connexion/service/auth_service.dart';
 const String baseUrl = 'https://varxpro.com';
 
 class EvaluationsService {
+  static String _truncate(String str, int maxLen) {
+    if (str.length <= maxLen) return str;
+    return str.substring(0, maxLen) + '...';
+  }
+
+  static Future<Map<String, dynamic>> fetchMeta() async {
+    final token = await AuthService.getToken();
+    if (token == null) {
+      return {'success': false, 'error': 'No token found - Login again 🔑'};
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/evaluations/meta'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+
+      print('Meta response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': json.decode(response.body)};
+      } else {
+        return _parseErrorResponse(response);
+      }
+    } catch (e) {
+      print('Meta error: $e');
+      return {'success': false, 'error': 'Network error: $e 🌐'};
+    }
+  }
+
   static Future<Map<String, dynamic>> listEvaluations() async {
     final token = await AuthService.getToken();
     if (token == null) {
@@ -18,7 +48,7 @@ class EvaluationsService {
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
-      print('List evals response: ${response.statusCode} - ${response.body.substring(0, 200)}...'); // Truncated debug
+      print('List evals response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -73,10 +103,13 @@ class EvaluationsService {
         body: json.encode(data),
       ).timeout(const Duration(seconds: 10));
 
-      print('Create response: ${response.statusCode} - ${response.body.substring(0, 200)}...'); // Truncated
+      print('Create response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return {'success': true, 'data': json.decode(response.body)};
+        final jsonData = json.decode(response.body);
+        // Unwrap the 'data' wrapper if present
+        final createData = jsonData['data'] ?? (jsonData is Map<String, dynamic> ? jsonData : {});
+        return {'success': true, 'data': createData};
       } else if (response.statusCode == 422) {
         final errorBody = json.decode(response.body);
         return {
@@ -104,10 +137,13 @@ class EvaluationsService {
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
-      print('Get eval response: ${response.statusCode} - ${response.body.substring(0, 200)}...'); // Truncated
+      print('Get eval response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': json.decode(response.body)};
+        final jsonData = json.decode(response.body);
+        // Unwrap the 'data' wrapper (handles both {data: {...}} and direct object)
+        final evalData = jsonData['data'] ?? (jsonData is Map<String, dynamic> ? jsonData : {});
+        return {'success': true, 'data': evalData};
       } else {
         return _parseErrorResponse(response);
       }
@@ -134,10 +170,13 @@ class EvaluationsService {
         body: json.encode(data),
       ).timeout(const Duration(seconds: 10));
 
-      print('Update response: ${response.statusCode} - ${response.body.substring(0, 200)}...'); // Truncated
+      print('Update response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
 
       if (response.statusCode == 200) {
-        return {'success': true, 'data': json.decode(response.body)};
+        final jsonData = json.decode(response.body);
+        // Unwrap the 'data' wrapper if present
+        final updateData = jsonData['data'] ?? (jsonData is Map<String, dynamic> ? jsonData : {});
+        return {'success': true, 'data': updateData};
       } else {
         return _parseErrorResponse(response);
       }
@@ -154,7 +193,7 @@ class EvaluationsService {
     }
 
     try {
-      // Fixed: Use http.delete instead of POST spoofing
+      print('Deleting eval ID: $id'); // Added debug
       final response = await http.delete(
         Uri.parse('$baseUrl/api/evaluations/$id'),
         headers: {
@@ -162,7 +201,7 @@ class EvaluationsService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('Delete response: ${response.statusCode} - ${response.body.substring(0, 200)}...'); // Truncated
+      print('Delete response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         return {'success': true};
@@ -190,7 +229,7 @@ class EvaluationsService {
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
-      print('Referee evals response: ${response.statusCode} - ${response.body.substring(0, 200)}...'); // Truncated
+      print('Referee evals response: ${response.statusCode} - ${_truncate(response.body, 200)}'); // Safe truncate
 
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -233,7 +272,7 @@ class EvaluationsService {
       if (response.body.startsWith('<!DOCTYPE html>')) {
         errorMsg = 'Server error - Check API endpoint 🌐';
       } else {
-        errorMsg += ': ${response.body.substring(0, 100)}...';
+        errorMsg += ': ${_truncate(response.body, 100)}'; // Safe truncate, no extra ...
       }
     }
     return {'success': false, 'error': errorMsg};

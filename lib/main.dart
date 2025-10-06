@@ -23,9 +23,16 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
-      child: Consumer3<ModeProvider, AuthProvider, LanguageProvider>(
-        builder: (context, modeProvider, authProvider, langProvider, child) {
+      child: Builder(
+        builder: (context) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<AuthProvider>().checkAuthStatus();
+          });
+
+          final modeProvider = context.watch<ModeProvider>();
+          final langProvider = context.watch<LanguageProvider>();
           final currentLang = langProvider.currentLanguage ?? 'en';
+
           return MaterialApp(
             title: 'VAR X Pro',
             locale: Locale(currentLang),
@@ -34,8 +41,7 @@ class MyApp extends StatelessWidget {
               colorScheme: ColorScheme.fromSeed(
                 seedColor: AppColors.seedColors[modeProvider.currentMode] ??
                     AppColors.seedColors[1]!,
-                brightness:
-                    AppColors.getBrightness(modeProvider.currentMode),
+                brightness: AppColors.getBrightness(modeProvider.currentMode),
               ),
               fontFamily: 'Poppins',
             ),

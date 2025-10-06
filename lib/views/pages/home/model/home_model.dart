@@ -1,3 +1,4 @@
+// lib/models/referee.dart (No changes needed; already handles fallbacks and toJson)
 class Referee {
   final String id; 
   final String confed;
@@ -25,15 +26,10 @@ class Referee {
 
   factory Referee.fromJson(Map<String, dynamic> json) {
     return Referee(
-      id:
-          json['id']?.toString() ??
-          json['_id']?.toString() ??
-          '', // Support both
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '', // Support both
       confed: json['confed'] ?? '',
       country: json['country'] ?? '',
-      details: json['details'] != null
-          ? Details.fromJson(json['details'])
-          : null,
+      details: json['details'] != null ? Details.fromJson(json['details']) : null,
       gender: json['gender'] ?? '',
       lastEnriched: json['last_enriched'] ?? 0,
       name: json['name'] ?? '',
@@ -42,10 +38,24 @@ class Referee {
       year: json['year'],
     );
   }
+
+  // Added for caching (serialize back to JSON)
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'confed': confed,
+      'country': country,
+      'details': details?.toJson(),
+      'gender': gender,
+      'last_enriched': lastEnriched,
+      'name': name,
+      'roles': roles,
+      'since': since,
+      'year': year,
+    };
+  }
 }
 
-// Rest of model unchanged
-// Rest of model unchanged (Details, WorldFootball, etc.)
 class Details {
   final WorldFootball? worldfootball;
 
@@ -57,6 +67,12 @@ class Details {
           ? WorldFootball.fromJson(json['worldfootball'])
           : null,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'worldfootball': worldfootball?.toJson(),
+    };
   }
 }
 
@@ -77,7 +93,7 @@ class WorldFootball {
 
   factory WorldFootball.fromJson(Map<String, dynamic> json) {
     if (json['error'] != null) {
-      print('Referee details not found: ${json['error']}'); // Debug
+      // Removed print to stop console spam; fallback silently
       return WorldFootball(
         competitions: [],
         overallTotals: OverallTotals(
@@ -107,6 +123,16 @@ class WorldFootball {
       source: Source.fromJson(json['source']),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'competitions': competitions.map((c) => c.toJson()).toList(),
+      'overall_totals': overallTotals.toJson(),
+      'profile': profile.toJson(),
+      'scraped_at': scrapedAt,
+      'source': source.toJson(),
+    };
+  }
 }
 
 class Competition {
@@ -120,6 +146,13 @@ class Competition {
       name: json['competition'] ?? '',
       totals: Totals.fromJson(json['totals']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'competition': name,
+      'totals': totals.toJson(),
+    };
   }
 }
 
@@ -147,6 +180,16 @@ class Totals {
       yellowPerGame: (json['yellow_per_game'] ?? 0).toDouble(),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'matches': matches,
+      'red': red,
+      'second_yellow': secondYellow,
+      'yellow': yellow,
+      'yellow_per_game': yellowPerGame,
+    };
+  }
 }
 
 class OverallTotals {
@@ -172,6 +215,16 @@ class OverallTotals {
       yellow: json['yellow'] ?? 0,
       yellowPerGame: (json['yellow_per_game'] ?? 0).toDouble(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'matches': matches,
+      'red': red,
+      'second_yellow': secondYellow,
+      'yellow': yellow,
+      'yellow_per_game': yellowPerGame,
+    };
   }
 }
 
@@ -199,6 +252,16 @@ class Profile {
       placeOfBirth: json['place_of_birth'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'born': born,
+      'complete_name': completeName,
+      'name': name,
+      'nationality': nationality,
+      'place_of_birth': placeOfBirth,
+    };
+  }
 }
 
 class Source {
@@ -210,4 +273,16 @@ class Source {
   factory Source.fromJson(Map<String, dynamic> json) {
     return Source(site: json['site'] ?? '', url: json['url'] ?? '');
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'site': site,
+      'url': url,
+    };
+  }
 }
+
+
+
+
+

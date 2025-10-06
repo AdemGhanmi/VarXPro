@@ -1,8 +1,9 @@
-// New file: lib/views/pages/home/view/competitions_tab.dart
+// lib/views/pages/home/view/details_arbiter/competitions_tab.dart (Updated with translations)
 import 'package:flutter/material.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
+import 'package:VarXPro/lang/translation.dart';
 
 class CompetitionsTab extends StatelessWidget {
   final Referee referee;
@@ -34,11 +35,7 @@ class CompetitionsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (referee
-            .details
-            ?.worldfootball
-            ?.competitions !=
-        null) {
+    if (referee.details?.worldfootball?.competitions != null) {
       return AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: SingleChildScrollView(
@@ -48,7 +45,7 @@ class CompetitionsTab extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               Text(
-                '🏆 Recent Competitions',
+                Translations.getEvaluationText('recentCompetitions', currentLang),
                 style: TextStyle(
                   color: textColor,
                   fontWeight: FontWeight.bold,
@@ -64,251 +61,133 @@ class CompetitionsTab extends StatelessWidget {
                     return Opacity(
                       opacity: animationController.value,
                       child: GridView.builder(
-                        gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount:
-                                  isLargeScreen ? 2 : 1,
-                              childAspectRatio:
-                                  1.4, 
-                              crossAxisSpacing:
-                                  8, 
-                              mainAxisSpacing:
-                                  8, 
-                            ),
-                        itemCount: referee
-                            .details!
-                            .worldfootball!
-                            .competitions
-                            .take(6)
-                            .length, 
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: isLargeScreen ? 2 : 1,
+                          childAspectRatio: 1.4, 
+                          crossAxisSpacing: 8, 
+                          mainAxisSpacing: 8, 
+                        ),
+                        itemCount: referee.details!.worldfootball!.competitions.take(6).length, 
                         itemBuilder: (context, index) {
-                          final comp = referee
-                              .details!
-                              .worldfootball!
-                              .competitions[index];
+                          final comp = referee.details!.worldfootball!.competitions[index];
                           return AnimatedBuilder(
-                            animation:
-                                animationController,
+                            animation: animationController,
                             builder: (context, child) {
                               return GestureDetector(
                                 onTapDown: (_) {
-                                  animationController
-                                      .reset();
-                                  animationController
-                                      .forward();
+                                  animationController.reset();
+                                  animationController.forward();
                                 },
                                 child: TweenAnimationBuilder<double>(
-                                  duration:
-                                      const Duration(
-                                        milliseconds: 200,
-                                      ),
-                                  tween: Tween(
-                                    begin: 1.0,
-                                    end: 0.95,
+                                  duration: const Duration(milliseconds: 200),
+                                  tween: Tween(begin: 1.0, end: 0.95),
+                                  builder: (context, scale, child) => Transform.scale(
+                                    scale: scale,
+                                    child: child,
                                   ),
-                                  builder:
-                                      (
-                                        context,
-                                        scale,
-                                        child,
-                                      ) =>
-                                          Transform.scale(
-                                            scale: scale,
-                                            child: child,
-                                          ),
                                   child: AnimatedContainer(
-                                    duration: Duration(
-                                      milliseconds:
-                                          300 +
-                                          index * 150,
-                                    ),
-                                    curve:
-                                        Curves.easeInOut,
+                                    duration: Duration(milliseconds: 300 + index * 150),
+                                    curve: Curves.easeInOut,
                                     decoration: BoxDecoration(
-                                      color: AppColors.getSurfaceColor(
-                                        modeProvider
-                                            .currentMode,
-                                      ),
-                                      borderRadius:
-                                          BorderRadius.circular(
-                                            16,
-                                          ),
+                                      color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                                      borderRadius: BorderRadius.circular(16),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors
-                                              .black
-                                              .withOpacity(
-                                                0.1,
-                                              ),
+                                          color: Colors.black.withOpacity(0.1),
                                           blurRadius: 10,
-                                          offset:
-                                              const Offset(
-                                                0,
-                                                4,
-                                              ),
+                                          offset: const Offset(0, 4),
                                         ),
                                       ],
                                     ),
                                     child: InkWell(
-                                      borderRadius:
-                                          BorderRadius.circular(
-                                            16,
-                                          ),
+                                      borderRadius: BorderRadius.circular(16),
                                       onTap: () {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Tapped on ${comp.name} 🎯',
-                                            ),
-                                          ),
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('${Translations.getEvaluationText('tappedOn', currentLang)} ${comp.name} 🎯')),
                                         );
                                       },
                                       child: Padding(
-                                        padding:
-                                            const EdgeInsets.all(
-                                                  12,
-                                                ), 
+                                        padding: const EdgeInsets.all(12), 
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment
-                                                  .start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment
-                                                  .spaceBetween,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                           
                                             Expanded(
                                               flex: 2,
                                               child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment
-                                                        .start,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
                                                   Text(
                                                     '🏅 ${comp.name}',
                                                     style: TextStyle(
-                                                      color:
-                                                          textColor,
-                                                      fontWeight:
-                                                          FontWeight.w700,
-                                                      fontSize:
-                                                          isLargeScreen
-                                                          ? 15
-                                                          : 13, 
+                                                      color: textColor,
+                                                      fontWeight: FontWeight.w700,
+                                                      fontSize: isLargeScreen ? 15 : 13, 
                                                     ),
-                                                    maxLines:
-                                                        2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
                                                   ),
-                                                  const SizedBox(
-                                                    height:
-                                                        8,
-                                                  ),
+                                                  const SizedBox(height: 8),
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(
-                                                      horizontal:
-                                                          8,
-                                                      vertical:
-                                                          4,
-                                                    ),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                                     decoration: BoxDecoration(
-                                                      color: seedColor.withOpacity(
-                                                        0.1,
-                                                      ),
-                                                      borderRadius: BorderRadius.circular(
-                                                        12,
-                                                      ),
+                                                      color: seedColor.withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(12),
                                                     ),
                                                     child: Text(
-                                                      '📊 Total Cards: ${comp.totals.yellow + comp.totals.red + comp.totals.secondYellow}',
+                                                      '${Translations.getEvaluationText('totalCards', currentLang)}: ${comp.totals.yellow + comp.totals.red + comp.totals.secondYellow}',
                                                       style: TextStyle(
-                                                        color: textColor.withOpacity(
-                                                          0.8,
-                                                        ),
-                                                        fontSize: isLargeScreen
-                                                            ? 11
-                                                            : 10, 
+                                                        color: textColor.withOpacity(0.8),
+                                                        fontSize: isLargeScreen ? 11 : 10, 
                                                       ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
-                                            const SizedBox(
-                                              height: 8,
-                                            ), 
+                                            const SizedBox(height: 8), 
                                             Expanded(
                                               flex: 1,
                                               child: Row(
                                                 children: [
                                                   Expanded(
                                                     child: _buildAnimatedMiniStat(
-                                                      label:
-                                                          '⚽ Matches',
-                                                      targetValue:
-                                                          comp.totals.matches.toDouble(),
-                                                      isInt:
-                                                          true,
-                                                      icon:
-                                                          Icons.sports_soccer,
-                                                      iconColor:
-                                                          Colors.green,
-                                                      textColor:
-                                                          textColor,
-                                                      animation:
-                                                          animationController,
+                                                      label: Translations.getEvaluationText('matches', currentLang),
+                                                      targetValue: comp.totals.matches.toDouble(),
+                                                      isInt: true,
+                                                      icon: Icons.sports_soccer,
+                                                      iconColor: Colors.green,
+                                                      textColor: textColor,
+                                                      animation: animationController,
                                                     ),
                                                   ),
                                                   Expanded(
                                                     child: _buildAnimatedMiniStat(
-                                                      label:
-                                                          '🟨 Yellow',
-                                                      targetValue:
-                                                          comp.totals.yellow.toDouble(),
-                                                      isInt:
-                                                          true,
-                                                      icon:
-                                                          Icons.warning_amber_rounded,
-                                                      iconColor:
-                                                          Colors.orange,
-                                                      textColor:
-                                                          textColor,
-                                                      animation:
-                                                          animationController,
+                                                      label: Translations.getEvaluationText('yellow', currentLang),
+                                                      targetValue: comp.totals.yellow.toDouble(),
+                                                      isInt: true,
+                                                      icon: Icons.warning_amber_rounded,
+                                                      iconColor: Colors.orange,
+                                                      textColor: textColor,
+                                                      animation: animationController,
                                                     ),
                                                   ),
                                                   Expanded(
                                                     child: _buildAnimatedMiniStat(
-                                                      label:
-                                                          '🔴 Red',
-                                                      targetValue:
-                                                          (comp.totals.red +
-                                                                  comp.totals.secondYellow)
-                                                              .toDouble(),
-                                                      isInt:
-                                                          true,
-                                                      icon:
-                                                          Icons.block,
-                                                      iconColor:
-                                                          Colors.red,
-                                                      textColor:
-                                                          textColor,
-                                                      animation:
-                                                          animationController,
+                                                      label: Translations.getEvaluationText('red', currentLang),
+                                                      targetValue: (comp.totals.red + comp.totals.secondYellow).toDouble(),
+                                                      isInt: true,
+                                                      icon: Icons.block,
+                                                      iconColor: Colors.red,
+                                                      textColor: textColor,
+                                                      animation: animationController,
                                                     ),
                                                   ),
                                                 ],
                                               ),
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.only(
-                                                    top:
-                                                        4,
-                                                  ), 
+                                              padding: const EdgeInsets.only(top: 4), 
                                               child: Column(
                                                 children: [
                                                   Row(
@@ -326,35 +205,13 @@ class CompetitionsTab extends StatelessWidget {
                                                       ),
                                                     ],
                                                   ),
-                                                  const SizedBox(
-                                                    height:
-                                                        4,
-                                                  ), 
+                                                  const SizedBox(height: 4), 
                                                   LinearProgressIndicator(
-                                                    value:
-                                                        (comp.totals.yellowPerGame /
-                                                                      5)
-                                                                    .clamp(
-                                                                      0.0,
-                                                                      1.0,
-                                                                    ), 
-                                                    backgroundColor: textColor.withOpacity(
-                                                      0.2,
-                                                    ),
-                                                    valueColor:
-                                                        AlwaysStoppedAnimation<
-                                                            Color
-                                                        >(
-                                                            Colors.blue.withOpacity(
-                                                              0.7,
-                                                            ),
-                                                        ),
-                                                    minHeight:
-                                                        3, 
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          2,
-                                                        ),
+                                                    value: (comp.totals.yellowPerGame / 5).clamp(0.0, 1.0), 
+                                                    backgroundColor: textColor.withOpacity(0.2),
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.withOpacity(0.7)),
+                                                    minHeight: 3, 
+                                                    borderRadius: BorderRadius.circular(2),
                                                   ),
                                                 ],
                                               ),
@@ -365,12 +222,12 @@ class CompetitionsTab extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  );
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    );
                 },
               ),
               ),
@@ -379,9 +236,7 @@ class CompetitionsTab extends StatelessWidget {
         ),
       );
     } else {
-      return const Center(
-        child: Text('No competitions available 😔'),
-      );
+      return Center(child: Text(Translations.getEvaluationText('noCompetitionsAvailable', currentLang)));
     }
   }
 

@@ -1,9 +1,10 @@
-// lib/views/pages/home/view/statistics_tab.dart
+// lib/views/pages/home/view/details_arbiter/statistics_tab.dart (Updated with translations)
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
+import 'package:VarXPro/lang/translation.dart';
 
 class StatisticsTab extends StatelessWidget {
   final Referee referee;
@@ -35,11 +36,7 @@ class StatisticsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (referee
-            .details
-            ?.worldfootball
-            ?.overallTotals !=
-        null) {
+    if (referee.details?.worldfootball?.overallTotals != null) {
       return AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: SingleChildScrollView(
@@ -49,20 +46,14 @@ class StatisticsTab extends StatelessWidget {
             children: [
               const SizedBox(height: 16),
               AnimatedContainer(
-                duration: const Duration(
-                  milliseconds: 600,
-                ),
+                duration: const Duration(milliseconds: 600),
                 curve: Curves.easeInOut,
                 decoration: BoxDecoration(
-                  color: AppColors.getSurfaceColor(
-                    modeProvider.currentMode,
-                  ),
+                  color: AppColors.getSurfaceColor(modeProvider.currentMode),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(
-                        0.1,
-                      ),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -72,73 +63,45 @@ class StatisticsTab extends StatelessWidget {
                 child: Column(
                   children: [
                     AnimatedSwitcher(
-                      duration: const Duration(
-                        milliseconds: 400,
-                      ),
+                      duration: const Duration(milliseconds: 400),
                       child: Row(
-                        key: ValueKey(
-                          'stats_row_${animationController.hashCode}',
-                        ),
-                        mainAxisAlignment:
-                            MainAxisAlignment.spaceEvenly,
+                        key: ValueKey('stats_row_${animationController.hashCode}'),
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildAnimatedStatCard(
-                            label: '⚽ Matches',
-                            targetValue: referee
-                                .details!
-                                .worldfootball!
-                                .overallTotals!
-                                .matches
-                                .toDouble(),
+                            label: Translations.getEvaluationText('matches', currentLang),
+                            targetValue: referee.details!.worldfootball!.overallTotals!.matches.toDouble(),
                             isInt: true,
                             icon: Icons.sports_soccer,
                             iconColor: Colors.green,
                             textColor: textColor,
-                            animation:
-                                animationController,
+                            animation: animationController,
                           ),
                           _buildAnimatedStatCard(
-                            label: '🟨 Yellow Cards',
-                            targetValue: referee
-                                .details!
-                                .worldfootball!
-                                .overallTotals!
-                                .yellow
-                                .toDouble(),
+                            label: Translations.getEvaluationText('yellowCards', currentLang),
+                            targetValue: referee.details!.worldfootball!.overallTotals!.yellow.toDouble(),
                             isInt: true,
-                            icon: Icons
-                                .warning_amber_rounded,
+                            icon: Icons.warning_amber_rounded,
                             iconColor: Colors.orange,
                             textColor: textColor,
-                            animation:
-                                animationController,
+                            animation: animationController,
                           ),
                           _buildAnimatedStatCard(
-                            label: '🔴 Red Cards',
-                            targetValue: referee
-                                .details!
-                                .worldfootball!
-                                .overallTotals!
-                                .red
-                                .toDouble(),
+                            label: Translations.getEvaluationText('redCards', currentLang),
+                            targetValue: referee.details!.worldfootball!.overallTotals!.red.toDouble(),
                             isInt: true,
                             icon: Icons.block,
                             iconColor: Colors.red,
                             textColor: textColor,
-                            animation:
-                                animationController,
+                            animation: animationController,
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
                     _buildAnimatedStatCard(
-                      label: '📈 Yellow per Game',
-                      targetValue: referee
-                          .details!
-                          .worldfootball!
-                          .overallTotals!
-                          .yellowPerGame,
+                      label: Translations.getEvaluationText('yellowPerGame', currentLang),
+                      targetValue: referee.details!.worldfootball!.overallTotals!.yellowPerGame,
                       isInt: false,
                       icon: Icons.trending_up,
                       iconColor: Colors.blue,
@@ -153,42 +116,17 @@ class StatisticsTab extends StatelessWidget {
                         animation: animationController,
                         builder: (context, child) {
                           return Transform.scale(
-                            scale:
-                                0.9 +
-                                0.1 *
-                                    animationController
-                                        .value,
+                            scale: 0.9 + 0.1 * animationController.value,
                             child: AnimatedOpacity(
-                              opacity:
-                                  animationController
-                                      .value,
-                              duration: const Duration(
-                                milliseconds: 500,
-                              ),
+                              opacity: animationController.value,
+                              duration: const Duration(milliseconds: 500),
                               child: PieChart(
                                 PieChartData(
-                                  pieTouchData: PieTouchData(
-                                    touchCallback:
-                                        (
-                                          FlTouchEvent
-                                          event,
-                                          pieTouchResponse,
-                                        ) {},
-                                  ),
-                                  borderData:
-                                      FlBorderData(
-                                        show: false,
-                                      ),
+                                  pieTouchData: PieTouchData(touchCallback: (FlTouchEvent event, pieTouchResponse) {}),
+                                  borderData: FlBorderData(show: false),
                                   sectionsSpace: 2,
                                   centerSpaceRadius: 40,
-                                  sections:
-                                      _getPieChartSections(
-                                        referee
-                                            .details!
-                                            .worldfootball!
-                                            .overallTotals!,
-                                        textColor,
-                                      ),
+                                  sections: _getPieChartSections(referee.details!.worldfootball!.overallTotals!, textColor),
                                 ),
                               ),
                             ),
@@ -203,72 +141,25 @@ class StatisticsTab extends StatelessWidget {
                         animation: animationController,
                         builder: (context, child) {
                           return Transform.rotate(
-                            angle:
-                                animationController
-                                    .value *
-                                0.1,
+                            angle: animationController.value * 0.1,
                             child: AnimatedOpacity(
-                              opacity:
-                                  animationController
-                                      .value,
-                              duration: const Duration(
-                                milliseconds: 700,
-                              ),
+                              opacity: animationController.value,
+                              duration: const Duration(milliseconds: 700),
                               child: RadarChart(
                                 RadarChartData(
-                                  radarShape:
-                                      RadarShape.circle,
-                                  dataSets:
-                                      _getRadarDataSets(
-                                        referee
-                                            .details!
-                                            .worldfootball!
-                                            .overallTotals!,
-                                        textColor,
-                                      ),
-                                  radarBorderData:
-                                      BorderSide(
-                                        color: textColor
-                                            .withOpacity(
-                                              0.3,
-                                            ),
-                                      ),
+                                  radarShape: RadarShape.circle,
+                                  dataSets: _getRadarDataSets(referee.details!.worldfootball!.overallTotals!, textColor),
+                                  radarBorderData: BorderSide(color: textColor.withOpacity(0.3)),
                                   tickCount: 5,
-                                  ticksTextStyle:
-                                      TextStyle(
-                                        color: textColor
-                                            .withOpacity(
-                                              0.5,
-                                            ),
-                                        fontSize: 10,
-                                      ),
-                                  tickBorderData:
-                                      BorderSide(
-                                        color: textColor
-                                            .withOpacity(
-                                              0.3,
-                                            ),
-                                      ),
-                                  gridBorderData:
-                                      BorderSide(
-                                        color: textColor
-                                            .withOpacity(
-                                              0.2,
-                                            ),
-                                      ),
+                                  ticksTextStyle: TextStyle(
+                                    color: textColor.withOpacity(0.5),
+                                    fontSize: 10,
+                                  ),
+                                  tickBorderData: BorderSide(color: textColor.withOpacity(0.3)),
+                                  gridBorderData: BorderSide(color: textColor.withOpacity(0.2)),
                                   getTitle: (index, angle) {
-                                    final titles = [
-                                      'Matches',
-                                      'Yellows',
-                                      'Reds',
-                                      'YPG*10',
-                                    ];
-                                    return RadarChartTitle(
-                                      text:
-                                          titles[index %
-                                              titles
-                                                  .length],
-                                    );
+                                    final titles = [Translations.getEvaluationText('matches', currentLang), Translations.getEvaluationText('yellow', currentLang), Translations.getEvaluationText('red', currentLang), 'YPG*10'];
+                                    return RadarChartTitle(text: titles[index % titles.length]);
                                   },
                                 ),
                               ),
@@ -285,9 +176,7 @@ class StatisticsTab extends StatelessWidget {
         ),
       );
     } else {
-      return const Center(
-        child: Text('No statistics available 😔'),
-      );
+      return Center(child: Text(Translations.getEvaluationText('noStatisticsAvailable', currentLang)));
     }
   }
 
@@ -343,10 +232,7 @@ class StatisticsTab extends StatelessWidget {
     }
   }
 
-  List<PieChartSectionData> _getPieChartSections(
-    OverallTotals totals,
-    Color textColor,
-  ) {
+  List<PieChartSectionData> _getPieChartSections(OverallTotals totals, Color textColor) {
     final totalCards = totals.yellow + totals.red;
     if (totalCards == 0) {
       return [PieChartSectionData(color: Colors.grey, value: 1, radius: 60)];
@@ -357,22 +243,14 @@ class StatisticsTab extends StatelessWidget {
         value: totals.yellow.toDouble(),
         title: '${totals.yellow}',
         radius: 60,
-        titleStyle: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: textColor,
-        ),
+        titleStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
       ),
       PieChartSectionData(
         color: Colors.red,
         value: totals.red.toDouble(),
         title: '${totals.red}',
         radius: 60,
-        titleStyle: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: textColor,
-        ),
+        titleStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
       ),
     ];
   }
@@ -389,9 +267,7 @@ class StatisticsTab extends StatelessWidget {
       RadarDataSet(
         fillColor: Colors.blue.withOpacity(0.2),
         borderColor: Colors.blue,
-        dataEntries: values
-            .map((v) => RadarEntry(value: v / maxValue * 100))
-            .toList(),
+        dataEntries: values.map((v) => RadarEntry(value: v / maxValue * 100)).toList(),
         borderWidth: 2,
         entryRadius: 4,
       ),

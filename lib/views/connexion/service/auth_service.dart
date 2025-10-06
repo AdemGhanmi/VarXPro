@@ -6,12 +6,68 @@ import 'package:shared_preferences/shared_preferences.dart';
 const String baseUrl = 'https://varxpro.com';
 
 class AuthService {
+  /* ======================= Local Cache Helpers ======================= */
+
+  static const _kToken = 'token';
+  static const _kUserRole = 'user_role';
+  static const _kUserJson = 'user_json';
+
+  static Future<void> _cacheToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kToken, token);
+  }
+
+  static Future<void> _cacheRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kUserRole, role);
+  }
+
+  static Future<void> cacheUser(Map<String, dynamic> user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kUserJson, json.encode(user));
+  }
+
+  static Future<Map<String, dynamic>?> getCachedUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_kUserJson);
+    if (raw == null) return null;
+    try {
+      return json.decode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> clearCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kToken);
+    await prefs.remove(_kUserRole);
+    await prefs.remove(_kUserJson);
+  }
+
+  static Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kToken);
+  }
+
+  static Future<String?> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kUserRole) ?? 'visitor';
+  }
+
+  static Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kToken) != null;
+  }
+
+  /* ======================= API Calls ======================= */
+
   static Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
     required String passwordConfirmation,
-    required String role, // Can be 'user', 'supervisor'
+    required String role, // 'user' or 'supervisor'
   }) async {
     try {
       final response = await http.post(
@@ -30,34 +86,25 @@ class AuthService {
         return {'success': true, 'data': json.decode(response.body)};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Registration failed',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Registration failed'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};
     }
   }
 
-  static Future<Map<String, dynamic>> sendEmailOtp({
-    required String email,
-  }) async {
+  static Future<Map<String, dynamic>> sendEmailOtp({required String email}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/email/send-otp'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
       );
-
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(response.body)};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Failed to send OTP',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Failed to send OTP'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};
@@ -74,15 +121,11 @@ class AuthService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email, 'code': code}),
       );
-
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(response.body)};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Verification failed',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Verification failed'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};
@@ -100,39 +143,41 @@ class AuthService {
         body: json.encode({'email': email, 'password': password}),
       );
 
-      print('Login response: ${response.statusCode} - ${response.body}'); // Debug
+      // Debug
+      // print('Login response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['token'] != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('token', data['token']);
-          await prefs.setString('user_role', data['user']['role'] ?? 'visitor'); // Store role
+        final data = json.decode(response.body) as Map<String, dynamic>;
+
+        final token = data['token'] as String?;
+        final user = (data['user'] ?? {}) as Map<String, dynamic>;
+        final role = (user['role'] ?? 'visitor') as String;
+
+        if (token != null) {
+          await _cacheToken(token);
+          await _cacheRole(role);
+          await cacheUser(user); // <<<<<< cache full user (name/email/role/id)
           return {'success': true, 'data': data};
         }
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Login failed',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Login failed'};
       }
     } catch (e) {
-      print('Login error: $e'); // Debug
+      // print('Login error: $e');
       return {'success': false, 'error': 'Network error: $e'};
     }
     return {'success': false, 'error': 'Unknown error'};
   }
 
   static Future<Map<String, dynamic>> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    final token = await getToken();
     if (token == null) {
-      return {'success': false, 'error': 'No token found'};
+      await clearCache();
+      return {'success': true, 'data': {}};
     }
 
     try {
-      print('Logout with token: $token'); // Debug
       final response = await http.post(
         Uri.parse('$baseUrl/api/logout'),
         headers: {
@@ -141,46 +186,32 @@ class AuthService {
         },
       );
 
-      await prefs.remove('token');
-      await prefs.remove('user_role'); // Clean role too
-
-      print('Logout response: ${response.statusCode} - ${response.body}'); // Debug
+      await clearCache();
 
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(response.body)};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Logout failed',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Logout failed'};
       }
     } catch (e) {
-      await prefs.remove('token');
-      await prefs.remove('user_role');
-      print('Logout error: $e'); // Debug
+      await clearCache();
       return {'success': true, 'data': {}};
     }
   }
 
-  static Future<Map<String, dynamic>> sendForgotPasswordOtp({
-    required String email,
-  }) async {
+  static Future<Map<String, dynamic>> sendForgotPasswordOtp({required String email}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/password/forgot/send-otp'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
       );
-
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(response.body)};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Failed to send OTP',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Failed to send OTP'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};
@@ -204,15 +235,11 @@ class AuthService {
           'password_confirmation': passwordConfirmation,
         }),
       );
-
       if (response.statusCode == 200) {
         return {'success': true, 'data': json.decode(response.body)};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Reset failed',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Reset failed'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};
@@ -221,42 +248,25 @@ class AuthService {
 
   static Future<Map<String, dynamic>> getUserProfile() async {
     final token = await getToken();
-    if (token == null) {
-      return {'success': false, 'error': 'No token found'};
-    }
+    if (token == null) return {'success': false, 'error': 'No token found'};
 
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/user'),
         headers: {'Authorization': 'Bearer $token'},
       );
-
       if (response.statusCode == 200) {
-        return {'success': true, 'data': json.decode(response.body)};
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        // keep cache in sync with server
+        await cacheUser(data);
+        await _cacheRole((data['role'] ?? 'visitor') as String);
+        return {'success': true, 'data': data};
       } else {
         final errorBody = json.decode(response.body);
-        return {
-          'success': false,
-          'error': errorBody['message'] ?? 'Failed to fetch user profile',
-        };
+        return {'success': false, 'error': errorBody['message'] ?? 'Failed to fetch user profile'};
       }
     } catch (e) {
       return {'success': false, 'error': 'Network error: $e'};
     }
-  }
-
-  static Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token') != null;
-  }
-
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
-  }
-
-  static Future<String?> getUserRole() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_role') ?? 'visitor';
   }
 }

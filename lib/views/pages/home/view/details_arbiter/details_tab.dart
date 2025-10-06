@@ -1,4 +1,4 @@
-// lib/views/pages/home/view/details_tab.dart
+// lib/views/pages/home/view/details_arbiter/details_tab.dart (No changes needed)
 import 'package:flutter/material.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/lang/translation.dart';
@@ -37,32 +37,21 @@ class DetailsTab extends StatelessWidget {
           const SizedBox(height: 16),
           _buildDetailRow(
             emoji: '🏆',
-            label: Translations.getRefereeDetailsText(
-              'confederation',
-              currentLang,
-            ),
+            label: Translations.getRefereeDetailsText('confederation', currentLang),
             value: referee.confed,
             textColor: textColor,
           ),
           const SizedBox(height: 12),
           _buildDetailRow(
             emoji: '📅',
-            label: Translations.getRefereeDetailsText(
-              'since',
-              currentLang,
-            ),
+            label: Translations.getRefereeDetailsText('since', currentLang),
             value: referee.since.toString(),
             textColor: textColor,
           ),
           const SizedBox(height: 12),
           _buildDetailRow(
-            emoji: referee.gender == 'Male'
-                ? '♂️'
-                : '♀️',
-            label: Translations.getRefereeDetailsText(
-              'gender',
-              currentLang,
-            ),
+            emoji: referee.gender == 'Male' ? '♂️' : '♀️',
+            label: Translations.getRefereeDetailsText('gender', currentLang),
             value: referee.gender,
             textColor: textColor,
           ),
@@ -88,28 +77,17 @@ class DetailsTab extends StatelessWidget {
                     children: referee.roles
                         .map(
                           (role) => Chip(
-                            avatar: Text(
-                              _getRoleEmoji(role),
-                            ),
+                            avatar: Text(_getRoleEmoji(role)),
                             label: Text(
                               role,
                               style: TextStyle(
-                                color: _getRoleColor(
-                                  role,
-                                ),
-                                fontWeight:
-                                    FontWeight.w500,
+                                color: _getRoleColor(role),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            backgroundColor:
-                                _getRoleColor(
-                                  role,
-                                ).withOpacity(0.2),
+                            backgroundColor: _getRoleColor(role).withOpacity(0.2),
                             shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(
-                                    8,
-                                  ),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                         )
@@ -120,10 +98,7 @@ class DetailsTab extends StatelessWidget {
             )
           else
             Text(
-              Translations.getRefereeDetailsText(
-                'noRolesSpecified',
-                currentLang,
-              ),
+              Translations.getRefereeDetailsText('noRolesSpecified', currentLang),
               style: TextStyle(
                 color: textColor.withOpacity(0.6),
                 fontSize: isLargeScreen ? 16 : 14,

@@ -1,4 +1,3 @@
-// Updated file: lib/views/pages/offsidePage/view/offside_page.dart
 import 'dart:io';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';

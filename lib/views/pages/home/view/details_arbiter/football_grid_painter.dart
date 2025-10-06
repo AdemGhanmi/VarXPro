@@ -1,4 +1,4 @@
-// New file: lib/views/pages/home/view/football_grid_painter.dart
+// lib/views/pages/home/view/details_arbiter/football_grid_painter.dart (No changes needed)
 import 'package:flutter/material.dart';
 import 'package:VarXPro/model/appcolor.dart';
 
@@ -47,3 +47,4 @@ class FootballGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

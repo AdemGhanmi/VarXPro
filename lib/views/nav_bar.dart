@@ -16,16 +16,19 @@ import 'package:VarXPro/views/connexion/providers/auth_provider.dart'; // Add au
 
 // PAGES
 import 'package:VarXPro/views/pages/home/view/home_page.dart';
-import 'package:VarXPro/views/pages/RefereeTraking/service/referee_api_service.dart';
-import 'package:VarXPro/views/pages/RefereeTraking/view/referee_tracking.dart';
+
 import 'package:VarXPro/views/pages/FauteDetectiong/service/FoulDetectionService.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
+
 import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/view/key_field_lines_page.dart';
+
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/view/offside_page.dart';
+
 import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/service/tracking_service.dart';
 import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/view/tracking_page.dart';
+
 import 'package:VarXPro/views/pages/LiveStream/controller/live_stream_controller.dart';
 import 'package:VarXPro/views/pages/LiveStream/views/live_stream_dashboard.dart';
 
@@ -51,7 +54,6 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     super.initState();
     _pages = [
       const HomePage(),
-      RepositoryProvider(create: (_) => RefereeService(), child: const RefereeTrackingSystemPage()),
       RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()),
       RepositoryProvider(create: (_) => PerspectiveService(), child: const KeyFieldLinesPage()),
       RepositoryProvider(create: (_) => OffsideService(), child: const OffsidePage()),
@@ -139,10 +141,10 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         : const [
             _NavItem(emoji: '🏠', pageIndex: 0),
             _NavItem(emoji: '🧑‍⚖️', pageIndex: 1),
-            _NavItem(emoji: '🗺️', pageIndex: 3),
-            _NavItem(emoji: '🚩', pageIndex: 4),
-            _NavItem(emoji: '📊', pageIndex: 5),
-            _NavItem(emoji: '📡', pageIndex: 6),
+            _NavItem(emoji: '🗺️', pageIndex: 2),
+            _NavItem(emoji: '🚩', pageIndex: 3),
+            _NavItem(emoji: '📊', pageIndex: 4),
+            _NavItem(emoji: '📡', pageIndex: 5),
           ];
 
     return WillPopScope( // Fix back behavior: For visitor, confirm before exit; for auth, stay

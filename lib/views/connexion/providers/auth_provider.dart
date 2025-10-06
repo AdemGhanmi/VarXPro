@@ -22,8 +22,10 @@ class AuthProvider extends ChangeNotifier {
     final response = AuthResponse.fromService(result);
 
     if (response.success) {
-      _user = response.user;
-      // Fetch full user after login
+      _user = response.user; // from immediate login response
+      notifyListeners();
+
+      // Refresh from server & recache
       await _fetchUserDetails();
     } else {
       _error = response.error;
@@ -35,20 +37,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _fetchUserDetails() async {
-    // Fetch user from API
     final result = await AuthService.getUserProfile();
     if (result['success']) {
-      final data = result['data'];
+      final data = result['data'] as Map<String, dynamic>;
       _user = User(
-        id: data['id'].toString(),
-        name: data['name'] ?? 'User',
-        email: data['email'] ?? '',
-        role: data['role'] ?? 'user',
+        id: (data['id'] ?? '').toString(),
+        name: (data['name'] ?? '') as String,
+        email: (data['email'] ?? '') as String,
+        role: (data['role'] ?? 'user') as String,
       );
-      notifyListeners();
     } else {
-      print('Error fetching user details: ${result['error']}');
+      // keep cached user if API fails
+      // debug: print('Error fetching user details: ${result['error']}');
     }
+    notifyListeners();
   }
 
   Future<AuthResponse> register({
@@ -103,12 +105,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void setAsVisitor() {
-    _user = User(
-      id: '',
-      name: 'Visitor',
-      email: '',
-      role: 'visitor',
-    );
+    _user = User(id: '', name: 'Visitor', email: '', role: 'visitor');
     notifyListeners();
   }
 
@@ -119,24 +116,27 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Call once on app launch.
   Future<void> checkAuthStatus() async {
-    final isLoggedIn = await AuthService.isLoggedIn();
-    if (isLoggedIn) {
-      final token = await AuthService.getToken();
-      if (token != null) {
+    // 1) If token exists, hydrate from local cache FIRST (instant UI)
+    final logged = await AuthService.isLoggedIn();
+    if (logged) {
+      final cached = await AuthService.getCachedUser();
+      if (cached != null) {
+        _user = User.fromJson(cached); // instant name/email/role
+        notifyListeners();
+      } else {
+        // fallback (very rare): read role only
         final role = await AuthService.getUserRole() ?? 'visitor';
-        _user = User(
-          id: 'from_token', // Will be updated by fetch
-          name: 'Loading...',
-          email: 'loading@example.com',
-          role: role,
-        );
-        await _fetchUserDetails();
+        _user = User(id: '', name: ' ', email: '', role: role); // empty name instead of "Loading..."
+        notifyListeners();
       }
+
+      // 2) Then refresh from API (keeps UI fresh if network OK)
+      await _fetchUserDetails();
     } else {
       setAsVisitor();
     }
-    notifyListeners();
   }
 
   void clearError() {

@@ -7,10 +7,6 @@ import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-
-const String baseUrl = 'https://varxpro.com';
 
 class SettingsPage extends StatefulWidget {
   final LanguageProvider langProvider;
@@ -114,12 +110,12 @@ class _SettingsPageState extends State<SettingsPage>
           mode,
         ),
         content: Row(
-          children: [
+          children: const [
             Icon(Icons.check_circle, color: Colors.white, size: 20),
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                message,
+                '',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -131,7 +127,37 @@ class _SettingsPageState extends State<SettingsPage>
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: EdgeInsets.all(16),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+
+    // إعادة إظهار النص (علشان نعدّل الـ content حسب الرسالة)
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.getPrimaryColor(
+          AppColors.seedColors[mode] ?? AppColors.seedColors[1]!,
+          mode,
+        ),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -142,12 +168,12 @@ class _SettingsPageState extends State<SettingsPage>
         backgroundColor: Colors.red.shade700,
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.white, size: 20),
-            SizedBox(width: 8),
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
@@ -158,7 +184,7 @@ class _SettingsPageState extends State<SettingsPage>
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: EdgeInsets.all(16),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -187,7 +213,7 @@ class _SettingsPageState extends State<SettingsPage>
                   color: Colors.red.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.logout, color: Colors.red, size: 30),
+                child: const Icon(Icons.logout, color: Colors.red, size: 30),
               ),
               const SizedBox(height: 16),
 
@@ -257,25 +283,14 @@ class _SettingsPageState extends State<SettingsPage>
                     child: ElevatedButton(
                       onPressed: () async {
                         Navigator.pop(ctx);
-                        await authProvider.logout();
                         try {
-                          final prefs = await SharedPreferences.getInstance();
-                          final token = prefs.getString('token');
-                          if (token != null) {
-                            await http.post(
-                              Uri.parse('$baseUrl/api/logout'),
-                              headers: {
-                                'Authorization': 'Bearer $token',
-                                'Content-Type': 'application/json',
-                              },
-                            );
-                          }
-                          await prefs.remove('token');
+                          await authProvider.logout(); // يمر عبر AuthService.logout و ينظف الكاش
                           if (!mounted) return;
-                          Navigator.of(context).pushReplacement(
+                          Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(
                               builder: (_) => const LoginPage(),
                             ),
+                            (route) => false,
                           );
                           _showSuccessSnackbar(
                             context,
@@ -329,14 +344,13 @@ class _SettingsPageState extends State<SettingsPage>
     final currentLang = langProvider.currentLanguage;
     final seedColor =
         AppColors.seedColors[modeProvider.currentMode] ??
-        AppColors.seedColors[1]!;
+            AppColors.seedColors[1]!;
     final size = MediaQuery.sizeOf(context);
     final isCompact = size.width < 360;
     final isTablet = size.width > 600;
 
-    final textDirection = currentLang == 'ar'
-        ? TextDirection.rtl
-        : TextDirection.ltr;
+    final textDirection =
+        currentLang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
     return Directionality(
       textDirection: textDirection,
@@ -417,15 +431,16 @@ class _SettingsPageState extends State<SettingsPage>
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color(0xFF6200EE),
-                                    Color(0xFF3700B3).withOpacity(0.8),
+                                    const Color(0xFF6200EE),
+                                    const Color(0xFF3700B3).withOpacity(0.8),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0xFF6200EE).withOpacity(0.3),
+                                    color: const Color(0xFF6200EE)
+                                        .withOpacity(0.3),
                                     blurRadius: 10,
                                     spreadRadius: 1,
                                     offset: const Offset(0, 2),
@@ -440,8 +455,10 @@ class _SettingsPageState extends State<SettingsPage>
                                 child: Image.asset(
                                   'assets/logo.jpg',
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.sports_soccer, color: Colors.white, size: 20),
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          const Icon(Icons.sports_soccer,
+                                              color: Colors.white, size: 20),
                                 ),
                               ),
                             ),
@@ -513,7 +530,7 @@ class _BackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final seedColor =
         AppColors.seedColors[modeProvider.currentMode] ??
-        AppColors.seedColors[1]!;
+            AppColors.seedColors[1]!;
     final primaryColor = AppColors.getPrimaryColor(
       seedColor,
       modeProvider.currentMode,
@@ -634,7 +651,7 @@ class _SettingsContent extends StatelessWidget {
           _SettingsSection(
             title:
                 Translations.getSettingsText('languageSection', currentLang) ??
-                'Language',
+                    'Language',
             icon: '🌐',
             modeProvider: modeProvider,
           ),
@@ -655,7 +672,7 @@ class _SettingsContent extends StatelessWidget {
           _SettingsSection(
             title:
                 Translations.getSettingsText('modeSection', currentLang) ??
-                'Interface Mode',
+                    'Interface Mode',
             icon: '🎨',
             modeProvider: modeProvider,
           ),
@@ -703,7 +720,10 @@ class _UserProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final seedColor = AppColors.seedColors[modeProvider.currentMode] ??
+        AppColors.seedColors[1]!;
+    final displayName =
+        user.name.trim().isEmpty ? '...' : user.name; // Fallback أنظف
 
     return Container(
       width: double.infinity,
@@ -711,15 +731,21 @@ class _UserProfileSection extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.getPrimaryColor(seedColor, modeProvider.currentMode).withOpacity(0.1),
-            AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
+            AppColors
+                .getPrimaryColor(seedColor, modeProvider.currentMode)
+                .withOpacity(0.1),
+            AppColors
+                .getSurfaceColor(modeProvider.currentMode)
+                .withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.getPrimaryColor(seedColor, modeProvider.currentMode).withOpacity(0.2),
+          color: AppColors
+              .getPrimaryColor(seedColor, modeProvider.currentMode)
+              .withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
@@ -740,8 +766,12 @@ class _UserProfileSection extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  isAuthenticated ? Colors.blue.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
-                  isAuthenticated ? Colors.purple.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                  isAuthenticated
+                      ? Colors.blue.withOpacity(0.2)
+                      : Colors.grey.withOpacity(0.2),
+                  isAuthenticated
+                      ? Colors.purple.withOpacity(0.1)
+                      : Colors.grey.withOpacity(0.1),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -769,7 +799,7 @@ class _UserProfileSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.name,
+                  displayName,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -781,7 +811,9 @@ class _UserProfileSection extends StatelessWidget {
                   user.email,
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppColors.getTextColor(modeProvider.currentMode).withOpacity(0.7),
+                    color: AppColors
+                        .getTextColor(modeProvider.currentMode)
+                        .withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -793,7 +825,9 @@ class _UserProfileSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isAuthenticated ? '${user.role.toUpperCase()} USER' : 'VISITOR MODE',
+                      isAuthenticated
+                          ? '${user.role.toUpperCase()} USER'
+                          : 'VISITOR MODE',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -931,7 +965,7 @@ class _LanguageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final seedColor =
         AppColors.seedColors[modeProvider.currentMode] ??
-        AppColors.seedColors[1]!;
+            AppColors.seedColors[1]!;
 
     return GestureDetector(
       onTap: onTap,
@@ -942,15 +976,15 @@ class _LanguageCard extends StatelessWidget {
           color: isSelected
               ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
               : AppColors.getSurfaceColor(
-                  modeProvider.currentMode,
-                ).withOpacity(0.8),
+            modeProvider.currentMode,
+          ).withOpacity(0.8),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
                 : AppColors.getTextColor(
-                    modeProvider.currentMode,
-                  ).withOpacity(0.1),
+              modeProvider.currentMode,
+            ).withOpacity(0.1),
             width: 2,
           ),
           boxShadow: [
@@ -1065,18 +1099,18 @@ class _ModeCard extends StatelessWidget {
           ),
           gradient: isSelected
               ? LinearGradient(
-                  colors: [color, color.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
+            colors: [color, color.withOpacity(0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
               : LinearGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.1),
-                    Colors.white.withOpacity(0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+            colors: [
+              Colors.white.withOpacity(0.1),
+              Colors.white.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           boxShadow: [
             if (isSelected)
               BoxShadow(
@@ -1088,6 +1122,11 @@ class _ModeCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
+            const Positioned(
+              top: 12,
+              left: 12,
+              child: Text(''),
+            ),
             Positioned(
               top: 12,
               left: 12,
@@ -1099,7 +1138,8 @@ class _ModeCard extends StatelessWidget {
               child: AnimatedOpacity(
                 opacity: isSelected ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 200),
-                child: Icon(Icons.check_circle, color: Colors.white, size: 16),
+                child:
+                    const Icon(Icons.check_circle, color: Colors.white, size: 16),
               ),
             ),
             Center(
@@ -1181,7 +1221,7 @@ class _LogoutButton extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.logout, color: Colors.white, size: 20),
+                const Icon(Icons.logout, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
                 Text(
                   Translations.getSettingsText('logoutButton', currentLang) ??
