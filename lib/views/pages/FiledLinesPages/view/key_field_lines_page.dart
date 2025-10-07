@@ -14,13 +14,13 @@ import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/controller/perspective_controller.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/widgets/CalibrationForm.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/widgets/LoadCalibrationForm.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/widgets/TransformPointForm.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/widgets/VideoPlayerWidget.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/widgets/VideoTransformForm.dart';
+//import 'package:VarXPro/views/pages/FiledLinesPages/widgets/CalibrationForm.dart';
+//import 'package:VarXPro/views/pages/FiledLinesPages/widgets/LoadCalibrationForm.dart';
+//import 'package:VarXPro/views/pages/FiledLinesPages/widgets/TransformPointForm.dart';
+//import 'package:VarXPro/views/pages/FiledLinesPages/widgets/VideoPlayerWidget.dart';
+//import 'package:VarXPro/views/pages/FiledLinesPages/widgets/VideoTransformForm.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/widgets/image_picker_widget.dart';
-import 'package:url_launcher/url_launcher.dart';
+//import 'package:url_launcher/url_launcher.dart';
 
 class KeyFieldLinesPage extends StatefulWidget {
   const KeyFieldLinesPage({super.key});
@@ -226,7 +226,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                         ),
                         SizedBox(height: screenWidth * 0.05),
 
-                        // Load Calibration Section
+                        // /* COMMENTED: Load Calibration Section */
+                        /*
                         _buildSectionCard(
                           emoji: '📥',
                           title: Translations.getOffsideText('loadCalibration', currentLang),
@@ -248,8 +249,9 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.05),
+                        */
 
-                        // Detect Field Lines Section
+                        // Detect Field Lines Section (KEPT AS IS)
                         _buildSectionCard(
                           emoji: '🔍',
                           title: Translations.getOffsideText('detectFieldLines', currentLang),
@@ -270,7 +272,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                         ),
                         SizedBox(height: screenWidth * 0.05),
 
-                        // Set Calibration Section
+                        // /* COMMENTED: Set Calibration Section */
+                        /*
                         _buildSectionCard(
                           emoji: '⚙️',
                           title: Translations.getOffsideText('setCalibration', currentLang),
@@ -285,8 +288,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.05),
+                        */
 
-                        // Transform Image Section
+                        // /* COMMENTED: Transform Image Section */
+                        /*
                         _buildSectionCard(
                           emoji: '🖼️',
                           title: Translations.getOffsideText('transformImage', currentLang),
@@ -315,8 +320,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.05),
+                        */
 
-                        // Transform Video Section
+                        // /* COMMENTED: Transform Video Section */
+                        /*
                         _buildSectionCard(
                           emoji: '🎥',
                           title: Translations.getOffsideText('transformVideo', currentLang),
@@ -337,8 +344,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.05),
+                        */
 
-                        // Transform Points Section
+                        // /* COMMENTED: Transform Points Section */
+                        /*
                         _buildSectionCard(
                           emoji: '📍',
                           title: Translations.getOffsideText('transformPoints', currentLang),
@@ -354,8 +363,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.05),
+                        */
 
-                        // Clean Artifacts Section
+                        // /* COMMENTED: Clean Artifacts Section */
+                        /*
                         _buildSectionCard(
                           emoji: '🧹',
                           title: Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
@@ -387,6 +398,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.1),
+                        */
+
                       ],
                     ),
                   ),
@@ -490,6 +503,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
     );
   }
 
+  // /* COMMENTED: _buildLoadCalibrationResult method */
+  /*
   Widget _buildLoadCalibrationResult(LoadCalibrationResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
       color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
@@ -510,6 +525,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ),
     );
   }
+  */
 
   Widget _buildDetectLinesResult(DetectLinesResponse response, int mode, Color seedColor, String currentLang, double screenWidth) {
     return Column(
@@ -579,6 +595,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
     );
   }
 
+  // /* COMMENTED: _buildCalibrationResult method */
+  /*
   Widget _buildCalibrationResult(CalibrationResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
       color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
@@ -599,7 +617,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ),
     );
   }
+  */
 
+  // /* COMMENTED: _buildTransformFrameResult method */
+  /*
   Widget _buildTransformFrameResult(TransformFrameResponse response, int mode, Color seedColor, String currentLang, double screenWidth) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -654,7 +675,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ],
     );
   }
+  */
 
+  // /* COMMENTED: _buildTransformVideoResult method */
+  /*
   Widget _buildTransformVideoResult(TransformVideoResponse response, int mode, Color seedColor, String currentLang, double screenWidth) {
     final String fullOutputUrl = '${PerspectiveService.defaultBaseUrl}${response.outputUrl}';
     return Column(
@@ -698,7 +722,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ],
     );
   }
+  */
 
+  // /* COMMENTED: _buildTransformPointResult method */
+  /*
   Widget _buildTransformPointResult(TransformPointResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
       color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
@@ -718,7 +745,10 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ),
     );
   }
+  */
 
+  // /* COMMENTED: _buildInverseTransformPointResult method */
+  /*
   Widget _buildInverseTransformPointResult(TransformPointResponse response, int mode, Color seedColor, String currentLang) {
     return Card(
       color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
@@ -738,6 +768,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ),
     );
   }
+  */
 
   Widget _buildStatusItem(String label, String value, int mode, Color seedColor) {
     return Padding(
@@ -779,6 +810,8 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
     );
   }
 
+  // /* COMMENTED: _buildClickableResultItem method */
+  /*
   Widget _buildClickableResultItem({
     required String label,
     required String value,
@@ -814,6 +847,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ),
     );
   }
+  */
 }
 
 class _FootballGridPainter extends CustomPainter {
