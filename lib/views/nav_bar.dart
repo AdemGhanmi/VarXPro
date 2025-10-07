@@ -146,7 +146,6 @@ String _titleForIndex(int pageIndex, String lang) {
 final title = _titleForIndex(_selectedIndex, currentLang);
     final emoji = _emojiForIndex(_selectedIndex);
 
-    // الزائر يشوف Home فقط
     final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
     _navItems = isVisitor
         ? const [
