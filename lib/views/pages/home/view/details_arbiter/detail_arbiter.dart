@@ -85,175 +85,182 @@ class _DetailArbiterState extends State<DetailArbiter>
     }
   }
 
-  void _setupTabs(String currentUserId) {
-    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
-    final currentLang = langProvider.currentLanguage ?? 'en';
-    final modeProvider = Provider.of<ModeProvider>(context, listen: false);
-    final textColor = AppColors.getTextColor(modeProvider.currentMode);
-    final seedColor =
-        AppColors.seedColors[modeProvider.currentMode] ??
-        AppColors.seedColors[1]!;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isLargeScreen = screenWidth > 600;
+void _setupTabs(String currentUserId) {
+  final langProvider = Provider.of<LanguageProvider>(context, listen: false);
+  final currentLang = langProvider.currentLanguage ?? 'en';
+  final modeProvider = Provider.of<ModeProvider>(context, listen: false);
+  final textColor = AppColors.getTextColor(modeProvider.currentMode);
+  final seedColor =
+      AppColors.seedColors[modeProvider.currentMode] ??
+      AppColors.seedColors[1]!;
+  final screenWidth = MediaQuery.of(context).size.width;
+  final isLargeScreen = screenWidth > 600;
 
-    if (_isVisitor) {
-      // For visitor: only Details, Statistics, Competitions with emojis
-      _tabs = [
-        const Tab(text: 'ℹ️ Details'),
-        const Tab(text: '📊 Statistics'),
-        const Tab(text: '🏆 Competitions'),
-      ];
-      _tabViews = [
-        DetailsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-        ),
-        StatisticsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-        ),
-        CompetitionsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-        ),
-      ];
-      _tabLength = 3;
-    } else if (_isUser) {
-      // For user: Details, Statistics, Competitions, Evaluations (view + create)
-      _tabs = [
-        const Tab(text: 'ℹ️ Details'),
-        const Tab(text: '📊 Statistics'),
-        const Tab(text: '🏆 Competitions'),
-        const Tab(text: '📋 Evaluations'),
-        const Tab(text: '👨‍⚖️ Referee'),
-      ];
-      _tabViews = [
-        DetailsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-        ),
-        StatisticsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-        ),
-        CompetitionsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-        ),
-        EvaluationsTab(
-          refereeId: widget.referee.id,
-          isSupervisor: _isSupervisor,
-          isUser: _isUser,
-          onCreate: _navigateToCreateEvaluation,
-          onUpdate: _updateEvaluation,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-          currentUserId: currentUserId, // Added
-        ),
-            RefereeTrackingTab(
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-          isSupervisor: _isSupervisor,
-        ),
-      ];
-      _tabLength = 5;
-    } else {
-      // For supervisor: all 5 tabs with full access
-      _tabs = [
-        const Tab(text: 'ℹ️ Details'),
-        const Tab(text: '📊 Statistics'),
-        const Tab(text: '🏆 Competitions'),
-        const Tab(text: '📋 Evaluations'),
-        const Tab(text: '👨‍⚖️ Referee'),
-      ];
-      _tabViews = [
-        DetailsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-        ),
-        StatisticsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-        ),
-        CompetitionsTab(
-          referee: widget.referee,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-        ),
-        EvaluationsTab(
-          refereeId: widget.referee.id,
-          isSupervisor: true,
-          isUser: false,
-          onCreate: _navigateToCreateEvaluation,
-          onUpdate: _updateEvaluation,
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-          currentUserId: currentUserId, // Added
-        ),
-        RefereeTrackingTab(
-          currentLang: currentLang,
-          textColor: textColor,
-          isLargeScreen: isLargeScreen,
-          animationController: _animationController,
-          modeProvider: modeProvider,
-          seedColor: seedColor,
-          isSupervisor: _isSupervisor,
-        ),
-      ];
-      _tabLength = 5;
-    }
+  // ترجمة النصوص للتبويبات حسب اللغة
+  final detailsTabText = Translations.getRefereeDetailsText('detailsTab', currentLang);
+  final statisticsTabText = Translations.getRefereeDetailsText('statisticsTab', currentLang);
+  final competitionsTabText = Translations.getRefereeDetailsText('competitionsTab', currentLang);
+  final evaluationsTabText = Translations.getRefereeDetailsText('evaluationsTab', currentLang);
+  final refereeTrackingTabText = Translations.getRefereeDetailsText('refereeTrackingTab', currentLang);
+
+  if (_isVisitor) {
+    // For visitor: only Details, Statistics, Competitions with emojis
+    _tabs = [
+      Tab(text: 'ℹ️ $detailsTabText'),
+      Tab(text: '📊 $statisticsTabText'),
+      Tab(text: '🏆 $competitionsTabText'),
+    ];
+    _tabViews = [
+      DetailsTab(
+        referee: widget.referee,
+        currentLang: currentLang,  // مرر اللغة للـ sub-widget عشان يترجم جواه
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+      ),
+      StatisticsTab(
+        referee: widget.referee,
+        currentLang: currentLang,  // مرر اللغة
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+      ),
+      CompetitionsTab(
+        referee: widget.referee,
+        currentLang: currentLang,  // مرر اللغة
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+      ),
+    ];
+    _tabLength = 3;
+  } else if (_isUser) {
+    // For user: Details, Statistics, Competitions, Evaluations (view + create)
+    _tabs = [
+      Tab(text: 'ℹ️ $detailsTabText'),
+      Tab(text: '📊 $statisticsTabText'),
+      Tab(text: '🏆 $competitionsTabText'),
+      Tab(text: '📋 $evaluationsTabText'),
+      Tab(text: '👨‍⚖️ $refereeTrackingTabText'),
+    ];
+    _tabViews = [
+      DetailsTab(
+        referee: widget.referee,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+      ),
+      StatisticsTab(
+        referee: widget.referee,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+      ),
+      CompetitionsTab(
+        referee: widget.referee,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+      ),
+      EvaluationsTab(
+        refereeId: widget.referee.id,
+        isSupervisor: _isSupervisor,
+        isUser: _isUser,
+        onCreate: _navigateToCreateEvaluation,
+        onUpdate: _updateEvaluation,
+        currentLang: currentLang,  // مرر اللغة
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+        currentUserId: currentUserId,
+      ),
+      RefereeTrackingTab(
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+        isSupervisor: _isSupervisor,
+      ),
+    ];
+    _tabLength = 5;
+  } else {
+    // For supervisor: all 5 tabs with full access
+    _tabs = [
+      Tab(text: 'ℹ️ $detailsTabText'),
+      Tab(text: '📊 $statisticsTabText'),
+      Tab(text: '🏆 $competitionsTabText'),
+      Tab(text: '📋 $evaluationsTabText'),
+      Tab(text: '👨‍⚖️ $refereeTrackingTabText'),
+    ];
+    _tabViews = [
+      // نفس الـ views زي فوق، بس isSupervisor: true
+      DetailsTab(
+        referee: widget.referee,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+      ),
+      StatisticsTab(
+        referee: widget.referee,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+      ),
+      CompetitionsTab(
+        referee: widget.referee,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+      ),
+      EvaluationsTab(
+        refereeId: widget.referee.id,
+        isSupervisor: true,
+        isUser: false,
+        onCreate: _navigateToCreateEvaluation,
+        onUpdate: _updateEvaluation,
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+        currentUserId: currentUserId,
+      ),
+      RefereeTrackingTab(
+        currentLang: currentLang,
+        textColor: textColor,
+        isLargeScreen: isLargeScreen,
+        animationController: _animationController,
+        modeProvider: modeProvider,
+        seedColor: seedColor,
+        isSupervisor: _isSupervisor,
+      ),
+    ];
+    _tabLength = 5;
   }
-
+}
   Future<void> _updateEvaluation(
     int evalId,
     Map<String, dynamic> updates,

@@ -1,4 +1,4 @@
-// lib/views/pages/home/view/details_arbiter/details_tab.dart (No changes needed)
+// lib/views/pages/home/view/details_arbiter/details_tab.dart
 import 'package:flutter/material.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/lang/translation.dart';
@@ -38,21 +38,21 @@ class DetailsTab extends StatelessWidget {
           _buildDetailRow(
             emoji: '🏆',
             label: Translations.getRefereeDetailsText('confederation', currentLang),
-            value: referee.confed,
+            value: referee.confed ?? Translations.getRefereeDetailsText('na', currentLang),
             textColor: textColor,
           ),
           const SizedBox(height: 12),
           _buildDetailRow(
             emoji: '📅',
             label: Translations.getRefereeDetailsText('since', currentLang),
-            value: referee.since.toString(),
+            value: referee.since?.toString() ?? Translations.getRefereeDetailsText('na', currentLang),
             textColor: textColor,
           ),
           const SizedBox(height: 12),
           _buildDetailRow(
             emoji: referee.gender == 'Male' ? '♂️' : '♀️',
             label: Translations.getRefereeDetailsText('gender', currentLang),
-            value: referee.gender,
+            value: referee.gender ?? Translations.getRefereeDetailsText('na', currentLang),
             textColor: textColor,
           ),
           const SizedBox(height: 12),

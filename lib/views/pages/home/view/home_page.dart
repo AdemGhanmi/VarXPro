@@ -11,7 +11,7 @@ import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/lang/translation.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Add to pubspec.yaml: shared_preferences: ^2.2.2
+import 'package:shared_preferences/shared_preferences.dart'; 
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

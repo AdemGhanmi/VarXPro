@@ -1,8 +1,9 @@
 // lib/views/nav/nav_page.dart
-// (final) — Removed RefereeTrackingSystem page completely.
-// Navbar: emojis only, exactly 6 items (Home, Faute, Lines, Offside, Tracking, Live Stream).
-// Visitor: يرى Home فقط. Settings تبقى ظاهرة للجميع.
-// Fix: no index 6 anymore; updated emoji map & title mapping.
+// Navbar: emojis only, Home-only for Visitor (no overflow / no giant emoji).
+// Updates:
+// - bottomNavigationBar wrapped with MediaQuery(textScaler: 1.0)
+// - _EmojiOnlyNavBar & _SingleNavItem now use SizedBox + FittedBox for emoji
+// - Fixed height constraints for stable layout
 
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
@@ -56,7 +57,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
 
-    // ✅ 6 صفحات بالترتيب المطلوب
+    // 6 pages (authenticated)
     _pages = [
       const HomePage(), // 0
       RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()), // 1
@@ -106,13 +107,10 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     return shouldExit ?? false;
   }
 
-  // lib/views/nav/nav_page.dart  (بدّل هالدالة كاملة)
-String _titleForIndex(int pageIndex, String lang) {
-  return Translations.getAppBarTitle(pageIndex, lang);
-}
+  String _titleForIndex(int pageIndex, String lang) {
+    return Translations.getAppBarTitle(pageIndex, lang);
+  }
 
-
-  // إيموجيات التاب
   String _emojiForIndex(int pageIndex) {
     switch (pageIndex) {
       case 0:
@@ -120,11 +118,11 @@ String _titleForIndex(int pageIndex, String lang) {
       case 1:
         return '🚨'; // Faute detection
       case 2:
-        return '📐'; // Lignes du terrain
+        return '📐'; // Field lines
       case 3:
-        return '🚩'; // Hors-jeu
+        return '🚩'; // Offside
       case 4:
-        return '📊'; // Suivre de joueur (tracking)
+        return '📊'; // Tracking
       case 5:
         return '📡'; // Live stream
       default:
@@ -143,7 +141,7 @@ String _titleForIndex(int pageIndex, String lang) {
     final w = MediaQuery.sizeOf(context).width;
     final isCompact = w < 360;
 
-final title = _titleForIndex(_selectedIndex, currentLang);
+    final title = _titleForIndex(_selectedIndex, currentLang);
     final emoji = _emojiForIndex(_selectedIndex);
 
     final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
@@ -216,26 +214,20 @@ final title = _titleForIndex(_selectedIndex, currentLang);
                   actions: [
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.center,
-                        children: [
-                          IconButton(
-                            tooltip: 'Settings',
-                            icon: Text('⚙️', style: TextStyle(fontSize: isCompact ? 18 : 22, color: Colors.white)),
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => SettingsPage(
-                                    langProvider: langProvider,
-                                    modeProvider: modeProvider,
-                                    currentLang: currentLang,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                      child: IconButton(
+                        tooltip: 'Settings',
+                        icon: Text('⚙️', style: TextStyle(fontSize: isCompact ? 18 : 22, color: Colors.white)),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => SettingsPage(
+                                langProvider: langProvider,
+                                modeProvider: modeProvider,
+                                currentLang: currentLang,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -260,19 +252,23 @@ final title = _titleForIndex(_selectedIndex, currentLang);
           ),
         ),
 
-        // NAV BAR — emojis only
+        // NAV BAR — emojis only (FIX: lock text scale + size cap)
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
-            child: _EmojiOnlyNavBar(
-              items: _navItems,
-              seedColor: seed,
-              isCompact: isCompact,
-              currentPageIndex: _selectedIndex,
-              onTapItem: _onTapNav,
-              pillScale: _pillScale,
-              mode: modeProvider.currentMode,
+            child: MediaQuery(
+              // prevent system's text scaling from enlarging emojis here
+              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.0)),
+              child: _EmojiOnlyNavBar(
+                items: _navItems,
+                seedColor: seed,
+                isCompact: isCompact,
+                currentPageIndex: _selectedIndex,
+                onTapItem: _onTapNav,
+                pillScale: _pillScale,
+                mode: modeProvider.currentMode,
+              ),
             ),
           ),
         ),
@@ -321,6 +317,7 @@ class _EmojiOnlyNavBar extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
+          constraints: const BoxConstraints(minHeight: 56, maxHeight: 64), // stable height
           padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
           decoration: BoxDecoration(
             color: AppColors.getSurfaceColor(mode).withOpacity(.74),
@@ -361,10 +358,21 @@ class _EmojiOnlyNavBar extends StatelessWidget {
                             ),
                             child: ScaleTransition(
                               scale: selected ? pillScale : const AlwaysStoppedAnimation(1.0),
-                              child: Text(
-                                it.emoji,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: isCompact ? 18 : 20),
+                              child: SizedBox(
+                                height: isCompact ? 24 : 28,
+                                child: FittedBox(
+                                  fit: BoxFit.contain,
+                                  child: Text(
+                                    it.emoji,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: isCompact ? 20 : 22, height: 1.0),
+                                    textHeightBehavior: const TextHeightBehavior(
+                                      applyHeightToFirstAscent: false,
+                                      applyHeightToLastDescent: false,
+                                    ),
+                                    softWrap: false,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -412,10 +420,21 @@ class _SingleNavItem extends StatelessWidget {
         ),
         child: ScaleTransition(
           scale: pillScale,
-          child: Text(
-            item.emoji,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: isCompact ? 18 : 20),
+          child: SizedBox(
+            height: isCompact ? 24 : 28,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: Text(
+                item.emoji,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: isCompact ? 20 : 22, height: 1.0),
+                textHeightBehavior: const TextHeightBehavior(
+                  applyHeightToFirstAscent: false,
+                  applyHeightToLastDescent: false,
+                ),
+                softWrap: false,
+              ),
+            ),
           ),
         ),
       ),
