@@ -3,14 +3,14 @@ class Translations {
   static const Map<String, Map<String, dynamic>> pageTitles = {
     'en': {
       'titles': [
-        'Referee Tracking',
+        'Home',
         'Fault Detection',
         'Field Lines',
         'Offside',
         'Player Tracking',
         'Live Streaming',
-        'Home',
       ],
+
       'settingsPage': {
         'settingsTitle': 'Settings',
         'languageSection': 'Language',
@@ -119,7 +119,8 @@ class Translations {
         'Cleaned ': 'Cleaned ',
         ' files': ' files',
         'Failed to load image': 'Failed to load image',
-        'Analyzing video... This may take 10-30 minutes or longer.': 'Analyzing video... This may take 10-30 minutes or longer.',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyzing video... This may take 10-30 minutes or longer.',
         'Retry': 'Retry',
         'Play Tic-Tac-Toe while waiting!': 'Play Tic-Tac-Toe while waiting!',
         'It\'s a draw!': 'It\'s a draw!',
@@ -132,22 +133,29 @@ class Translations {
         'Visualizations': 'Visualizations',
         'Clean Files': 'Clean Files',
         'Tic-Tac-Toe': 'Tic-Tac-Toe',
-        'Supported: MP4 • Max length depends on server config.': 'Supported: MP4 • Max length depends on server config.',
+        'Supported: MP4 • Max length depends on server config.':
+            'Supported: MP4 • Max length depends on server config.',
       },
       'homePage': {
         'subtitle': 'AI-Powered Football Video Analytics',
         'playerTrackingTitle': 'Player Tracking',
-        'playerTrackingDesc': 'Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.',
+        'playerTrackingDesc':
+            'Advanced AI system for tracking players and analyzing goals in football videos, providing insights on movements, speeds, and goal opportunities.',
         'foulDetectionTitle': 'Foul Detection',
-        'foulDetectionDesc': 'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
+        'foulDetectionDesc':
+            'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
         'keyFieldLinesTitle': 'Key Field Lines',
-        'keyFieldLinesDesc': 'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
+        'keyFieldLinesDesc':
+            'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
         'offsideTitle': 'Offside Detection',
-        'offsideDesc': 'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
+        'offsideDesc':
+            'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
         'refereeTrackingTitle': 'Referee Tracking',
-        'refereeTrackingDesc': 'Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.',
+        'refereeTrackingDesc':
+            'Track referee movements, calculate distances, speeds, and generate heatmaps, speed plots, and proximity analysis.',
         'aiInsightsTitle': 'AI Insights',
-        'aiInsightsDesc': 'Get the best AI-powered solutions for your football analysis problems, including tracking, verification, and more.',
+        'aiInsightsDesc':
+            'Get the best AI-powered solutions for your football analysis problems, including tracking, verification, and more.',
         'enterApp': 'Enter the App',
         'mainTitle': 'Advanced VAR Technology',
       },
@@ -202,7 +210,8 @@ class Translations {
         'parameters': 'Parameters',
         'lineMode': 'Line Mode',
         'photoAccessDenied': 'Please grant photo access to pick images',
-        'photoAccessPermanentlyDenied': 'Photo access denied. Enable in settings.',
+        'photoAccessPermanentlyDenied':
+            'Photo access denied. Enable in settings.',
         'noImageSelected': 'No image selected',
         'errorPickingImage': 'Error picking image',
         'error': 'Error',
@@ -276,7 +285,8 @@ class Translations {
         'cleanArtifacts': 'Clean Artifacts',
         'status': 'Status',
         'fieldLinesAnalysis': 'Field Lines Analysis',
-        'fieldLinesDescription': 'Detect and calibrate football field lines for tactical analysis.',
+        'fieldLinesDescription':
+            'Detect and calibrate football field lines for tactical analysis.',
         'fieldLinesDetected': 'Field lines detected',
         'noFieldLinesDetected': 'No field lines detected',
       },
@@ -349,14 +359,16 @@ class Translations {
         'failedToLoadVideo': 'Failed to load video',
         'retry': 'Retry',
         'fileAccessDenied': 'Please grant file access to pick files',
-        'fileAccessPermanentlyDenied': 'File access denied. Enable in settings.',
+        'fileAccessPermanentlyDenied':
+            'File access denied. Enable in settings.',
         'noFileSelected': 'No file selected',
         'settings': 'Settings',
       },
       'playerTrackingPage': {
         'error': 'Error',
         'artifactsCleaned': 'Temporary Files Cleaned Successfully',
-        'Analyzing video... This may take 10-30 minutes or longer.': 'Analyzing video... This may take 10-30 minutes or longer.',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyzing video... This may take 10-30 minutes or longer.',
         'Play Tic-Tac-Toe while waiting!': 'Play Tic-Tac-Toe while waiting!',
         'Analysis complete! View results.': 'Analysis complete! View results.',
         'analysisConfiguration': 'Analysis Configuration',
@@ -431,7 +443,8 @@ class Translations {
       'error_sharing': 'Error sharing',
       'delete': 'Delete',
       'confirm_delete': 'Confirm Delete',
-      'delete_recording_confirm': 'Are you sure you want to delete this recording?',
+      'delete_recording_confirm':
+          'Are you sure you want to delete this recording?',
       'cancel': 'Cancel',
       'recording_deleted': 'Recording deleted',
       'error_deleting': 'Error deleting',
@@ -483,7 +496,8 @@ class Translations {
         'launchFullSystem': 'Launch Full System',
         'enterViewerMode': 'Enter Viewer Mode',
         'keyFeatures': 'Key Features',
-        'onlyAuthenticatedUsers': 'Only authenticated users can create evaluations',
+        'onlyAuthenticatedUsers':
+            'Only authenticated users can create evaluations',
         'invalidRefereeId': 'Invalid referee ID',
         'evaluationCreated': 'Evaluation created! Reload to see',
         'failedToCreate': 'Failed to create evaluation',
@@ -506,7 +520,8 @@ class Translations {
         'scoreMustBe0100': 'Score must be 0-100',
         'youCanOnlyDeleteOwn': 'You can only delete your own evaluations',
         'confirmDelete': 'Confirm Delete',
-        'areYouSureDelete': 'Are you sure you want to delete this evaluation? This action cannot be undone.',
+        'areYouSureDelete':
+            'Are you sure you want to delete this evaluation? This action cannot be undone.',
         'cancel': 'Cancel',
         'delete': 'Delete',
         'deletedSuccessfully': 'Deleted successfully',
@@ -515,22 +530,24 @@ class Translations {
         'failedToUpdate': 'Failed to update',
         'errorUpdating': 'Error updating',
         'evaluationSections': 'Evaluation Sections',
-        'detailedSectionsNotAvailable': 'Detailed sections not available in this view',
-        'summaryShownAbove': 'Summary shown above. Contact supervisor for full report.',
+        'detailedSectionsNotAvailable':
+            'Detailed sections not available in this view',
+        'summaryShownAbove':
+            'Summary shown above. Contact supervisor for full report.',
         'advancedRefereeTrackingSystem': 'Advanced Referee Tracking System',
-        'fullAccessDescription': 'Full access: Upload videos, AI analysis, and performance insights.',
+        'fullAccessDescription':
+            'Full access: Upload videos, AI analysis, and performance insights.',
         'viewerModeDescription': 'Viewer mode: Explore analytics and reports.',
       },
     },
     'fr': {
       'titles': [
-        'Suivi des Joueurs',
+        'Accueil',
         'Détection de Fautes',
         'Lignes de Terrain',
         'Hors-jeu',
-        'Suivi de l\'Arbitre',
+        'Suivi des Joueurs',
         'Diffusion en Direct',
-        'Home',
       ],
       'settingsPage': {
         'settingsTitle': 'Paramètres',
@@ -598,7 +615,8 @@ class Translations {
         'verify': 'VÉRIFIER',
         'loading': 'Chargement...',
         'continueAsVisitor': 'Continuer en tant que Visiteur',
-        'forgotMessage': 'Entrez votre email pour réinitialiser le mot de passe',
+        'forgotMessage':
+            'Entrez votre email pour réinitialiser le mot de passe',
         'backToLogin': 'Retour à la Connexion',
         'sendOtp': 'Envoyer OTP',
         'name': 'Nom',
@@ -641,35 +659,44 @@ class Translations {
         'Cleaned ': 'Nettoyé ',
         ' files': ' fichiers',
         'Failed to load image': 'Échec du chargement de l\'image',
-        'Analyzing video... This may take 10-30 minutes or longer.': 'Analyse de la vidéo en cours... Cela peut prendre 10-30 minutes ou plus.',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyse de la vidéo en cours... Cela peut prendre 10-30 minutes ou plus.',
         'Retry': 'Réessayer',
         'Play Tic-Tac-Toe while waiting!': 'Jouez au Morpion en attendant !',
         'It\'s a draw!': 'C\'est un match nul !',
         ' wins!': ' gagne !',
         'Reset Game': 'Réinitialiser le Jeu',
-        'Analysis complete! View results.': 'Analyse terminée ! Voir les résultats.',
+        'Analysis complete! View results.':
+            'Analyse terminée ! Voir les résultats.',
         'Unknown': 'Inconnu',
         'Summary': 'Résumé',
         'Downloads': 'Téléchargements',
         'Visualisations': 'Visualisations',
         'Clean Files': 'Nettoyer les fichiers',
         'Tic-Tac-Toe': 'Morpion',
-        'Supported: MP4 • Max length depends on server config.': 'Supporté : MP4 • La longueur max dépend de la config du serveur.',
+        'Supported: MP4 • Max length depends on server config.':
+            'Supporté : MP4 • La longueur max dépend de la config du serveur.',
       },
       'homePage': {
         'subtitle': 'Analyse vidéo de football propulsée par l\'IA',
         'playerTrackingTitle': 'Suivi des joueurs',
-        'playerTrackingDesc': 'Système avancé d\'IA pour suivre les joueurs et analyser les buts dans les vidéos de football, fournissant des informations sur les mouvements, les vitesses et les opportunités de but.',
+        'playerTrackingDesc':
+            'Système avancé d\'IA pour suivre les joueurs et analyser les buts dans les vidéos de football, fournissant des informations sur les mouvements, les vitesses et les opportunités de but.',
         'foulDetectionTitle': 'Détection de fautes',
-        'foulDetectionDesc': 'Détecter et analyser les fautes en utilisant l\'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.',
+        'foulDetectionDesc':
+            'Détecter et analyser les fautes en utilisant l\'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.',
         'keyFieldLinesTitle': 'Lignes de terrain clés',
-        'keyFieldLinesDesc': 'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
+        'keyFieldLinesDesc':
+            'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
         'offsideTitle': 'Détection de hors-jeu',
-        'offsideDesc': 'Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d\'attaque.',
+        'offsideDesc':
+            'Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d\'attaque.',
         'refereeTrackingTitle': 'Suivi de l\'arbitre',
-        'refereeTrackingDesc': 'Suivre les mouvements de l\'arbitre, calculer les distances, les vitesses et générer des cartes de chaleur, des graphiques de vitesse et une analyse de proximité.',
+        'refereeTrackingDesc':
+            'Suivre les mouvements de l\'arbitre, calculer les distances, les vitesses et générer des cartes de chaleur, des graphiques de vitesse et une analyse de proximité.',
         'aiInsightsTitle': 'Perspectives IA',
-        'aiInsightsDesc': 'Obtenez les meilleures solutions basées sur l\'IA pour vos problèmes d\'analyse de football, y compris le suivi, la vérification, et plus encore.',
+        'aiInsightsDesc':
+            'Obtenez les meilleures solutions basées sur l\'IA pour vos problèmes d\'analyse de football, y compris le suivi, la vérification, et plus encore.',
         'enterApp': 'Entrer dans l\'application',
         'mainTitle': 'Technologie VAR avancée',
       },
@@ -713,11 +740,14 @@ class Translations {
         'annotatedZip': 'ZIP Annoté',
         'noRuns': 'Aucune analyse précédente trouvée',
         'noValidRuns': 'Aucune analyse valide trouvée',
-        'pressRefresh': 'Appuyez sur rafraîchir pour charger les analyses précédentes',
+        'pressRefresh':
+            'Appuyez sur rafraîchir pour charger les analyses précédentes',
         'parameters': 'Paramètres',
         'lineMode': 'Mode de Ligne',
-        'photoAccessDenied': 'Veuillez accorder l\'accès aux photos pour choisir des images',
-        'photoAccessPermanentlyDenied': 'Accès aux photos refusé. Activez dans les paramètres.',
+        'photoAccessDenied':
+            'Veuillez accorder l\'accès aux photos pour choisir des images',
+        'photoAccessPermanentlyDenied':
+            'Accès aux photos refusé. Activez dans les paramètres.',
         'noImageSelected': 'Aucune image sélectionnée',
         'errorPickingImage': 'Erreur lors de la sélection de l\'image',
         'error': 'Erreur',
@@ -748,7 +778,8 @@ class Translations {
         'enterHeight': 'Veuillez entrer la hauteur',
         'saveAs': 'Enregistrer sous',
         'setCalibration': 'Définir la calibration',
-        'calibrationFileMustBeNpz': 'Le fichier de calibration doit être au format NPZ',
+        'calibrationFileMustBeNpz':
+            'Le fichier de calibration doit être au format NPZ',
         'imageMustBeJpgOrPng': 'L\'image doit être au format JPG ou PNG',
         'loadCalibrationByName': 'Charger la calibration par nom',
         'loadCalibrationByFile': 'Charger la calibration par fichier',
@@ -791,7 +822,8 @@ class Translations {
         'cleanArtifacts': 'Nettoyer les artefacts',
         'status': 'État',
         'fieldLinesAnalysis': 'Analyse des lignes de terrain',
-        'fieldLinesDescription': 'Détecter et calibrer les lignes du terrain de football pour l\'analyse tactique.',
+        'fieldLinesDescription':
+            'Détecter et calibrer les lignes du terrain de football pour l\'analyse tactique.',
         'fieldLinesDetected': 'Lignes du terrain détectées',
         'noFieldLinesDetected': 'Aucune ligne détectée',
       },
@@ -859,21 +891,26 @@ class Translations {
         'filesRemoved': 'Fichiers Supprimés',
         'failedToLoadHeatmap': 'Échec du chargement de la carte de chaleur',
         'failedToLoadSpeedPlot': 'Échec du chargement du graphique de vitesse',
-        'failedToLoadProximityPlot': 'Échec du chargement du graphique de proximité',
+        'failedToLoadProximityPlot':
+            'Échec du chargement du graphique de proximité',
         'failedToLoadFrame': 'Échec du chargement de l\'image',
         'failedToLoadVideo': 'Échec du chargement de la vidéo',
         'retry': 'Réessayer',
-        'fileAccessDenied': 'Veuillez accorder l\'accès aux fichiers pour choisir des fichiers',
-        'fileAccessPermanentlyDenied': 'Accès aux fichiers refusé. Activez dans les paramètres.',
+        'fileAccessDenied':
+            'Veuillez accorder l\'accès aux fichiers pour choisir des fichiers',
+        'fileAccessPermanentlyDenied':
+            'Accès aux fichiers refusé. Activez dans les paramètres.',
         'noFileSelected': 'Aucun fichier sélectionné',
         'settings': 'Paramètres',
       },
       'playerTrackingPage': {
         'error': 'Erreur',
         'artifactsCleaned': 'Fichiers temporaires nettoyés avec succès',
-        'Analyzing video... This may take 10-30 minutes or longer.': 'Analyse de la vidéo en cours... Cela peut prendre 10-30 minutes ou plus.',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'Analyse de la vidéo en cours... Cela peut prendre 10-30 minutes ou plus.',
         'Play Tic-Tac-Toe while waiting!': 'Jouez au Morpion en attendant !',
-        'Analysis complete! View results.': 'Analyse terminée ! Voir les résultats.',
+        'Analysis complete! View results.':
+            'Analyse terminée ! Voir les résultats.',
         'analysisConfiguration': 'Configuration de l\'analyse',
         'pickAndAnalyzeVideo': 'Choisir et analyser la vidéo',
         'detectionConfidence': 'Confiance de détection (0-1)',
@@ -946,7 +983,8 @@ class Translations {
       'error_sharing': 'Erreur lors du partage',
       'delete': 'Supprimer',
       'confirm_delete': 'Confirmer la Suppression',
-      'delete_recording_confirm': 'Êtes-vous sûr de vouloir supprimer cet enregistrement ?',
+      'delete_recording_confirm':
+          'Êtes-vous sûr de vouloir supprimer cet enregistrement ?',
       'cancel': 'Annuler',
       'recording_deleted': 'Enregistrement supprimé',
       'error_deleting': 'Erreur lors de la suppression',
@@ -963,7 +1001,8 @@ class Translations {
         'allConfederations': 'Toutes les confédérations',
         'allCountries': 'Tous les pays',
         'noRefereesFound': 'Aucun arbitre trouvé',
-        'adjustSearchOrFilters': 'Essayez d\'ajuster votre recherche ou vos filtres',
+        'adjustSearchOrFilters':
+            'Essayez d\'ajuster votre recherche ou vos filtres',
         'failedToLoadReferees': 'Échec du chargement des arbitres',
         'checkConnection': 'Veuillez vérifier votre connexion',
         'retry': 'Réessayer',
@@ -998,7 +1037,8 @@ class Translations {
         'launchFullSystem': 'Lancer le Système Complet',
         'enterViewerMode': 'Entrer en Mode Spectateur',
         'keyFeatures': 'Fonctionnalités Clés',
-        'onlyAuthenticatedUsers': 'Seuls les utilisateurs authentifiés peuvent créer des évaluations',
+        'onlyAuthenticatedUsers':
+            'Seuls les utilisateurs authentifiés peuvent créer des évaluations',
         'invalidRefereeId': 'ID d\'arbitre invalide',
         'evaluationCreated': 'Évaluation créée ! Rechargez pour voir',
         'failedToCreate': 'Échec de création de l\'évaluation',
@@ -1008,7 +1048,8 @@ class Translations {
         'creating': 'Création en cours...',
         'createEvaluation': 'Créer Évaluation',
         'loginToView': 'Connectez-vous pour voir et gérer les évaluations',
-        'signInAsUserOrSupervisor': 'Connectez-vous en tant qu\'utilisateur ou superviseur pour accéder',
+        'signInAsUserOrSupervisor':
+            'Connectez-vous en tant qu\'utilisateur ou superviseur pour accéder',
         'loadingEvaluations': 'Chargement des évaluations...',
         'noEvaluations': 'Aucune évaluation disponible',
         'createOneToGetStarted': 'Créez-en une pour commencer',
@@ -1017,11 +1058,14 @@ class Translations {
         'matchField': 'Match',
         'dateField': 'Date',
         'viewOnly': 'Vue seule (non auteur)',
-        'youCanOnlyEditOwn': 'Vous ne pouvez modifier que vos propres évaluations',
+        'youCanOnlyEditOwn':
+            'Vous ne pouvez modifier que vos propres évaluations',
         'scoreMustBe0100': 'Le score doit être entre 0 et 100',
-        'youCanOnlyDeleteOwn': 'Vous ne pouvez supprimer que vos propres évaluations',
+        'youCanOnlyDeleteOwn':
+            'Vous ne pouvez supprimer que vos propres évaluations',
         'confirmDelete': 'Confirmer la Suppression',
-        'areYouSureDelete': 'Êtes-vous sûr de vouloir supprimer cette évaluation ? Cette action est irréversible.',
+        'areYouSureDelete':
+            'Êtes-vous sûr de vouloir supprimer cette évaluation ? Cette action est irréversible.',
         'cancel': 'Annuler',
         'delete': 'Supprimer',
         'deletedSuccessfully': 'Supprimé avec succès',
@@ -1030,22 +1074,25 @@ class Translations {
         'failedToUpdate': 'Échec de mise à jour',
         'errorUpdating': 'Erreur de mise à jour',
         'evaluationSections': 'Sections d\'Évaluation',
-        'detailedSectionsNotAvailable': 'Sections détaillées non disponibles dans cette vue',
-        'summaryShownAbove': 'Résumé affiché ci-dessus. Contactez le superviseur pour le rapport complet.',
+        'detailedSectionsNotAvailable':
+            'Sections détaillées non disponibles dans cette vue',
+        'summaryShownAbove':
+            'Résumé affiché ci-dessus. Contactez le superviseur pour le rapport complet.',
         'advancedRefereeTrackingSystem': 'Système Avancé de Suivi des Arbitres',
-        'fullAccessDescription': 'Accès complet : Téléchargez des vidéos, analyse IA et insights de performance.',
-        'viewerModeDescription': 'Mode spectateur : Explorez les analyses et rapports.',
+        'fullAccessDescription':
+            'Accès complet : Téléchargez des vidéos, analyse IA et insights de performance.',
+        'viewerModeDescription':
+            'Mode spectateur : Explorez les analyses et rapports.',
       },
     },
     'ar': {
       'titles': [
-        'تتبع اللاعبين',
+        'الرئيسية',
         'كشف الأخطاء',
         'خطوط الملعب',
         'تسلل',
-        'تتبع الحكم',
+        'تتبع اللاعبين',
         'البث المباشر',
-        'بيت',
       ],
       'settingsPage': {
         'settingsTitle': 'الإعدادات',
@@ -1155,7 +1202,8 @@ class Translations {
         'Cleaned ': 'تم تنظيف ',
         ' files': ' ملفات',
         'Failed to load image': 'فشل في تحميل الصورة',
-        'Analyzing video... This may take 10-30 minutes or longer.': 'جاري تحليل الفيديو... قد يستغرق ذلك 10-30 دقيقة أو أكثر.',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'جاري تحليل الفيديو... قد يستغرق ذلك 10-30 دقيقة أو أكثر.',
         'Retry': 'إعادة المحاولة',
         'Play Tic-Tac-Toe while waiting!': 'العب تيك تاك تو أثناء الانتظار!',
         'It\'s a draw!': 'إنه تعادل!',
@@ -1168,22 +1216,29 @@ class Translations {
         'Visualizations': 'التصورات',
         'Clean Files': 'تنظيف الملفات',
         'Tic-Tac-Toe': 'تيك تاك تو',
-        'Supported: MP4 • Max length depends on server config.': 'مدعوم: MP4 • الطول الأقصى يعتمد على إعدادات الخادم.',
+        'Supported: MP4 • Max length depends on server config.':
+            'مدعوم: MP4 • الطول الأقصى يعتمد على إعدادات الخادم.',
       },
       'homePage': {
         'subtitle': 'تحليل فيديو كرة القدم باستخدام الذكاء الاصطناعي',
         'playerTrackingTitle': 'تتبع اللاعبين',
-        'playerTrackingDesc': 'نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، مع توفير رؤى حول الحركات والسرعات وفرص التسجيل.',
+        'playerTrackingDesc':
+            'نظام ذكاء اصطناعي متقدم لتتبع اللاعبين وتحليل الأهداف في فيديوهات كرة القدم، مع توفير رؤى حول الحركات والسرعات وفرص التسجيل.',
         'foulDetectionTitle': 'كشف الأخطاء',
-        'foulDetectionDesc': 'كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.',
+        'foulDetectionDesc':
+            'كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.',
         'keyFieldLinesTitle': 'خطوط الملعب الرئيسية',
-        'keyFieldLinesDesc': 'تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
+        'keyFieldLinesDesc':
+            'تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
         'offsideTitle': 'كشف التسلل',
-        'offsideDesc': 'كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.',
+        'offsideDesc':
+            'كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.',
         'refereeTrackingTitle': 'تتبع الحكم',
-        'refereeTrackingDesc': 'تتبع حركات الحكم، وحساب المسافات والسرعات، وإنشاء خرائط حرارة ورسوم سرعات وتحليل القرب.',
+        'refereeTrackingDesc':
+            'تتبع حركات الحكم، وحساب المسافات والسرعات، وإنشاء خرائط حرارة ورسوم سرعات وتحليل القرب.',
         'aiInsightsTitle': 'رؤى الذكاء الاصطناعي',
-        'aiInsightsDesc': 'احصل على أفضل الحلول المدعومة بالذكاء الاصطناعي لمشاكل تحليل كرة القدم، بما في ذلك التتبع والتحقق والمزيد.',
+        'aiInsightsDesc':
+            'احصل على أفضل الحلول المدعومة بالذكاء الاصطناعي لمشاكل تحليل كرة القدم، بما في ذلك التتبع والتحقق والمزيد.',
         'enterApp': 'دخول التطبيق',
         'mainTitle': 'تقنية VAR المتقدمة',
       },
@@ -1231,7 +1286,8 @@ class Translations {
         'parameters': 'المعلمات',
         'lineMode': 'وضع الخط',
         'photoAccessDenied': 'يرجى منح إذن الوصول إلى الصور لاختيار الصور',
-        'photoAccessPermanentlyDenied': 'تم رفض الوصول إلى الصور. قم بالتفعيل في الإعدادات.',
+        'photoAccessPermanentlyDenied':
+            'تم رفض الوصول إلى الصور. قم بالتفعيل في الإعدادات.',
         'noImageSelected': 'لم يتم اختيار صورة',
         'errorPickingImage': 'خطأ أثناء اختيار الصورة',
         'error': 'خطأ',
@@ -1305,7 +1361,8 @@ class Translations {
         'cleanArtifacts': 'تنظيف الملفات المؤقتة',
         'status': 'الحالة',
         'fieldLinesAnalysis': 'تحليل خطوط الملعب',
-        'fieldLinesDescription': 'كشف ومعايرة خطوط ملعب كرة القدم للتحليل التكتيكي.',
+        'fieldLinesDescription':
+            'كشف ومعايرة خطوط ملعب كرة القدم للتحليل التكتيكي.',
         'fieldLinesDetected': 'تم اكتشاف خطوط الملعب',
         'noFieldLinesDetected': 'لم يتم اكتشاف أي خطوط',
       },
@@ -1378,14 +1435,16 @@ class Translations {
         'failedToLoadVideo': 'فشل تحميل الفيديو',
         'retry': 'إعادة المحاولة',
         'fileAccessDenied': 'يرجى منح إذن الوصول إلى الملفات لاختيار الملفات',
-        'fileAccessPermanentlyDenied': 'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
+        'fileAccessPermanentlyDenied':
+            'تم رفض الوصول إلى الملفات. قم بالتفعيل في الإعدادات.',
         'noFileSelected': 'لم يتم اختيار ملف',
         'settings': 'الإعدادات',
       },
       'playerTrackingPage': {
         'error': 'خطأ',
         'artifactsCleaned': 'تم تنظيف الملفات المؤقتة بنجاح',
-        'Analyzing video... This may take 10-30 minutes or longer.': 'جاري تحليل الفيديو... قد يستغرق ذلك 10-30 دقيقة أو أكثر.',
+        'Analyzing video... This may take 10-30 minutes or longer.':
+            'جاري تحليل الفيديو... قد يستغرق ذلك 10-30 دقيقة أو أكثر.',
         'Play Tic-Tac-Toe while waiting!': 'العب تيك تاك تو أثناء الانتظار!',
         'Analysis complete! View results.': 'اكتمل التحليل! عرض النتائج.',
         'analysisConfiguration': 'تكوين التحليل',
@@ -1512,7 +1571,8 @@ class Translations {
         'launchFullSystem': 'تشغيل النظام الكامل',
         'enterViewerMode': 'دخول وضع المشاهد',
         'keyFeatures': 'الميزات الرئيسية',
-        'onlyAuthenticatedUsers': 'فقط المستخدمين المصادق عليهم يمكنهم إنشاء تقييمات',
+        'onlyAuthenticatedUsers':
+            'فقط المستخدمين المصادق عليهم يمكنهم إنشاء تقييمات',
         'invalidRefereeId': 'معرف الحكم غير صالح',
         'evaluationCreated': 'تم إنشاء التقييم! أعد التحميل لرؤيته',
         'failedToCreate': 'فشل في إنشاء التقييم',
@@ -1535,7 +1595,8 @@ class Translations {
         'scoreMustBe0100': 'يجب أن تكون النتيجة بين 0 و 100',
         'youCanOnlyDeleteOwn': 'يمكنك حذف تقييماتك فقط',
         'confirmDelete': 'تأكيد الحذف',
-        'areYouSureDelete': 'هل أنت متأكد من حذف هذا التقييم؟ هذا الإجراء لا يمكن التراجع عنه.',
+        'areYouSureDelete':
+            'هل أنت متأكد من حذف هذا التقييم؟ هذا الإجراء لا يمكن التراجع عنه.',
         'cancel': 'إلغاء',
         'delete': 'حذف',
         'deletedSuccessfully': 'تم الحذف بنجاح',
@@ -1544,10 +1605,13 @@ class Translations {
         'failedToUpdate': 'فشل في التحديث',
         'errorUpdating': 'خطأ في التحديث',
         'evaluationSections': 'أقسام التقييم',
-        'detailedSectionsNotAvailable': 'الأقسام التفصيلية غير متاحة في هذا العرض',
-        'summaryShownAbove': 'الملخص المعروض أعلاه. اتصل بالمشرف للحصول على التقرير الكامل.',
+        'detailedSectionsNotAvailable':
+            'الأقسام التفصيلية غير متاحة في هذا العرض',
+        'summaryShownAbove':
+            'الملخص المعروض أعلاه. اتصل بالمشرف للحصول على التقرير الكامل.',
         'advancedRefereeTrackingSystem': 'نظام تتبع الحكم المتقدم',
-        'fullAccessDescription': 'الوصول الكامل: رفع فيديوهات، تحليل الذكاء الاصطناعي، ورؤى الأداء.',
+        'fullAccessDescription':
+            'الوصول الكامل: رفع فيديوهات، تحليل الذكاء الاصطناعي، ورؤى الأداء.',
         'viewerModeDescription': 'وضع المشاهد: استكشف التحليلات والتقارير.',
       },
     },
@@ -1558,7 +1622,7 @@ class Translations {
     final translation =
         pageTitles[validLang]?['refereeDetails']?[key] ??
         pageTitles['en']?['refereeDetails']?[key] ??
-        key;  // Default to key if not found
+        key; // Default to key if not found
     return translation ?? 'Missing translation for $key';
   }
 
@@ -1568,7 +1632,8 @@ class Translations {
         key;
   }
 
-  static String getHistoryText(String key, String lang) {  // New method for History
+  static String getHistoryText(String key, String lang) {
+    // New method for History
     return pageTitles[lang]?['historyPage']?[key] ??
         pageTitles['en']?['historyPage']?[key] ??
         key;
@@ -1580,12 +1645,17 @@ class Translations {
 
   static String getTitle(int index, String lang) {
     final titles = pageTitles[lang]?['titles'] ?? pageTitles['en']?['titles'];
-    return titles != null && index < titles.length ? titles[index] : 'Title $index';
+    return titles != null && index < titles.length
+        ? titles[index]
+        : 'Title $index';
   }
 
   static String getNavLabel(int index, String lang) {
-    final labels = pageTitles[lang]?['navLabels'] ?? pageTitles['en']?['navLabels'];
-    return labels != null && index < labels.length ? labels[index] : 'Nav $index';
+    final labels =
+        pageTitles[lang]?['navLabels'] ?? pageTitles['en']?['navLabels'];
+    return labels != null && index < labels.length
+        ? labels[index]
+        : 'Nav $index';
   }
 
   static String getChooseLanguage(String lang) {
@@ -1595,7 +1665,9 @@ class Translations {
   }
 
   static String getChooseMode(String lang) {
-    return pageTitles[lang]?['chooseMode'] ?? pageTitles['en']?['chooseMode'] ?? 'Choose Mode';
+    return pageTitles[lang]?['chooseMode'] ??
+        pageTitles['en']?['chooseMode'] ??
+        'Choose Mode';
   }
 
   static List<String> getLanguages(String lang) {
@@ -1663,5 +1735,17 @@ class Translations {
     return pageTitles[lang]?['evaluationPage']?[key] ??
         pageTitles['en']?['evaluationPage']?[key] ??
         key;
+  }
+
+  // lib/lang/translation.dart  (أضف الدالة التالية داخل class Translations)
+
+  static String getAppBarTitle(int pageIndex, String lang) {
+    final validLang = ['en', 'fr', 'ar'].contains(lang) ? lang : 'en';
+    final titles =
+        pageTitles[validLang]?['titles'] ?? pageTitles['en']?['titles'];
+    if (titles is List && pageIndex >= 0 && pageIndex < titles.length) {
+      return titles[pageIndex];
+    }
+    return 'Title $pageIndex';
   }
 }

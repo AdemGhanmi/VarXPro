@@ -1,18 +1,22 @@
-// lib/views/nav/nav_page.dart (fixed: add back arrow leading for visitor only; ensure settings always visible; center single nav item; remove dots under emojis; only show emojis)
+// lib/views/nav/nav_page.dart
+// (final) — Removed RefereeTrackingSystem page completely.
+// Navbar: emojis only, exactly 6 items (Home, Faute, Lines, Offside, Tracking, Live Stream).
+// Visitor: يرى Home فقط. Settings تبقى ظاهرة للجميع.
+// Fix: no index 6 anymore; updated emoji map & title mapping.
+
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:VarXPro/views/setting/views/settings_page.dart';
 
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
-import 'package:VarXPro/views/connexion/providers/auth_provider.dart'; // Add auth provider
+import 'package:VarXPro/views/connexion/providers/auth_provider.dart';
 
 // PAGES
 import 'package:VarXPro/views/pages/home/view/home_page.dart';
@@ -45,20 +49,21 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
   late List<_NavItem> _navItems;
   late final List<Widget> _pages;
 
-  // Anim “pill” sélectionné
   late final AnimationController _pillController;
   late Animation<double> _pillScale;
 
   @override
   void initState() {
     super.initState();
+
+    // ✅ 6 صفحات بالترتيب المطلوب
     _pages = [
-      const HomePage(),
-      RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()),
-      RepositoryProvider(create: (_) => PerspectiveService(), child: const KeyFieldLinesPage()),
-      RepositoryProvider(create: (_) => OffsideService(), child: const OffsidePage()),
-      RepositoryProvider(create: (_) => TrackingService(), child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage()),
-      RepositoryProvider(create: (_) => LiveStreamController(), child: const LiveStreamDashboard()),
+      const HomePage(), // 0
+      RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()), // 1
+      RepositoryProvider(create: (_) => PerspectiveService(), child: const KeyFieldLinesPage()), // 2
+      RepositoryProvider(create: (_) => OffsideService(), child: const OffsidePage()), // 3
+      RepositoryProvider(create: (_) => TrackingService(), child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage()), // 4
+      RepositoryProvider(create: (_) => LiveStreamController(), child: const LiveStreamDashboard()), // 5
     ];
 
     _pillController = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
@@ -78,7 +83,9 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     if (target == _selectedIndex) return;
     HapticFeedback.lightImpact();
     setState(() => _selectedIndex = target);
-    _pillController..reset()..forward();
+    _pillController
+      ..reset()
+      ..forward();
   }
 
   Future<bool> _showExitDialog() async {
@@ -94,28 +101,34 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
       ),
     );
     if (shouldExit == true) {
-      SystemNavigator.pop(); // Exit app
+      SystemNavigator.pop();
     }
     return shouldExit ?? false;
   }
 
-  String _titleForIndex(int pageIndex, String lang) {
-    if (pageIndex == 0) return 'Home';
-    // mapping selon Translations.getTitle(index)
-    final mapToOld = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5};
-    return Translations.getTitle(mapToOld[pageIndex] ?? 0, lang);
-  }
+  // lib/views/nav/nav_page.dart  (بدّل هالدالة كاملة)
+String _titleForIndex(int pageIndex, String lang) {
+  return Translations.getAppBarTitle(pageIndex, lang);
+}
 
+
+  // إيموجيات التاب
   String _emojiForIndex(int pageIndex) {
     switch (pageIndex) {
-      case 0: return '🏠';
-      case 1: return '🧑‍⚖️';
-      case 2: return '🛑';
-      case 3: return '🗺️';
-      case 4: return '🚩';
-      case 5: return '📊';
-      case 6: return '📡';
-      default: return '⚽';
+      case 0:
+        return '🏠'; // Home
+      case 1:
+        return '🚨'; // Faute detection
+      case 2:
+        return '📐'; // Lignes du terrain
+      case 3:
+        return '🚩'; // Hors-jeu
+      case 4:
+        return '📊'; // Suivre de joueur (tracking)
+      case 5:
+        return '📡'; // Live stream
+      default:
+        return '⚽';
     }
   }
 
@@ -123,39 +136,38 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final langProvider = Provider.of<LanguageProvider>(context);
     final modeProvider = Provider.of<ModeProvider>(context);
-    final historyProvider = Provider.of<HistoryProvider>(context);
-    final authProvider = Provider.of<AuthProvider>(context); // Add auth check
+    final authProvider = Provider.of<AuthProvider>(context);
 
     final currentLang = (langProvider.currentLanguage);
     final seed = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
     final w = MediaQuery.sizeOf(context).width;
     final isCompact = w < 360;
 
-    final title = _titleForIndex(_selectedIndex, currentLang);
+final title = _titleForIndex(_selectedIndex, currentLang);
     final emoji = _emojiForIndex(_selectedIndex);
 
-    // Check if visitor - show only Home
+    // الزائر يشوف Home فقط
     final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
-    _navItems = isVisitor 
-        ? const [_NavItem(emoji: '🏠', pageIndex: 0)] // Only Home for visitor
+    _navItems = isVisitor
+        ? const [
+            _NavItem(emoji: '🏠', pageIndex: 0),
+          ]
         : const [
             _NavItem(emoji: '🏠', pageIndex: 0),
-            _NavItem(emoji: '🧑‍⚖️', pageIndex: 1),
-            _NavItem(emoji: '🗺️', pageIndex: 2),
+            _NavItem(emoji: '🚨', pageIndex: 1),
+            _NavItem(emoji: '📐', pageIndex: 2),
             _NavItem(emoji: '🚩', pageIndex: 3),
             _NavItem(emoji: '📊', pageIndex: 4),
             _NavItem(emoji: '📡', pageIndex: 5),
           ];
 
-    return WillPopScope( // Fix back behavior: For visitor, confirm before exit; for auth, stay
-      onWillPop: () async {
-        return await _showExitDialog();
-      },
+    return WillPopScope(
+      onWillPop: () async => await _showExitDialog(),
       child: Scaffold(
-        extendBody: true, // pour voir le blur sous la nav bar
+        extendBody: true,
         backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
 
-        // APP BAR modernisée
+        // APP BAR
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(72),
           child: ClipRRect(
@@ -163,15 +175,14 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Gradient + blur subtil
                 Container(decoration: BoxDecoration(gradient: AppColors.getAppBarGradient(modeProvider.currentMode))),
                 BackdropFilter(filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4), child: Container(color: Colors.transparent)),
                 AppBar(
                   elevation: 0,
                   centerTitle: true,
                   backgroundColor: Colors.transparent,
-                  automaticallyImplyLeading: false, // Hide implied back arrow
-                  leading: isVisitor // Show back arrow only for visitor
+                  automaticallyImplyLeading: false,
+                  leading: isVisitor
                       ? IconButton(
                           icon: const Icon(Icons.arrow_back, color: Colors.white),
                           onPressed: () async {
@@ -204,7 +215,6 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                     ),
                   ),
                   actions: [
-                    // bouton settings + badge historique (always visible, even for visitor)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
                       child: Stack(
@@ -213,7 +223,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                         children: [
                           IconButton(
                             tooltip: 'Settings',
-                            icon: Text('⚙️', style: TextStyle(fontSize: isCompact ? 18 : 22, color: Colors.white)), // Ensure white color for visibility
+                            icon: Text('⚙️', style: TextStyle(fontSize: isCompact ? 18 : 22, color: Colors.white)),
                             onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
@@ -226,23 +236,6 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                               );
                             },
                           ),
-                          if (historyProvider.historyCount > 0)
-                            Positioned(
-                              right: 6,
-                              top: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  borderRadius: BorderRadius.circular(999),
-                                  boxShadow: [BoxShadow(color: Colors.redAccent.withOpacity(.45), blurRadius: 8, offset: const Offset(0, 2))],
-                                ),
-                                child: Text(
-                                  '${historyProvider.historyCount}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -253,7 +246,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
           ),
         ),
 
-        // BODY - Show selected page
+        // BODY
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           transitionBuilder: (child, anim) {
@@ -268,7 +261,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
           ),
         ),
 
-        // NAV BAR — emojis only (filtered for visitor)
+        // NAV BAR — emojis only
         bottomNavigationBar: SafeArea(
           top: false,
           child: Padding(
@@ -337,12 +330,14 @@ class _EmojiOnlyNavBar extends StatelessWidget {
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(.12), blurRadius: 22, offset: const Offset(0, 10))],
           ),
           child: items.length == 1
-              ? _SingleNavItem( // Custom for single item to center
-                  item: items[0],
-                  seedColor: seedColor,
-                  isCompact: isCompact,
-                  pillScale: pillScale,
-                  mode: mode,
+              ? Center(
+                  child: _SingleNavItem(
+                    item: items[0],
+                    seedColor: seedColor,
+                    isCompact: isCompact,
+                    pillScale: pillScale,
+                    mode: mode,
+                  ),
                 )
               : Row(
                   children: List.generate(items.length, (i) {
@@ -407,12 +402,12 @@ class _SingleNavItem extends StatelessWidget {
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
-      onTap: () {}, // No other items, so no action
+      onTap: () {}, // single item (visitor)
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
         decoration: BoxDecoration(
-          color: pill, // Always "selected" style
+          color: pill,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [BoxShadow(color: glow, blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 3))],
         ),

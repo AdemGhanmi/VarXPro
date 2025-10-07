@@ -740,9 +740,11 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                                   const SizedBox(height: 10),
                                   SizedBox(
                                     height: isLargeScreen ? 300 : 220,
-                                    child: VideoPlayerWidget(
-                                      videoUrl:
-                                          '$baseUrl${state.analyzeResponse!.artifacts.outputVideoUrl}',
+                                    child: ClipRect(
+                                      child: VideoPlayerWidget(
+                                        videoUrl:
+                                            '$baseUrl${state.analyzeResponse!.artifacts.outputVideoUrl}',
+                                      ),
                                     ),
                                   ),
                                 ],

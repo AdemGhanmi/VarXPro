@@ -20,6 +20,7 @@ import 'package:VarXPro/views/pages/FiledLinesPages/widgets/TransformPointForm.d
 import 'package:VarXPro/views/pages/FiledLinesPages/widgets/VideoPlayerWidget.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/widgets/VideoTransformForm.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/widgets/image_picker_widget.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class KeyFieldLinesPage extends StatefulWidget {
   const KeyFieldLinesPage({super.key});
@@ -207,6 +208,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                 }
               },
               builder: (context, state) {
+                final bool calibrated = state.health?.calibrated ?? false;
                 return RefreshIndicator(
                   onRefresh: () async => context.read<PerspectiveBloc>().add(CheckHealthEvent()),
                   child: SingleChildScrollView(
@@ -294,11 +296,20 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ImagePickerWidget(
+                                enabled: calibrated,
                                 onImagePicked: (File image) => context.read<PerspectiveBloc>().add(TransformFrameEvent(image)),
                                 buttonText: Translations.getOffsideText('selectImageToTransform', currentLang),
                                 mode: modeProvider.currentMode,
                                 seedColor: seedColor,
                               ),
+                              if (!calibrated)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    Translations.getOffsideText('pleaseCalibrateFirst', currentLang),
+                                    style: const TextStyle(color: Colors.redAccent),
+                                  ),
+                                ),
                               if (state.transformFrameResponse != null) _buildTransformFrameResult(state.transformFrameResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
                             ],
                           ),
@@ -645,6 +656,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
   }
 
   Widget _buildTransformVideoResult(TransformVideoResponse response, int mode, Color seedColor, String currentLang, double screenWidth) {
+    final String fullOutputUrl = '${PerspectiveService.defaultBaseUrl}${response.outputUrl}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -659,7 +671,14 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
               children: [
                 _buildResultItem(Translations.getOffsideText('success', currentLang), response.ok.toString(), response.ok, mode, seedColor),
                 if (response.inputUrl != null) _buildResultItem(Translations.getOffsideText('inputUrl', currentLang), response.inputUrl!, false, mode, seedColor),
-                if (response.outputUrl != null) _buildResultItem(Translations.getOffsideText('outputUrl', currentLang), response.outputUrl!, false, mode, seedColor),
+                if (response.outputUrl != null)
+                  _buildClickableResultItem(
+                    label: Translations.getOffsideText('outputUrl', currentLang),
+                    value: response.outputUrl!,
+                    url: fullOutputUrl,
+                    mode: mode,
+                    seedColor: seedColor,
+                  ),
                 if (response.frames != null) _buildResultItem(Translations.getOffsideText('processedFrames', currentLang), response.frames.toString(), false, mode, seedColor),
                 if (response.dstSize != null)
                   _buildResultItem(Translations.getOffsideText('dstSize', currentLang), '${response.dstSize!['width']}x${response.dstSize!['height']}', false, mode, seedColor),
@@ -674,7 +693,7 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
             style: GoogleFonts.roboto(fontWeight: FontWeight.bold, color: AppColors.getTextColor(mode), fontSize: 16),
           ),
           SizedBox(height: screenWidth * 0.02),
-          VideoPlayerWidget(videoUrl: '${PerspectiveService.defaultBaseUrl}${response.outputUrl}', mode: mode, seedColor: seedColor),
+          VideoPlayerWidget(videoUrl: fullOutputUrl, mode: mode, seedColor: seedColor),
         ],
       ],
     );
@@ -759,6 +778,42 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       ),
     );
   }
+
+  Widget _buildClickableResultItem({
+    required String label,
+    required String value,
+    required String url,
+    required int mode,
+    required Color seedColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Text('$label: ', style: GoogleFonts.roboto(color: AppColors.getTextColor(mode).withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+          Expanded(
+            child: GestureDetector(
+              onTap: () async {
+                final Uri uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: Text(
+                value,
+                style: GoogleFonts.roboto(
+                  color: AppColors.getTertiaryColor(seedColor, mode),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _FootballGridPainter extends CustomPainter {
@@ -789,7 +844,7 @@ class _FootballGridPainter extends CustomPainter {
     final rect = Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
     canvas.drawRect(rect, fieldPaint);
 
-    final midY = rect.top + rect.height / 2;  // Fixed: Use midY for horizontal mid line
+    final midY = rect.top + rect.height / 2;
     canvas.drawLine(Offset(rect.left, midY), Offset(rect.right, midY), fieldPaint);
     canvas.drawCircle(Offset(rect.center.dx, midY), 30, fieldPaint);
   }

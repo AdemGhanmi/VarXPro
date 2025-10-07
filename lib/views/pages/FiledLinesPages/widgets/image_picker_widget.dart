@@ -1,3 +1,4 @@
+// Updated ImagePickerWidget to support enabled parameter
 import 'dart:io';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ class ImagePickerWidget extends StatelessWidget {
   final bool isCalibration;
   final int mode;
   final Color seedColor;
+  final bool enabled;
 
   const ImagePickerWidget({
     super.key,
@@ -24,6 +26,7 @@ class ImagePickerWidget extends StatelessWidget {
     this.isCalibration = false,
     required this.mode,
     required this.seedColor,
+    this.enabled = true,
   });
 
   Future<void> _pickFile(BuildContext context) async {
@@ -168,9 +171,11 @@ class ImagePickerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: () => _pickFile(context),
+      onPressed: enabled ? () => _pickFile(context) : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.getTertiaryColor(seedColor, mode),
+        backgroundColor: enabled 
+            ? AppColors.getTertiaryColor(seedColor, mode)
+            : Colors.grey.withOpacity(0.5),
         foregroundColor: AppColors.getTextColor(mode),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(
@@ -181,7 +186,7 @@ class ImagePickerWidget extends StatelessWidget {
         buttonText,
         style: TextStyle(
           fontWeight: FontWeight.w600,
-          color: AppColors.getTextColor(mode),
+          color: enabled ? AppColors.getTextColor(mode) : Colors.grey,
         ),
       ),
     );
