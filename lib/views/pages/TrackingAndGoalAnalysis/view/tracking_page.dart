@@ -38,15 +38,21 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
   final _goalLeftYController = TextEditingController(text: '100');
   final _goalRightXController = TextEditingController(text: '500');
   final _goalRightYController = TextEditingController(text: '100');
+  final _attackingTeamController = TextEditingController();
+  final _lineStartXController = TextEditingController(text: '640');
+  final _lineStartYController = TextEditingController(text: '0');
+  final _lineEndXController = TextEditingController(text: '640');
+  final _lineEndYController = TextEditingController(text: '480');
   bool _showTrails = true;
   bool _showSkeleton = true;
   bool _showBoxes = true;
   bool _showIds = true;
+  bool _offsideEnabled = false;
+  String _attackDirection = 'right';
   int _visibleRows = 10;
   bool _showAllRows = false;
   bool _showLottie = true;
   late AnimationController _glowController;
-  late AnimationController _scanController;
   late Animation<double> _glowAnimation;
   bool _analysisCompleted = false;
 
@@ -61,11 +67,6 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
     _glowAnimation = Tween(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
-
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
 
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
@@ -84,8 +85,12 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
     _goalLeftYController.dispose();
     _goalRightXController.dispose();
     _goalRightYController.dispose();
+    _attackingTeamController.dispose();
+    _lineStartXController.dispose();
+    _lineStartYController.dispose();
+    _lineEndXController.dispose();
+    _lineEndYController.dispose();
     _glowController.dispose();
-    _scanController.dispose();
     super.dispose();
   }
 
@@ -111,21 +116,6 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                     gradient: AppColors.getBodyGradient(mode),
                   ),
                 ),
-              ),
-            ),
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _scanController,
-                builder: (context, _) {
-                  final t = _scanController.value;
-                  return CustomPaint(
-                    painter: _ScanLinePainter(
-                      progress: t,
-                      mode: mode,
-                      seedColor: seedColor,
-                    ),
-                  );
-                },
               ),
             ),
             Center(
@@ -162,21 +152,6 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                     gradient: AppColors.getBodyGradient(mode),
                   ),
                 ),
-              ),
-            ),
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _scanController,
-                builder: (context, _) {
-                  final t = _scanController.value;
-                  return CustomPaint(
-                    painter: _ScanLinePainter(
-                      progress: t,
-                      mode: mode,
-                      seedColor: seedColor,
-                    ),
-                  );
-                },
               ),
             ),
             Directionality(
@@ -590,6 +565,17 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                           int.parse(_goalRightXController.text),
                           int.parse(_goalRightYController.text),
                         ],
+                        offsideEnabled: _offsideEnabled,
+                        attackDirection: _offsideEnabled ? _attackDirection : null,
+                        attackingTeam: _offsideEnabled && _attackingTeamController.text.isNotEmpty 
+                            ? _attackingTeamController.text.toUpperCase() 
+                            : null,
+                        lineStart: _offsideEnabled 
+                            ? [int.parse(_lineStartXController.text), int.parse(_lineStartYController.text)] 
+                            : null,
+                        lineEnd: _offsideEnabled 
+                            ? [int.parse(_lineEndXController.text), int.parse(_lineEndYController.text)] 
+                            : null,
                       ),
                     );
                   }
@@ -877,9 +863,7 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                           mode,
                         ).withOpacity(0.6),
                       ),
-                      style: GoogleFonts.roboto(
-                        color: AppColors.getTextColor(mode),
-                      ),
+                      style: GoogleFonts.roboto(color: AppColors.getTextColor(mode)), // إضافة الـ style المفقود
                       keyboardType: TextInputType.number,
                       validator: (value) =>
                           value!.isEmpty ? 'Enter X coordinate' : null,
@@ -930,6 +914,222 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                   ),
                 ],
               ),
+              SizedBox(height: constraints.maxWidth * 0.04),
+              SwitchListTile(
+                secondary: Text('🚩', style: GoogleFonts.roboto(fontSize: 20)),
+                title: Text(
+                  Translations.getPlayerTrackingText('enableOffsideDetection', currentLang),
+                  style: GoogleFonts.roboto(
+                    color: AppColors.getTextColor(mode),
+                    fontSize: 14,
+                  ),
+                ),
+                value: _offsideEnabled,
+                activeColor: AppColors.getTertiaryColor(seedColor, mode),
+                onChanged: (val) => setState(() => _offsideEnabled = val),
+              ),
+              if (_offsideEnabled) ...[
+                SizedBox(height: constraints.maxWidth * 0.03),
+                _buildSectionHeader(
+                  Translations.getPlayerTrackingText('offsideConfiguration', currentLang),
+                  mode,
+                  seedColor,
+                ),
+                SizedBox(height: constraints.maxWidth * 0.03),
+                DropdownButtonFormField<String>(
+                  value: _attackDirection,
+                  decoration: InputDecoration(
+                    labelText: Translations.getPlayerTrackingText('attackDirection', currentLang),
+                    labelStyle: GoogleFonts.roboto(
+                      color: AppColors.getTertiaryColor(seedColor, mode),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.6),
+                  ),
+                  items: ['right', 'left', 'up', 'down']
+                      .map((direction) => DropdownMenuItem(
+                            value: direction,
+                            child: Text(direction),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _attackDirection = value;
+                      });
+                    }
+                  },
+                ),
+                SizedBox(height: constraints.maxWidth * 0.03),
+                TextFormField(
+                  controller: _attackingTeamController,
+                  decoration: InputDecoration(
+                    labelText: Translations.getPlayerTrackingText('attackingTeam', currentLang),
+                    labelStyle: GoogleFonts.roboto(
+                      color: AppColors.getTertiaryColor(seedColor, mode),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.6),
+                  ),
+                  style: GoogleFonts.roboto(color: AppColors.getTextColor(mode)),
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      if (!['A', 'B'].contains(value.toUpperCase())) {
+                        return 'Must be A or B';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: constraints.maxWidth * 0.03),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lineStartXController,
+                        decoration: InputDecoration(
+                          labelText: Translations.getPlayerTrackingText('lineStartX', currentLang),
+                          labelStyle: GoogleFonts.roboto(
+                            color: AppColors.getTertiaryColor(seedColor, mode),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.6),
+                        ),
+                        style: GoogleFonts.roboto(color: AppColors.getTextColor(mode)),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Enter X' : null,
+                      ),
+                    ),
+                    SizedBox(width: constraints.maxWidth * 0.02),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lineStartYController,
+                        decoration: InputDecoration(
+                          labelText: Translations.getPlayerTrackingText('lineStartY', currentLang),
+                          labelStyle: GoogleFonts.roboto(
+                            color: AppColors.getTertiaryColor(seedColor, mode),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.6),
+                        ),
+                        style: GoogleFonts.roboto(color: AppColors.getTextColor(mode)),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Enter Y' : null,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: constraints.maxWidth * 0.03),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lineEndXController,
+                        decoration: InputDecoration(
+                          labelText: Translations.getPlayerTrackingText('lineEndX', currentLang),
+                          labelStyle: GoogleFonts.roboto(
+                            color: AppColors.getTertiaryColor(seedColor, mode),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.6),
+                        ),
+                        style: GoogleFonts.roboto(color: AppColors.getTextColor(mode)),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Enter X' : null,
+                      ),
+                    ),
+                    SizedBox(width: constraints.maxWidth * 0.02),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lineEndYController,
+                        decoration: InputDecoration(
+                          labelText: Translations.getPlayerTrackingText('lineEndY', currentLang),
+                          labelStyle: GoogleFonts.roboto(
+                            color: AppColors.getTertiaryColor(seedColor, mode),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                              color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.6),
+                        ),
+                        style: GoogleFonts.roboto(color: AppColors.getTextColor(mode)),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Enter Y' : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -947,6 +1147,8 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
     final baseUrl = "https://tracking.varxpro.com";
     final goalAnalysis =
         response.summary['goal_analysis'] as List<dynamic>? ?? [];
+    final offsideFrames = response.summary['offside_frames']?.toString() ?? '0';
+    final offsidesTotal = response.summary['offsides_total']?.toString() ?? '0';
 
     return Card(
       color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
@@ -966,11 +1168,27 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
             ),
             _buildResultItem(
               '👥 ${Translations.getPlayerTrackingText('playerCount', currentLang)}',
-              response.summary['player_count']?.toString() ?? '0',
+              response.summary['player_unique_count']?.toString() ?? '0',
               false,
               mode,
               seedColor,
             ),
+            if (offsideFrames != '0') ...[
+              _buildResultItem(
+                '🚩 ${Translations.getPlayerTrackingText('offsideFrames', currentLang)}',
+                offsideFrames,
+                false,
+                mode,
+                seedColor,
+              ),
+              _buildResultItem(
+                '🚩 ${Translations.getPlayerTrackingText('totalOffsides', currentLang)}',
+                offsidesTotal,
+                true,
+                mode,
+                seedColor,
+              ),
+            ],
             // Processed Video with Controls
             if (response.artifacts['video_url'] != null) ...[
               const SizedBox(height: 12),
@@ -992,24 +1210,42 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                 ],
               ),
               const SizedBox(height: 8),
-              Container(
-                constraints: BoxConstraints(
-                  maxWidth: constraints.maxWidth * 0.9,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.getTertiaryColor(
-                      seedColor,
-                      mode,
-                    ).withOpacity(0.3),
-                    width: 1,
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => Dialog(
+                      backgroundColor: Colors.black,
+                      insetPadding: EdgeInsets.zero,
+                      child: SizedBox(
+                        width: double.maxFinite,
+                        height: double.maxFinite,
+                        child: ControlledVideoPlayer(
+                          url: "$baseUrl${response.artifacts['video_url']}",
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: constraints.maxWidth * 0.95,
                   ),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: ControlledVideoPlayer(
-                    url: "$baseUrl${response.artifacts['video_url']}",
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.getTertiaryColor(
+                        seedColor,
+                        mode,
+                      ).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ControlledVideoPlayer(
+                      url: "$baseUrl${response.artifacts['video_url']}",
+                    ),
                   ),
                 ),
               ),
@@ -1037,7 +1273,6 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
               const SizedBox(height: 8),
               Container(
                 constraints: BoxConstraints(
-                  maxHeight: constraints.maxWidth * 0.5,
                   maxWidth: constraints.maxWidth * 0.9,
                 ),
                 decoration: BoxDecoration(
@@ -1097,7 +1332,7 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                 ),
               ),
             ],
-            // Goal Analysis Chart using data from summary
+            // Goal Analysis Chart - محسن
             if (goalAnalysis.isNotEmpty) ...[
               const SizedBox(height: 12),
               Row(
@@ -1120,7 +1355,6 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
               const SizedBox(height: 8),
               Container(
                 constraints: BoxConstraints(
-                  maxHeight: constraints.maxWidth * 0.5,
                   maxWidth: constraints.maxWidth * 0.9,
                 ),
                 decoration: BoxDecoration(
@@ -1154,288 +1388,6 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                     child: GoalAnalysisChart(goalAnalysis: goalAnalysis),
                   ),
                 ),
-              ),
-            ],
-            // Results Table
-            if (response.artifacts['results_url'] != null) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text('📋', style: GoogleFonts.roboto(fontSize: 20)),
-                  const SizedBox(width: 4),
-                  Text(
-                    Translations.getPlayerTrackingText(
-                      'resultsTable',
-                      currentLang,
-                    ),
-                    style: GoogleFonts.roboto(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(mode),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              FutureBuilder<http.Response>(
-                future: http.get(
-                  Uri.parse("$baseUrl${response.artifacts['results_url']}"),
-                ),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(
-                          AppColors.getTertiaryColor(seedColor, mode),
-                        ),
-                      ),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    return Text(
-                      '❌ ${Translations.getPlayerTrackingText('errorLoadingResults', currentLang)}',
-                      style: GoogleFonts.roboto(
-                        color: Colors.redAccent,
-                        fontSize: 14,
-                      ),
-                    );
-                  }
-                  if (!snapshot.hasData || snapshot.data?.body == null) {
-                    return Text(
-                      Translations.getPlayerTrackingText(
-                        'noResultsData',
-                        currentLang,
-                      ),
-                      style: GoogleFonts.roboto(
-                        color: AppColors.getTextColor(mode),
-                        fontSize: 14,
-                      ),
-                    );
-                  }
-                  final csvContent = snapshot.data!.body;
-                  final List<String> lines = csvContent
-                      .split('\n')
-                      .where((line) => line.isNotEmpty)
-                      .toList();
-                  if (lines.isEmpty) {
-                    return Text(
-                      Translations.getPlayerTrackingText(
-                        'emptyCSV',
-                        currentLang,
-                      ),
-                      style: GoogleFonts.roboto(
-                        color: AppColors.getTextColor(mode),
-                        fontSize: 14,
-                      ),
-                    );
-                  }
-                  final List<List<String>> data = lines.map((line) {
-                    return line.split(',').map((e) => e.trim()).toList();
-                  }).toList();
-                  final List<String> headers = data[0];
-                  final int colCount = headers.length;
-                  final List<DataRow> rows = data.sublist(1).map((row) {
-                    List<String> adjusted = List.from(row);
-                    while (adjusted.length < colCount) {
-                      adjusted.add('');
-                    }
-                    if (adjusted.length > colCount) {
-                      adjusted = adjusted.sublist(0, colCount);
-                    }
-                    return DataRow(
-                      cells: adjusted
-                          .map(
-                            (cell) => DataCell(
-                              Text(
-                                cell,
-                                style: GoogleFonts.roboto(
-                                  color: AppColors.getTextColor(mode),
-                                  fontSize: 12,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    );
-                  }).toList();
-
-                  final rowsToShow = _showAllRows
-                      ? rows
-                      : rows.take(_visibleRows).toList();
-
-                  return Column(
-                    children: [
-                      Container(
-                        constraints: BoxConstraints(
-                          maxWidth: constraints.maxWidth * 0.9,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: AppColors.getTertiaryColor(
-                              seedColor,
-                              mode,
-                            ).withOpacity(0.3),
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columnSpacing: constraints.maxWidth > 600 ? 20 : 10,
-                            dataRowMinHeight: 40,
-                            dataRowMaxHeight: 48,
-                            headingRowHeight: 48,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            columns: headers
-                                .map(
-                                  (header) => DataColumn(
-                                    label: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      child: Text(
-                                        header,
-                                        style: GoogleFonts.roboto(
-                                          fontSize: constraints.maxWidth > 600
-                                              ? 14
-                                              : 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: AppColors.getTertiaryColor(
-                                            seedColor,
-                                            mode,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            rows: rowsToShow.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final row = entry.value;
-                              return DataRow(
-                                color: WidgetStateProperty.resolveWith((
-                                  states,
-                                ) {
-                                  if (states.contains(WidgetState.hovered)) {
-                                    return AppColors.getTertiaryColor(
-                                      seedColor,
-                                      mode,
-                                    ).withOpacity(0.1);
-                                  }
-                                  return index % 2 == 0
-                                      ? AppColors.getSurfaceColor(
-                                          mode,
-                                        ).withOpacity(0.4)
-                                      : AppColors.getBackgroundColor(
-                                          mode,
-                                        ).withOpacity(0.4);
-                                }),
-                                cells: row.cells,
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                      if (rows.length > _visibleRows) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (!_showAllRows) ...[
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  setState(() {
-                                    _visibleRows += 10;
-                                    if (_visibleRows >= rows.length) {
-                                      _showAllRows = true;
-                                    }
-                                  });
-                                },
-                                icon: Text(
-                                  '⬇️',
-                                  style: GoogleFonts.roboto(fontSize: 18),
-                                ),
-                                label: Text(
-                                  Translations.getPlayerTrackingText(
-                                    'showMore',
-                                    currentLang,
-                                  ),
-                                  style: GoogleFonts.roboto(fontSize: 14),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.getTertiaryColor(
-                                    seedColor,
-                                    mode,
-                                  ).withOpacity(0.2),
-                                  foregroundColor: AppColors.getTertiaryColor(
-                                    seedColor,
-                                    mode,
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                            ],
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  _showAllRows = !_showAllRows;
-                                  if (!_showAllRows) {
-                                    _visibleRows = 10;
-                                  }
-                                });
-                              },
-                              icon: Text(
-                                _showAllRows ? '⬆️' : '📖',
-                                style: GoogleFonts.roboto(fontSize: 18),
-                              ),
-                              label: Text(
-                                _showAllRows
-                                    ? Translations.getPlayerTrackingText(
-                                        'showLess',
-                                        currentLang,
-                                      )
-                                    : Translations.getPlayerTrackingText(
-                                        'showAll',
-                                        currentLang,
-                                      ),
-                                style: GoogleFonts.roboto(fontSize: 14),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.getTertiaryColor(
-                                  seedColor,
-                                  mode,
-                                ).withOpacity(0.2),
-                                foregroundColor: AppColors.getTertiaryColor(
-                                  seedColor,
-                                  mode,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  );
-                },
               ),
             ],
           ],
@@ -1552,7 +1504,7 @@ class _ControlledVideoPlayerState extends State<ControlledVideoPlayer> {
         if (_controller.value.isInitialized) ...[
           // Control bar under the video
           SizedBox(
-            height: 80,
+            height: 60,
             child: Container(
               color: Colors.black54,
               child: Column(
@@ -1562,17 +1514,21 @@ class _ControlledVideoPlayerState extends State<ControlledVideoPlayer> {
                     child: VideoProgressIndicator(
                       _controller,
                       allowScrubbing: true,
-                      colors: VideoProgressColors(playedColor: Colors.red),
+                      colors: VideoProgressColors(
+                        playedColor: AppColors.getTertiaryColor(seedColor, mode),
+                        bufferedColor: AppColors.getSurfaceColor(mode),
+                        backgroundColor: AppColors.getTextColor(mode).withOpacity(0.24),
+                      ),
                     ),
                   ),
-                  // Buttons row - aligned to the left (not centered)
+                  // Buttons row
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(4.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.replay, color: Colors.white, size: 32),
+                          icon: const Icon(Icons.replay, color: Colors.white, size: 24),
                           onPressed: () {
                             _controller.seekTo(const Duration());
                             setState(() {
@@ -1585,7 +1541,7 @@ class _ControlledVideoPlayerState extends State<ControlledVideoPlayer> {
                           icon: Icon(
                             _isPlaying ? Icons.pause : Icons.play_arrow,
                             color: Colors.white,
-                            size: 48,
+                            size: 32,
                           ),
                           onPressed: () {
                             setState(() {
@@ -1611,7 +1567,7 @@ class _ControlledVideoPlayerState extends State<ControlledVideoPlayer> {
   }
 }
 
-// New Goal Analysis Chart Widget using fl_chart
+// Goal Analysis Chart Widget - محسن
 class GoalAnalysisChart extends StatelessWidget {
   final List<dynamic> goalAnalysis;
 
@@ -1635,18 +1591,75 @@ class GoalAnalysisChart extends StatelessWidget {
         .toList();
 
     return SizedBox(
-      height: 200,
+      height: 300, // زيادة الارتفاع للوضوح
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: true),
-          titlesData: FlTitlesData(show: true),
-          borderData: FlBorderData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            horizontalInterval: 20,
+            verticalInterval: 100,
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: AppColors.getTextColor(mode).withOpacity(0.2),
+              strokeWidth: 1,
+            ),
+            getDrawingVerticalLine: (value) => FlLine(
+              color: AppColors.getTextColor(mode).withOpacity(0.2),
+              strokeWidth: 1,
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                interval: spots.isNotEmpty ? spots.last.x / 5 : 1,
+                getTitlesWidget: (value, meta) => Text(
+                  '${value.toInt()}',
+                  style: GoogleFonts.roboto(
+                    fontSize: 10,
+                    color: AppColors.getTextColor(mode),
+                  ),
+                ),
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: 20,
+                getTitlesWidget: (value, meta) => Text(
+                  '${value.toInt()}%',
+                  style: GoogleFonts.roboto(
+                    fontSize: 10,
+                    color: AppColors.getTextColor(mode),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(color: AppColors.getTextColor(mode).withOpacity(0.3)),
+          ),
           lineBarsData: [
             LineChartBarData(
               spots: spots,
               isCurved: true,
               color: AppColors.getTertiaryColor(seedColor, mode),
               barWidth: 3,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                  radius: 4,
+                  color: AppColors.getTertiaryColor(seedColor, mode),
+                  strokeWidth: 2,
+                  strokeColor: Colors.white,
+                ),
+              ),
               belowBarData: BarAreaData(
                 show: true,
                 color: AppColors.getTertiaryColor(
@@ -1710,57 +1723,6 @@ class _FootballGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ScanLinePainter extends CustomPainter {
-  final double progress;
-  final int mode;
-  final Color seedColor;
-
-  _ScanLinePainter({
-    required this.progress,
-    required this.mode,
-    required this.seedColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final line = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.2),
-          AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 0.55, 1.0],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, y - 80, size.width, 160));
-
-    canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
-
-    final glow = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
-              Colors.transparent,
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width / 2, y),
-              radius: size.width * 0.25,
-            ),
-          );
-
-    canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanLinePainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.mode != mode;
 }
 
 class TicTacToeGame extends StatefulWidget {
@@ -1954,21 +1916,13 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
     final seedColor =
         AppColors.seedColors[modeProvider.currentMode] ??
         AppColors.seedColors[1]!;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomPadding = MediaQuery.of(context).padding.bottom + 16.0; // Add extra space for navbar
+
     return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: AppColors.getSurfaceColor(
-          modeProvider.currentMode,
-        ).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.getTertiaryColor(
-            seedColor,
-            modeProvider.currentMode,
-          ).withOpacity(0.3),
-        ),
-      ),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -2046,38 +2000,47 @@ class _TicTacToeGameState extends State<TicTacToeGame> {
                       ),
                     ),
                   const SizedBox(width: 8),
-                  Text(
-                    winner == 'Draw'
-                        ? '🤝 ${Translations.getPlayerTrackingText("It's a draw!", widget.currentLanguage)}'
-                        : '$winner${Translations.getPlayerTrackingText(' wins!', widget.currentLanguage)} 🏆',
-                    style: GoogleFonts.roboto(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTertiaryColor(
-                        seedColor,
-                        modeProvider.currentMode,
+                  Expanded(
+                    child: Text(
+                      winner == 'Draw'
+                          ? '🤝 ${Translations.getPlayerTrackingText("It's a draw!", widget.currentLanguage)}'
+                          : '$winner${Translations.getPlayerTrackingText(' wins!', widget.currentLanguage)} 🏆',
+                      style: GoogleFonts.roboto(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.getTertiaryColor(
+                          seedColor,
+                          modeProvider.currentMode,
+                        ),
                       ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ],
               ),
             ),
           const SizedBox(height: 10),
-          ElevatedButton.icon(
-            onPressed: resetGame,
-            icon: Text('🔄', style: GoogleFonts.roboto(fontSize: 18)),
-            label: Text(
-              '${Translations.getPlayerTrackingText('Reset Game', widget.currentLanguage)}',
-              style: GoogleFonts.roboto(fontSize: 16),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.getTertiaryColor(
-                seedColor,
-                modeProvider.currentMode,
-              ),
-              foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: resetGame,
+                icon: Text('🔄', style: GoogleFonts.roboto(fontSize: 18)),
+                label: Text(
+                  '${Translations.getPlayerTrackingText('Reset Game', widget.currentLanguage)}',
+                  style: GoogleFonts.roboto(fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.getTertiaryColor(
+                    seedColor,
+                    modeProvider.currentMode,
+                  ),
+                  foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
           ),

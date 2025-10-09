@@ -18,6 +18,11 @@ class AnalyzeVideoEvent extends TrackingEvent {
   final int? trailLength;
   final List<int>? goalLeft;
   final List<int>? goalRight;
+  final bool? offsideEnabled;
+  final String? attackDirection;
+  final String? attackingTeam;
+  final List<int>? lineStart;
+  final List<int>? lineEnd;
 
   AnalyzeVideoEvent({
     required this.video,
@@ -29,6 +34,11 @@ class AnalyzeVideoEvent extends TrackingEvent {
     this.trailLength,
     this.goalLeft,
     this.goalRight,
+    this.offsideEnabled,
+    this.attackDirection,
+    this.attackingTeam,
+    this.lineStart,
+    this.lineEnd,
   });
 }
 
@@ -98,6 +108,11 @@ class TrackingBloc extends Bloc<TrackingEvent, TrackingState> {
         trailLength: event.trailLength,
         goalLeft: event.goalLeft,
         goalRight: event.goalRight,
+        offsideEnabled: event.offsideEnabled,
+        attackDirection: event.attackDirection,
+        attackingTeam: event.attackingTeam,
+        lineStart: event.lineStart,
+        lineEnd: event.lineEnd,
       );
       emit(state.copyWith(isLoading: false, analyzeResponse: response));
     } catch (e) {

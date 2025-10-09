@@ -1,5 +1,3 @@
-
-// lib/views/pages/TrackingAndGoalAnalysis/model/analysis_result.dart
 class HealthResponse {
   final String status;
   final bool modelLoaded;
@@ -15,8 +13,8 @@ class HealthResponse {
 
   factory HealthResponse.fromJson(Map<String, dynamic> json) {
     return HealthResponse(
-      status: json['status'] as String,
-      modelLoaded: json['model_loaded'] as bool,
+      status: json['status'] as String? ?? 'unknown',
+      modelLoaded: json['model_loaded'] as bool? ?? false,
       classes: json['classes'] is Map ? Map<String, dynamic>.from(json['classes']) : null,
       defaults: json['defaults'] != null ? Map<String, dynamic>.from(json['defaults']) : null,
     );
@@ -37,11 +35,21 @@ class AnalyzeResponse {
   });
 
   factory AnalyzeResponse.fromJson(Map<String, dynamic> json) {
+    final bool isOk = json['ok'] as bool? ?? false;
+    if (!isOk) {
+      // If not ok, return a default error response
+      return AnalyzeResponse(
+        ok: false,
+        frames: 0,
+        artifacts: {},
+        summary: {'error': json['error'] ?? 'Unknown error'},
+      );
+    }
     return AnalyzeResponse(
-      ok: json['ok'] as bool,
-      frames: json['frames'] as int,
-      artifacts: Map<String, String>.from(json['artifacts']),
-      summary: Map<String, dynamic>.from(json['summary']),
+      ok: true,
+      frames: (json['frames'] as num?)?.toInt() ?? 0,
+      artifacts: (json['artifacts'] as Map<String, dynamic>?)?.map((k, v) => MapEntry(k, v.toString())) ?? {},
+      summary: json['summary'] != null ? Map<String, dynamic>.from(json['summary']) : {},
     );
   }
 }
@@ -54,7 +62,7 @@ class CleanResponse {
 
   factory CleanResponse.fromJson(Map<String, dynamic> json) {
     return CleanResponse(
-      ok: json['ok'] as bool,
+      ok: json['ok'] as bool? ?? false,
       removed: json['removed'] as int? ?? 0,
     );
   }

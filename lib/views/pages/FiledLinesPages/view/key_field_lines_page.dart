@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/views/pages/FiledLinesPages/model/perspective_model.dart';
@@ -32,7 +33,6 @@ class KeyFieldLinesPage extends StatefulWidget {
 class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProviderStateMixin {
   bool _showSplash = true;
   late AnimationController _glowController;
-  late AnimationController _scanController;
   late Animation<double> _glowAnimation;
   bool _hasShownCleanSnackBar = false;
 
@@ -48,11 +48,6 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() => _showSplash = false);
@@ -63,7 +58,6 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
   @override
   void dispose() {
     _glowController.dispose();
-    _scanController.dispose();
     super.dispose();
   }
 
@@ -88,21 +82,6 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                     gradient: AppColors.getBodyGradient(modeProvider.currentMode),
                   ),
                 ),
-              ),
-            ),
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _scanController,
-                builder: (context, _) {
-                  final t = _scanController.value;
-                  return CustomPaint(
-                    painter: _ScanLinePainter(
-                      progress: t,
-                      mode: modeProvider.currentMode,
-                      seedColor: seedColor,
-                    ),
-                  );
-                },
               ),
             ),
             Center(
@@ -134,277 +113,258 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
                 ),
               ),
             ),
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _scanController,
-                builder: (context, _) {
-                  final t = _scanController.value;
-                  return CustomPaint(
-                    painter: _ScanLinePainter(
-                      progress: t,
-                      mode: modeProvider.currentMode,
-                      seedColor: seedColor,
+            SafeArea(
+              child: BlocConsumer<PerspectiveBloc, PerspectiveState>(
+                listener: (context, state) {
+                  if (state.error != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${Translations.getPlayerTrackingText('error', currentLang)}: ${state.error}',
+                          style: GoogleFonts.roboto(
+                            color: AppColors.getTextColor(modeProvider.currentMode),
+                            fontSize: 14,
+                          ),
+                        ),
+                        backgroundColor: Colors.redAccent,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                  if (state.cleanResponse?.ok == true && !_hasShownCleanSnackBar) {
+                    setState(() {
+                      _hasShownCleanSnackBar = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          Translations.getPlayerTrackingText('artifactsCleaned', currentLang),
+                          style: GoogleFonts.roboto(
+                            color: AppColors.getTextColor(modeProvider.currentMode),
+                            fontSize: 14,
+                          ),
+                        ),
+                        backgroundColor: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onVisible: () {
+                          Future.delayed(const Duration(milliseconds: 1000), () {
+                            if (context.mounted) {
+                              context.read<PerspectiveBloc>().add(ResetCleanResponseEvent());
+                            }
+                          });
+                        },
+                      ),
+                    );
+                  }
+                  // Log to history on successful analysis (e.g., calibration, transform, etc.)
+                  if (state.calibrationResponse?.ok == true ||
+                      state.loadCalibrationResponse?.ok == true ||
+                      state.detectLinesResponse?.ok == true ||
+                      state.transformFrameResponse?.ok == true ||
+                      state.transformVideoResponse?.ok == true ||
+                      state.transformPointResponse?.ok == true) {
+                    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+                    historyProvider.addHistoryItem('Field Lines', 'Field lines analysis completed');
+                  }
+                },
+                builder: (context, state) {
+                  final bool calibrated = state.health?.calibrated ?? false;
+                  return RefreshIndicator(
+                    onRefresh: () async => context.read<PerspectiveBloc>().add(CheckHealthEvent()),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(screenWidth * 0.04),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // API Status Section
+                        
+                          SizedBox(height: screenWidth * 0.05),
+
+                          // /* COMMENTED: Load Calibration Section */
+                          /*
+                          _buildSectionCard(
+                            emoji: '📥',
+                            title: Translations.getOffsideText('loadCalibration', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                LoadCalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                                ImagePickerWidget(
+                                  onImagePicked: (File file) => context.read<PerspectiveBloc>().add(LoadCalibrationByFileEvent(file)),
+                                  buttonText: Translations.getOffsideText('selectCalibrationFile', currentLang),
+                                  isCalibration: true,
+                                  mode: modeProvider.currentMode,
+                                  seedColor: seedColor,
+                                ),
+                                if (state.loadCalibrationResponse != null) _buildLoadCalibrationResult(state.loadCalibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.05),
+                          */
+
+                          // Detect Field Lines Section (KEPT AS IS)
+                          _buildSectionCard(
+                            emoji: '🔍',
+                            title: Translations.getOffsideText('detectFieldLines', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ImagePickerWidget(
+                                  onImagePicked: (File image) => context.read<PerspectiveBloc>().add(DetectLinesEvent(image)),
+                                  buttonText: Translations.getOffsideText('selectImageForDetection', currentLang),
+                                  mode: modeProvider.currentMode,
+                                  seedColor: seedColor,
+                                ),
+                                if (state.detectLinesResponse != null) _buildDetectLinesResult(state.detectLinesResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.05),
+
+                          // /* COMMENTED: Set Calibration Section */
+                          /*
+                          _buildSectionCard(
+                            emoji: '⚙️',
+                            title: Translations.getOffsideText('setCalibration', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                                if (state.calibrationResponse != null) _buildCalibrationResult(state.calibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.05),
+                          */
+
+                          // /* COMMENTED: Transform Image Section */
+                          /*
+                          _buildSectionCard(
+                            emoji: '🖼️',
+                            title: Translations.getOffsideText('transformImage', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ImagePickerWidget(
+                                  enabled: calibrated,
+                                  onImagePicked: (File image) => context.read<PerspectiveBloc>().add(TransformFrameEvent(image)),
+                                  buttonText: Translations.getOffsideText('selectImageToTransform', currentLang),
+                                  mode: modeProvider.currentMode,
+                                  seedColor: seedColor,
+                                ),
+                                if (!calibrated)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      Translations.getOffsideText('pleaseCalibrateFirst', currentLang),
+                                      style: const TextStyle(color: Colors.redAccent),
+                                    ),
+                                  ),
+                                if (state.transformFrameResponse != null) _buildTransformFrameResult(state.transformFrameResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.05),
+                          */
+
+                          // /* COMMENTED: Transform Video Section */
+                          /*
+                          _buildSectionCard(
+                            emoji: '🎥',
+                            title: Translations.getOffsideText('transformVideo', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                VideoTransformForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                                if (state.isLoading && state.uploadProgress != null)
+                                  LinearProgressIndicator(
+                                    value: state.uploadProgress,
+                                    backgroundColor: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.3),
+                                    valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)),
+                                  ),
+                                if (state.transformVideoResponse != null) _buildTransformVideoResult(state.transformVideoResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.05),
+                          */
+
+                          // /* COMMENTED: Transform Points Section */
+                          /*
+                          _buildSectionCard(
+                            emoji: '📍',
+                            title: Translations.getOffsideText('transformPoints', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                TransformPointForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
+                                if (state.transformPointResponse != null) _buildTransformPointResult(state.transformPointResponse!, modeProvider.currentMode, seedColor, currentLang),
+                                if (state.inversePointResponse != null) _buildInverseTransformPointResult(state.inversePointResponse!, modeProvider.currentMode, seedColor, currentLang),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.05),
+                          */
+
+                          // /* COMMENTED: Clean Artifacts Section */
+                          /*
+                          _buildSectionCard(
+                            emoji: '🧹',
+                            title: Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
+                            mode: modeProvider.currentMode,
+                            seedColor: seedColor,
+                            child: ElevatedButton.icon(
+                              onPressed: () => context.read<PerspectiveBloc>().add(CleanEvent()),
+                              icon: Text(
+                                '🧹',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: AppColors.getTextColor(modeProvider.currentMode),
+                                ),
+                              ),
+                              label: Text(
+                                Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
+                                style: GoogleFonts.roboto(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.getTextColor(modeProvider.currentMode),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: screenWidth * 0.1),
+                          */
+
+                        ],
+                      ),
                     ),
                   );
                 },
               ),
-            ),
-            BlocConsumer<PerspectiveBloc, PerspectiveState>(
-              listener: (context, state) {
-                if (state.error != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '${Translations.getPlayerTrackingText('error', currentLang)}: ${state.error}',
-                        style: GoogleFonts.roboto(
-                          color: AppColors.getTextColor(modeProvider.currentMode),
-                          fontSize: 14,
-                        ),
-                      ),
-                      backgroundColor: Colors.redAccent,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                }
-                if (state.cleanResponse?.ok == true && !_hasShownCleanSnackBar) {
-                  setState(() {
-                    _hasShownCleanSnackBar = true;
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        Translations.getPlayerTrackingText('artifactsCleaned', currentLang),
-                        style: GoogleFonts.roboto(
-                          color: AppColors.getTextColor(modeProvider.currentMode),
-                          fontSize: 14,
-                        ),
-                      ),
-                      backgroundColor: AppColors.getTertiaryColor(seedColor, modeProvider.currentMode),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      onVisible: () {
-                        Future.delayed(const Duration(milliseconds: 1000), () {
-                          if (context.mounted) {
-                            context.read<PerspectiveBloc>().add(ResetCleanResponseEvent());
-                          }
-                        });
-                      },
-                    ),
-                  );
-                }
-                // Log to history on successful analysis (e.g., calibration, transform, etc.)
-                if (state.calibrationResponse?.ok == true ||
-                    state.loadCalibrationResponse?.ok == true ||
-                    state.detectLinesResponse?.ok == true ||
-                    state.transformFrameResponse?.ok == true ||
-                    state.transformVideoResponse?.ok == true ||
-                    state.transformPointResponse?.ok == true) {
-                  final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-                  historyProvider.addHistoryItem('Field Lines', 'Field lines analysis completed');
-                }
-              },
-              builder: (context, state) {
-                final bool calibrated = state.health?.calibrated ?? false;
-                return RefreshIndicator(
-                  onRefresh: () async => context.read<PerspectiveBloc>().add(CheckHealthEvent()),
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(screenWidth * 0.04),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // API Status Section
-                        _buildSectionCard(
-                          emoji: '📡',
-                          title: Translations.getPlayerTrackingText('apiStatus', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: _buildStatusCard(state, modeProvider.currentMode, seedColor, currentLang),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // /* COMMENTED: Load Calibration Section */
-                        /*
-                        _buildSectionCard(
-                          emoji: '📥',
-                          title: Translations.getOffsideText('loadCalibration', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              LoadCalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                              ImagePickerWidget(
-                                onImagePicked: (File file) => context.read<PerspectiveBloc>().add(LoadCalibrationByFileEvent(file)),
-                                buttonText: Translations.getOffsideText('selectCalibrationFile', currentLang),
-                                isCalibration: true,
-                                mode: modeProvider.currentMode,
-                                seedColor: seedColor,
-                              ),
-                              if (state.loadCalibrationResponse != null) _buildLoadCalibrationResult(state.loadCalibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-                        */
-
-                        // Detect Field Lines Section (KEPT AS IS)
-                        _buildSectionCard(
-                          emoji: '🔍',
-                          title: Translations.getOffsideText('detectFieldLines', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ImagePickerWidget(
-                                onImagePicked: (File image) => context.read<PerspectiveBloc>().add(DetectLinesEvent(image)),
-                                buttonText: Translations.getOffsideText('selectImageForDetection', currentLang),
-                                mode: modeProvider.currentMode,
-                                seedColor: seedColor,
-                              ),
-                              if (state.detectLinesResponse != null) _buildDetectLinesResult(state.detectLinesResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-
-                        // /* COMMENTED: Set Calibration Section */
-                        /*
-                        _buildSectionCard(
-                          emoji: '⚙️',
-                          title: Translations.getOffsideText('setCalibration', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CalibrationForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                              if (state.calibrationResponse != null) _buildCalibrationResult(state.calibrationResponse!, modeProvider.currentMode, seedColor, currentLang),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-                        */
-
-                        // /* COMMENTED: Transform Image Section */
-                        /*
-                        _buildSectionCard(
-                          emoji: '🖼️',
-                          title: Translations.getOffsideText('transformImage', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ImagePickerWidget(
-                                enabled: calibrated,
-                                onImagePicked: (File image) => context.read<PerspectiveBloc>().add(TransformFrameEvent(image)),
-                                buttonText: Translations.getOffsideText('selectImageToTransform', currentLang),
-                                mode: modeProvider.currentMode,
-                                seedColor: seedColor,
-                              ),
-                              if (!calibrated)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    Translations.getOffsideText('pleaseCalibrateFirst', currentLang),
-                                    style: const TextStyle(color: Colors.redAccent),
-                                  ),
-                                ),
-                              if (state.transformFrameResponse != null) _buildTransformFrameResult(state.transformFrameResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-                        */
-
-                        // /* COMMENTED: Transform Video Section */
-                        /*
-                        _buildSectionCard(
-                          emoji: '🎥',
-                          title: Translations.getOffsideText('transformVideo', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              VideoTransformForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                              if (state.isLoading && state.uploadProgress != null)
-                                LinearProgressIndicator(
-                                  value: state.uploadProgress,
-                                  backgroundColor: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.3),
-                                  valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(seedColor, modeProvider.currentMode)),
-                                ),
-                              if (state.transformVideoResponse != null) _buildTransformVideoResult(state.transformVideoResponse!, modeProvider.currentMode, seedColor, currentLang, screenWidth),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-                        */
-
-                        // /* COMMENTED: Transform Points Section */
-                        /*
-                        _buildSectionCard(
-                          emoji: '📍',
-                          title: Translations.getOffsideText('transformPoints', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              TransformPointForm(mode: modeProvider.currentMode, seedColor: seedColor, currentLang: currentLang),
-                              if (state.transformPointResponse != null) _buildTransformPointResult(state.transformPointResponse!, modeProvider.currentMode, seedColor, currentLang),
-                              if (state.inversePointResponse != null) _buildInverseTransformPointResult(state.inversePointResponse!, modeProvider.currentMode, seedColor, currentLang),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.05),
-                        */
-
-                        // /* COMMENTED: Clean Artifacts Section */
-                        /*
-                        _buildSectionCard(
-                          emoji: '🧹',
-                          title: Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
-                          mode: modeProvider.currentMode,
-                          seedColor: seedColor,
-                          child: ElevatedButton.icon(
-                            onPressed: () => context.read<PerspectiveBloc>().add(CleanEvent()),
-                            icon: Text(
-                              '🧹',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: AppColors.getTextColor(modeProvider.currentMode),
-                              ),
-                            ),
-                            label: Text(
-                              Translations.getPlayerTrackingText('cleanArtifacts', currentLang),
-                              style: GoogleFonts.roboto(
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.getTextColor(modeProvider.currentMode),
-                                fontSize: 14,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              foregroundColor: AppColors.getTextColor(modeProvider.currentMode),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: screenWidth * 0.1),
-                        */
-
-                      ],
-                    ),
-                  ),
-                );
-              },
             ),
           ],
         ),
@@ -420,8 +380,83 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
     required Widget child,
   }) {
     return Card(
-      color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.95),
+      elevation: 6,
+      shadowColor: Colors.black.withOpacity(0.2),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.getSurfaceColor(mode).withOpacity(0.98),
+              AppColors.getSurfaceColor(mode).withOpacity(0.92),
+            ],
+          ),
+          border: Border.all(
+            color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      emoji,
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: AppColors.getTertiaryColor(seedColor, mode),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.roboto(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.getTextColor(mode),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(PerspectiveState state, int mode, Color seedColor, String currentLang) {
+    return Card(
+      color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
       elevation: 4,
+      shadowColor: Colors.black.withOpacity(0.1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -431,75 +466,43 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  width: 14,
+                  height: 14,
                   decoration: BoxDecoration(
+                    color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
                     shape: BoxShape.circle,
-                    color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.2),
-                  ),
-                  child: Text(
-                    emoji,
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: AppColors.getTertiaryColor(seedColor, mode),
-                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.4) : Colors.redAccent.withOpacity(0.4),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: GoogleFonts.roboto(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(mode),
-                    ),
+                Text(
+                  state.health?.status == 'ok'
+                      ? Translations.getPlayerTrackingText('connected', currentLang)
+                      : Translations.getPlayerTrackingText('disconnected', currentLang),
+                  style: GoogleFonts.roboto(
+                    fontSize: 18,
+                    color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            child,
+            if (state.health != null) ...[
+              const SizedBox(height: 12),
+              _buildStatusItem(Translations.getPlayerTrackingText('status', currentLang), state.health!.status, mode, seedColor),
+              _buildStatusItem('Calibrated', state.health!.calibrated.toString(), mode, seedColor),
+              if (state.health!.dstSize != null)
+                _buildStatusItem('Output Size', '${state.health!.dstSize!['width']}x${state.health!.dstSize!['height']}', mode, seedColor),
+            ],
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatusCard(PerspectiveState state, int mode, Color seedColor, String currentLang) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              state.health?.status == 'ok'
-                  ? Translations.getPlayerTrackingText('connected', currentLang)
-                  : Translations.getPlayerTrackingText('disconnected', currentLang),
-              style: GoogleFonts.roboto(
-                fontSize: 16,
-                color: state.health?.status == 'ok' ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        if (state.health != null) ...[
-          const SizedBox(height: 8),
-          _buildStatusItem(Translations.getPlayerTrackingText('status', currentLang), state.health!.status, mode, seedColor),
-          _buildStatusItem('Calibrated', state.health!.calibrated.toString(), mode, seedColor),
-          if (state.health!.dstSize != null)
-            _buildStatusItem('Output Size', '${state.health!.dstSize!['width']}x${state.health!.dstSize!['height']}', mode, seedColor),
-        ],
-      ],
     );
   }
 
@@ -532,60 +535,76 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Card(
-          color: AppColors.getSurfaceColor(mode).withOpacity(0.9),
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: AppColors.getSurfaceColor(mode).withOpacity(0.95),
+          elevation: 4,
+          shadowColor: Colors.black.withOpacity(0.15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildResultItem(Translations.getOffsideText('success', currentLang), response.ok.toString(), response.ok, mode, seedColor),
                 _buildResultItem(Translations.getOffsideText('detectedLines', currentLang), '${response.lines?.length ?? 0} lines found', response.lines?.isNotEmpty ?? false, mode, seedColor),
-                if (response.uploadUrl != null) _buildResultItem(Translations.getOffsideText('uploadedImageUrl', currentLang), response.uploadUrl!, false, mode, seedColor),
-                if (response.annotatedUrl != null) _buildResultItem(Translations.getOffsideText('annotatedImageUrl', currentLang), response.annotatedUrl!, false, mode, seedColor),
-                if (response.lines != null) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    Translations.getOffsideText('linesCoordinates', currentLang),
-                    style: GoogleFonts.roboto(fontWeight: FontWeight.w600, color: AppColors.getTextColor(mode), fontSize: 16),
-                  ),
-                  const SizedBox(height: 8),
-                  ...response.lines!.map((line) => Text(
-                        line.toString(),
-                        style: GoogleFonts.roboto(color: AppColors.getTextColor(mode).withOpacity(0.7), fontSize: 14),
-                      )),
-                ],
               ],
             ),
           ),
         ),
         if (response.annotatedUrl != null) ...[
-          SizedBox(height: screenWidth * 0.03),
+          SizedBox(height: screenWidth * 0.04),
           Text(
             Translations.getOffsideText('annotatedImage', currentLang),
-            style: GoogleFonts.roboto(fontWeight: FontWeight.bold, color: AppColors.getTextColor(mode), fontSize: 16),
+            style: GoogleFonts.roboto(fontWeight: FontWeight.bold, color: AppColors.getTextColor(mode), fontSize: 18, letterSpacing: 0.5),
           ),
-          SizedBox(height: screenWidth * 0.02),
-          Container(
-            constraints: BoxConstraints(maxHeight: screenWidth * 0.5, maxWidth: screenWidth * 0.9),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3), width: 1),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: '${PerspectiveService.defaultBaseUrl}${response.annotatedUrl}',
-                fit: BoxFit.contain,
-                placeholder: (context, url) => Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(seedColor, mode)),
+          SizedBox(height: screenWidth * 0.03),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => FullScreenImagePage(
+                    imageUrl: '${PerspectiveService.defaultBaseUrl}${response.annotatedUrl}',
+                    mode: mode,
+                    seedColor: seedColor,
                   ),
                 ),
-                errorWidget: (context, url, error) => Text(
-                  Translations.getOffsideText('failedToLoadImage', currentLang),
-                  style: GoogleFonts.roboto(color: AppColors.getTextColor(mode), fontSize: 14),
+              );
+            },
+            child: Container(
+              constraints: BoxConstraints(maxHeight: screenWidth * 0.5, maxWidth: screenWidth * 0.95),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CachedNetworkImage(
+                  imageUrl: '${PerspectiveService.defaultBaseUrl}${response.annotatedUrl}',
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) => Container(
+                    height: screenWidth * 0.4,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation(AppColors.getTertiaryColor(seedColor, mode)),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    height: screenWidth * 0.2,
+                    child: Center(
+                      child: Text(
+                        Translations.getOffsideText('failedToLoadImage', currentLang),
+                        style: GoogleFonts.roboto(color: AppColors.getTextColor(mode), fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -772,40 +791,61 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
 
   Widget _buildStatusItem(String label, String value, int mode, Color seedColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Text('$label: ', style: GoogleFonts.roboto(color: AppColors.getTextColor(mode).withOpacity(0.7), fontSize: 14)),
-          Flexible(
-            child: Text(
-              value,
-              style: GoogleFonts.roboto(color: AppColors.getTextColor(mode), fontSize: 14, fontWeight: FontWeight.w500),
-              overflow: TextOverflow.ellipsis,
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.getSurfaceColor(mode).withOpacity(0.5),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Text('$label: ', style: GoogleFonts.roboto(color: AppColors.getTextColor(mode).withOpacity(0.7), fontSize: 14, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                value,
+                style: GoogleFonts.roboto(color: AppColors.getTextColor(mode), fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildResultItem(String label, String value, bool isSuccess, int mode, Color seedColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Text('$label: ', style: GoogleFonts.roboto(color: AppColors.getTextColor(mode).withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w600)),
-          Flexible(
-            child: Text(
-              value,
-              style: GoogleFonts.roboto(
-                color: isSuccess ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSuccess ? AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.1) : Colors.redAccent.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSuccess ? AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.3) : Colors.redAccent.withOpacity(0.3),
+            width: 1,
           ),
-        ],
+        ),
+        child: Row(
+          children: [
+            Text('$label: ', style: GoogleFonts.roboto(color: AppColors.getTextColor(mode).withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                value,
+                style: GoogleFonts.roboto(
+                  color: isSuccess ? AppColors.getTertiaryColor(seedColor, mode) : Colors.redAccent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -850,6 +890,60 @@ class _KeyFieldLinesPageState extends State<KeyFieldLinesPage> with TickerProvid
   */
 }
 
+class FullScreenImagePage extends StatelessWidget {
+  final String imageUrl;
+  final int mode;
+  final Color seedColor;
+
+  const FullScreenImagePage({
+    super.key,
+    required this.imageUrl,
+    required this.mode,
+    required this.seedColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Center(
+            child: InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.contain,
+                placeholder: (context, url) => const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+                errorWidget: (context, url, error) => const Center(
+                  child: Icon(Icons.error, color: Colors.white, size: 50),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FootballGridPainter extends CustomPainter {
   final int mode;
 
@@ -857,8 +951,9 @@ class _FootballGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final random = Random(42); // Seeded for consistency
     final gridPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.04)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.03)
       ..strokeWidth = 0.5;
 
     const step = 50.0;
@@ -869,10 +964,20 @@ class _FootballGridPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
+    // Add subtle particles for improved dynamic feel
+    final particlePaint = Paint()
+      ..color = AppColors.getTextColor(mode).withOpacity(0.08);
+    for (int i = 0; i < 25; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final radius = random.nextDouble() * 2 + 1;
+      canvas.drawCircle(Offset(x, y), radius, particlePaint);
+    }
+
     final fieldPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.08)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.06)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.5;
 
     final inset = 40.0;
     final rect = Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
@@ -885,41 +990,4 @@ class _FootballGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ScanLinePainter extends CustomPainter {
-  final double progress;
-  final int mode;
-  final Color seedColor;
-
-  _ScanLinePainter({required this.progress, required this.mode, required this.seedColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final line = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.2),
-          AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 0.55, 1.0],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, y - 80, size.width, 160));
-
-    canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
-
-    final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1), Colors.transparent],
-      ).createShader(Rect.fromCircle(center: Offset(size.width / 2, y), radius: size.width * 0.25));
-
-    canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanLinePainter oldDelegate) => oldDelegate.progress != progress || oldDelegate.mode != mode;
 }

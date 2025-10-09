@@ -1,6 +1,6 @@
-// lib/models/referee.dart (No changes needed; already handles fallbacks and toJson)
+// lib/models/referee.dart
 class Referee {
-  final String id; 
+  final String id;
   final String confed;
   final String country;
   late final Details? details;
@@ -26,15 +26,20 @@ class Referee {
 
   factory Referee.fromJson(Map<String, dynamic> json) {
     return Referee(
-      id: json['id']?.toString() ?? json['_id']?.toString() ?? '', // Support both
+      id:
+          json['id']?.toString() ??
+          json['_id']?.toString() ??
+          '', // Support both
       confed: json['confed'] ?? '',
       country: json['country'] ?? '',
-      details: json['details'] != null ? Details.fromJson(json['details']) : null,
+      details: json['details'] != null
+          ? Details.fromJson(json['details'])
+          : null,
       gender: json['gender'] ?? '',
-      lastEnriched: json['last_enriched'] ?? 0,
+      lastEnriched: (json['last_enriched'] ?? 0).toInt(),
       name: json['name'] ?? '',
       roles: json['roles'] != null ? List<String>.from(json['roles']) : [],
-      since: json['since'] ?? 0,
+      since: (json['since'] ?? 0).toInt(),
       year: json['year'],
     );
   }
@@ -70,9 +75,7 @@ class Details {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'worldfootball': worldfootball?.toJson(),
-    };
+    return {'worldfootball': worldfootball?.toJson()};
   }
 }
 
@@ -119,7 +122,7 @@ class WorldFootball {
       competitions: compsJson.map((c) => Competition.fromJson(c)).toList(),
       overallTotals: OverallTotals.fromJson(json['overall_totals']),
       profile: Profile.fromJson(json['profile']),
-      scrapedAt: json['scraped_at'] ?? 0,
+      scrapedAt: (json['scraped_at'] ?? 0).toInt(),
       source: Source.fromJson(json['source']),
     );
   }
@@ -149,10 +152,7 @@ class Competition {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'competition': name,
-      'totals': totals.toJson(),
-    };
+    return {'competition': name, 'totals': totals.toJson()};
   }
 }
 
@@ -173,10 +173,10 @@ class Totals {
 
   factory Totals.fromJson(Map<String, dynamic> json) {
     return Totals(
-      matches: json['matches'] ?? 0,
-      red: json['red'] ?? 0,
-      secondYellow: json['second_yellow'] ?? 0,
-      yellow: json['yellow'] ?? 0,
+      matches: (json['matches'] ?? 0).toInt(),
+      red: (json['red'] ?? 0).toInt(),
+      secondYellow: (json['second_yellow'] ?? 0).toInt(),
+      yellow: (json['yellow'] ?? 0).toInt(),
       yellowPerGame: (json['yellow_per_game'] ?? 0).toDouble(),
     );
   }
@@ -209,10 +209,10 @@ class OverallTotals {
 
   factory OverallTotals.fromJson(Map<String, dynamic> json) {
     return OverallTotals(
-      matches: json['matches'] ?? 0,
-      red: json['red'] ?? 0,
-      secondYellow: json['second_yellow'] ?? 0,
-      yellow: json['yellow'] ?? 0,
+      matches: (json['matches'] ?? 0).toInt(),
+      red: (json['red'] ?? 0).toInt(),
+      secondYellow: (json['second_yellow'] ?? 0).toInt(),
+      yellow: (json['yellow'] ?? 0).toInt(),
       yellowPerGame: (json['yellow_per_game'] ?? 0).toDouble(),
     );
   }
@@ -275,14 +275,7 @@ class Source {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'site': site,
-      'url': url,
-    };
+    return {'site': site, 'url': url};
   }
 }
-
-
-
-
-
+//

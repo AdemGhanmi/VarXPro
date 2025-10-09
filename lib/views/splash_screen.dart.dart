@@ -1,4 +1,4 @@
-import 'dart:math';
+// lib/views/connexion/view/splash_screen.dart
 import 'package:VarXPro/views/connexion/view/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -6,18 +6,24 @@ import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
-import 'package:VarXPro/views/nav_bar.dart';
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  final List<Map<String, dynamic>> _modes = [
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
+
+  final List<Map<String, dynamic>> _modes = const [
     {"name": "Classic Mode", "emoji": "⚽", "color": Colors.blue},
     {"name": "Light Mode", "emoji": "☀️", "color": Colors.amber},
     {"name": "Pro Analysis Mode", "emoji": "📊", "color": Colors.green},
@@ -25,50 +31,35 @@ class _SplashScreenState extends State<SplashScreen>
     {"name": "Referee Mode", "emoji": "👨‍⚖️", "color": Colors.red},
   ];
 
-  late AnimationController _fadeController;
-  late Animation<double> _fadeAnimation;
-  late AnimationController _scaleController;
-  late Animation<double> _scaleAnimation;
-  late AnimationController _slideController;
-  late Animation<Offset> _slideAnimation;
-  late AnimationController _scanController;
-
   @override
   void initState() {
     super.initState();
-
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..forward();
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
     );
 
     _scaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeInOut),
+    _scaleAnimation = CurvedAnimation(
+      parent: _scaleController,
+      curve: Curves.easeInOut,
     );
 
     _slideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
-
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
           CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
         );
-
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
   }
 
   @override
@@ -76,8 +67,28 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeController.dispose();
     _scaleController.dispose();
     _slideController.dispose();
-    _scanController.dispose();
     super.dispose();
+  }
+
+  void _showSuccessSnackbar(BuildContext context, String message, int mode) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.getPrimaryColor(
+          AppColors.seedColors[mode] ?? AppColors.seedColors[1]!,
+          mode,
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   void _showLanguageDialog(
@@ -88,82 +99,74 @@ class _SplashScreenState extends State<SplashScreen>
   ) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.getSurfaceColor(
-                  modeProvider.currentMode,
-                ).withOpacity(0.95),
-                AppColors.getSurfaceColor(
-                  modeProvider.currentMode,
-                ).withOpacity(0.85),
+      builder: (ctx) => Directionality(
+        textDirection: _getTextDirection(currentLang),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: AppColors.getSurfaceColor(modeProvider.currentMode),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "🌐",
-                style: TextStyle(
-                  fontSize: 40,
-                  color: AppColors.getPrimaryColor(
-                    AppColors.seedColors[modeProvider.currentMode] ??
-                        AppColors.seedColors[1]!,
-                    modeProvider.currentMode,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                Translations.getChooseLanguage(currentLang),
-                style: TextStyle(
-                  color: AppColors.getTextColor(modeProvider.currentMode),
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ...Translations.getLanguages(currentLang).asMap().entries.map((
-                entry,
-              ) {
-                int idx = entry.key;
-                String lang = entry.value;
-                String code = idx == 0
-                    ? 'en'
-                    : idx == 1
-                    ? 'fr'
-                    : 'ar';
-                String flag = code == 'en'
-                    ? '🇺🇸'
-                    : code == 'fr'
-                    ? '🇫🇷'
-                    : '🇹🇳';
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(16),
-                    color: AppColors.getTertiaryColor(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "🌐",
+                  style: TextStyle(
+                    fontSize: 40,
+                    color: AppColors.getPrimaryColor(
                       AppColors.seedColors[modeProvider.currentMode] ??
                           AppColors.seedColors[1]!,
                       modeProvider.currentMode,
-                    ).withOpacity(0.1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  Translations.getChooseLanguage(currentLang),
+                  style: TextStyle(
+                    color: AppColors.getTextColor(modeProvider.currentMode),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ...Translations.getLanguages(currentLang).asMap().entries.map((
+                  entry,
+                ) {
+                  int idx = entry.key;
+                  String lang = entry.value;
+                  String code = idx == 0
+                      ? 'en'
+                      : idx == 1
+                      ? 'fr'
+                      : 'ar';
+                  String flag = code == 'en'
+                      ? '🇺🇸'
+                      : code == 'fr'
+                      ? '🇫🇷'
+                      : '🇹🇳';
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      tileColor: AppColors.getTertiaryColor(
+                        AppColors.seedColors[modeProvider.currentMode] ??
+                            AppColors.seedColors[1]!,
+                        modeProvider.currentMode,
+                      ).withOpacity(0.1),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 8,
@@ -221,10 +224,10 @@ class _SplashScreenState extends State<SplashScreen>
                         );
                       },
                     ),
-                  ),
-                );
-              }).toList(),
-            ],
+                  );
+                }).toList(),
+              ],
+            ),
           ),
         ),
       ),
@@ -238,70 +241,62 @@ class _SplashScreenState extends State<SplashScreen>
   ) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: Container(
-          padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.getSurfaceColor(
-                  modeProvider.currentMode,
-                ).withOpacity(0.95),
-                AppColors.getSurfaceColor(
-                  modeProvider.currentMode,
-                ).withOpacity(0.85),
+      builder: (ctx) => Directionality(
+        textDirection: _getTextDirection(currentLang),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              color: AppColors.getSurfaceColor(modeProvider.currentMode),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "✨",
-                style: TextStyle(
-                  fontSize: 40,
-                  color: AppColors.getPrimaryColor(
-                    AppColors.seedColors[modeProvider.currentMode] ??
-                        AppColors.seedColors[1]!,
-                    modeProvider.currentMode,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                Translations.getChooseMode(currentLang),
-                style: TextStyle(
-                  color: AppColors.getTextColor(modeProvider.currentMode),
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ..._modes.asMap().entries.map((entry) {
-                int index = entry.key;
-                var mode = entry.value;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Material(
-                    borderRadius: BorderRadius.circular(16),
-                    color: AppColors.getTertiaryColor(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "✨",
+                  style: TextStyle(
+                    fontSize: 40,
+                    color: AppColors.getPrimaryColor(
                       AppColors.seedColors[modeProvider.currentMode] ??
                           AppColors.seedColors[1]!,
                       modeProvider.currentMode,
-                    ).withOpacity(0.1),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  Translations.getChooseMode(currentLang),
+                  style: TextStyle(
+                    color: AppColors.getTextColor(modeProvider.currentMode),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ..._modes.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  var mode = entry.value;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      tileColor: AppColors.getTertiaryColor(
+                        AppColors.seedColors[modeProvider.currentMode] ??
+                            AppColors.seedColors[1]!,
+                        modeProvider.currentMode,
+                      ).withOpacity(0.1),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
@@ -340,36 +335,18 @@ class _SplashScreenState extends State<SplashScreen>
                         );
                       },
                     ),
-                  ),
-                );
-              }).toList(),
-            ],
+                  );
+                }).toList(),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  void _showSuccessSnackbar(BuildContext context, String message, int mode) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.getPrimaryColor(
-          AppColors.seedColors[mode] ?? AppColors.seedColors[1]!,
-          mode,
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
+  TextDirection _getTextDirection(String? lang) =>
+      lang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
   @override
   Widget build(BuildContext context) {
@@ -429,345 +406,307 @@ class _SplashScreenState extends State<SplashScreen>
       },
     ];
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _FootballGridPainter(modeProvider.currentMode),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.topRight,
-                    radius: 1.5,
-                    colors: [
-                      AppColors.getPrimaryColor(
-                        seedColor,
-                        modeProvider.currentMode,
-                      ).withOpacity(0.15),
-                      AppColors.getSurfaceColor(
-                        modeProvider.currentMode,
-                      ).withOpacity(0.9),
-                      AppColors.getSurfaceColor(modeProvider.currentMode),
-                    ],
-                    stops: const [0.0, 0.5, 1.0],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _scanController,
-              builder: (context, _) {
-                final t = _scanController.value;
-                return CustomPaint(
-                  painter: _ScanLinePainter(
-                    progress: t,
-                    mode: modeProvider.currentMode,
-                    seedColor: seedColor,
-                  ),
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  // Header amélioré
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Hero(
-                                tag: 'logo',
-                                child: ScaleTransition(
-                                  scale: _scaleAnimation,
-                                  child: Container(
-                                    width: 70,
-                                    height: 70,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.getPrimaryColor(
-                                            seedColor,
-                                            modeProvider.currentMode,
+    return Directionality(
+      textDirection: _getTextDirection(currentLang),
+      child: Scaffold(
+        backgroundColor: AppColors.getSurfaceColor(modeProvider.currentMode),
+        body: Stack(
+          children: [
+
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Hero(
+                                  tag: 'logo',
+                                  child: ScaleTransition(
+                                    scale: _scaleAnimation,
+                                    child: Container(
+                                      width: 70,
+                                      height: 70,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppColors.getPrimaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ),
+                                            AppColors.getPrimaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ).withOpacity(0.7),
+                                          ],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.getPrimaryColor(
+                                              seedColor,
+                                              modeProvider.currentMode,
+                                            ).withOpacity(0.4),
+                                            blurRadius: 15,
+                                            spreadRadius: 3,
                                           ),
-                                          AppColors.getPrimaryColor(
-                                            seedColor,
-                                            modeProvider.currentMode,
-                                          ).withOpacity(0.7),
                                         ],
                                       ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: AppColors.getPrimaryColor(
-                                            seedColor,
-                                            modeProvider.currentMode,
-                                          ).withOpacity(0.4),
-                                          blurRadius: 15,
-                                          spreadRadius: 3,
+                                      child: ClipOval(
+                                        child: Image.asset(
+                                          'assets/logo.jpg',
+                                          fit: BoxFit.cover,
                                         ),
-                                      ],
-                                    ),
-                                    child: ClipOval(
-                                      child: Image.asset(
-                                        'assets/logo.jpg',
-                                        fit: BoxFit.cover,
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'VAR X PRO ',
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.getTextColor(
-                                          modeProvider.currentMode,
-                                        ),
-                                        letterSpacing: 1.2,
-                                        shadows: [
-                                          Shadow(
-                                            blurRadius: 10,
-                                            color: AppColors.getPrimaryColor(
-                                              seedColor,
-                                              modeProvider.currentMode,
-                                            ).withOpacity(0.3),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'VAR X PRO ',
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
                                           ),
-                                        ],
+                                          letterSpacing: 1.2,
+                                          shadows: [
+                                            Shadow(
+                                              blurRadius: 10,
+                                              color: AppColors.getPrimaryColor(
+                                                seedColor,
+                                                modeProvider.currentMode,
+                                              ).withOpacity(0.3),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      'AI Football Analysis',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: AppColors.getTextColor(
-                                          modeProvider.currentMode,
-                                        ).withOpacity(0.7),
-                                        fontWeight: FontWeight.w500,
+                                      Text(
+                                        'AI Football Analysis',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: AppColors.getTextColor(
+                                            modeProvider.currentMode,
+                                          ).withOpacity(0.7),
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              _AnimatedEmojiButton(
+                                emoji: "🌐",
+                                color: AppColors.getPrimaryColor(
+                                  seedColor,
+                                  modeProvider.currentMode,
+                                ),
+                                onPressed: () => _showLanguageDialog(
+                                  context,
+                                  langProvider,
+                                  modeProvider,
+                                  currentLang ?? 'en',
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              _AnimatedEmojiButton(
+                                emoji: "✨",
+                                color: AppColors.getPrimaryColor(
+                                  seedColor,
+                                  modeProvider.currentMode,
+                                ),
+                                onPressed: () => _showModeDialog(
+                                  context,
+                                  modeProvider,
+                                  currentLang ?? 'en',
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                        Row(
-                          children: [
-                            _AnimatedEmojiButton(
-                              emoji: "🌐",
-                              color: AppColors.getPrimaryColor(
-                                seedColor,
-                                modeProvider.currentMode,
-                              ),
-                              onPressed: () => _showLanguageDialog(
-                                context,
-                                langProvider,
-                                modeProvider,
-                                currentLang ?? 'en',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            _AnimatedEmojiButton(
-                              emoji: "✨",
-                              color: AppColors.getPrimaryColor(
-                                seedColor,
-                                modeProvider.currentMode,
-                              ),
-                              onPressed: () => _showModeDialog(
-                                context,
-                                modeProvider,
-                                currentLang ?? 'en',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-
-                  // Main Content
-                  Expanded(
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: [
-                            // Subtitle
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.getPrimaryColor(
-                                  seedColor,
-                                  modeProvider.currentMode,
-                                ).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
+                    Expanded(
+                      child: SlideTransition(
+                        position: _slideAnimation,
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
                                   color: AppColors.getPrimaryColor(
                                     seedColor,
                                     modeProvider.currentMode,
-                                  ).withOpacity(0.2),
-                                ),
-                              ),
-                              child: Text(
-                                Translations.getHomeText(
-                                      'subtitle',
-                                      currentLang,
-                                    ) ??
-                                    'Revolutionizing Football Analysis with AI',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.getTextColor(
-                                    modeProvider.currentMode,
-                                  ).withOpacity(0.9),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 40),
-
-                            // Features Grid amélioré
-                            GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    childAspectRatio: 0.8,
-                                    crossAxisSpacing: 16,
-                                    mainAxisSpacing: 16,
+                                  ).withOpacity(0.10),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: AppColors.getPrimaryColor(
+                                      seedColor,
+                                      modeProvider.currentMode,
+                                    ).withOpacity(0.2),
                                   ),
-                              itemCount: features.length,
-                              itemBuilder: (context, index) {
-                                final feature = features[index];
-                                return _FeatureCard(
-                                  emoji: feature['emoji'] as String,
-                                  title: feature['title'] as String,
-                                  desc: feature['desc'] as String,
-                                  iconColor: feature['color'] as Color,
-                                  seedColor: seedColor,
-                                  mode: modeProvider.currentMode,
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 40),
+                                ),
+                                child: Text(
+                                  Translations.getHomeText(
+                                        'subtitle',
+                                        currentLang,
+                                      ) ??
+                                      'Revolutionizing Football Analysis with AI',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.getTextColor(
+                                      modeProvider.currentMode,
+                                    ).withOpacity(0.9),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      childAspectRatio: 0.8,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                    ),
+                                itemCount: features.length,
+                                itemBuilder: (context, index) {
+                                  final feature = features[index];
+                                  return _FeatureCard(
+                                    emoji: feature['emoji'] as String,
+                                    title: feature['title'] as String,
+                                    desc: feature['desc'] as String,
+                                    iconColor: feature['color'] as Color,
+                                    seedColor: seedColor,
+                                    mode: modeProvider.currentMode,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 40),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.getSurfaceColor(
+                              modeProvider.currentMode,
+                            ).withOpacity(0.7),
+                            AppColors.getSurfaceColor(modeProvider.currentMode),
                           ],
                         ),
-                      ),
-                    ),
-                  ),
-
-                  // Bottom Button Section
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.getSurfaceColor(
-                            modeProvider.currentMode,
-                          ).withOpacity(0.7),
-                          AppColors.getSurfaceColor(modeProvider.currentMode),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
                         ],
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            PageRouteBuilder(
-                              transitionDuration: const Duration(
-                                milliseconds: 800,
-                              ),
-                              pageBuilder: (_, __, ___) => const LoginPage(),
-                              transitionsBuilder: (_, anim, __, child) {
-                                return FadeTransition(
-                                  opacity: anim,
-                                  child: SlideTransition(
-                                    position:
-                                        Tween<Offset>(
-                                          begin: const Offset(0, 0.5),
-                                          end: Offset.zero,
-                                        ).animate(
-                                          CurvedAnimation(
-                                            parent: anim,
-                                            curve: Curves.easeInOutBack,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              PageRouteBuilder(
+                                transitionDuration: const Duration(
+                                  milliseconds: 800,
+                                ),
+                                pageBuilder: (_, __, ___) => const LoginPage(),
+                                transitionsBuilder: (_, anim, __, child) {
+                                  return FadeTransition(
+                                    opacity: anim,
+                                    child: SlideTransition(
+                                      position:
+                                          Tween<Offset>(
+                                            begin: const Offset(0, 0.5),
+                                            end: Offset.zero,
+                                          ).animate(
+                                            CurvedAnimation(
+                                              parent: anim,
+                                              curve: Curves.easeInOutBack,
+                                            ),
                                           ),
-                                        ),
-                                    child: child,
-                                  ),
-                                );
-                              },
+                                      child: child,
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 22,
+                          ),
+                          label: Text(
+                            Translations.getHomeText('enterApp', currentLang) ??
+                                'ENTER APPLICATION',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 22),
-                        label: Text(
-                          Translations.getHomeText('enterApp', currentLang) ??
-                              'ENTER APPLICATION',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.getPrimaryColor(
-                            seedColor,
-                            modeProvider.currentMode,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.getPrimaryColor(
+                              seedColor,
+                              modeProvider.currentMode,
+                            ),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 24,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 8,
+                            shadowColor: AppColors.getPrimaryColor(
+                              seedColor,
+                              modeProvider.currentMode,
+                            ).withOpacity(0.5),
                           ),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 18,
-                            horizontal: 24,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 8,
-                          shadowColor: AppColors.getPrimaryColor(
-                            seedColor,
-                            modeProvider.currentMode,
-                          ).withOpacity(0.5),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -792,79 +731,77 @@ class _FeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.getSurfaceColor(mode).withOpacity(0.8),
-              AppColors.getSurfaceColor(mode).withOpacity(0.6),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.getSurfaceColor(mode).withOpacity(0.8),
+            AppColors.getSurfaceColor(mode).withOpacity(0.6),
           ],
-          border: Border.all(
-            color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.15),
-            width: 1,
-          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    iconColor.withOpacity(0.2),
-                    iconColor.withOpacity(0.1),
-                  ],
-                ),
-                border: Border.all(color: iconColor.withOpacity(0.3), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(
+          color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.15),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  iconColor.withOpacity(0.2),
+                  iconColor.withOpacity(0.1),
+                ],
               ),
-              child: Text(
-                emoji,
-                style: TextStyle(color: iconColor, fontSize: 28),
-              ),
+              border: Border.all(color: iconColor.withOpacity(0.3), width: 2),
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
+            child: Text(
+              emoji,
+              style: TextStyle(color: iconColor, fontSize: 28),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(mode),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Flexible(
+            child: Text(
+              desc,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: AppColors.getTextColor(mode),
-              ),
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 6),
-            Flexible(
-              child: Text(
-                desc,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.getTextColor(mode).withOpacity(0.8),
-                  height: 1.4,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.getTextColor(mode).withOpacity(0.8),
+                height: 1.4,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -874,31 +811,25 @@ class _AnimatedEmojiButton extends StatefulWidget {
   final String emoji;
   final Color color;
   final VoidCallback onPressed;
-
   const _AnimatedEmojiButton({
     required this.emoji,
     required this.color,
     required this.onPressed,
   });
-
   @override
-  __AnimatedEmojiButtonState createState() => __AnimatedEmojiButtonState();
+  State<_AnimatedEmojiButton> createState() => __AnimatedEmojiButtonState();
 }
 
 class __AnimatedEmojiButtonState extends State<_AnimatedEmojiButton>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(_controller);
-  }
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+  );
+  late final Animation<double> _scaleAnimation = Tween<double>(
+    begin: 1.0,
+    end: 0.9,
+  ).animate(_controller);
 
   @override
   void dispose() {
@@ -906,18 +837,13 @@ class __AnimatedEmojiButtonState extends State<_AnimatedEmojiButton>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    _controller.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
+  void _onTapDown(TapDownDetails _) => _controller.forward();
+  void _onTapUp(TapUpDetails _) {
     _controller.reverse();
     widget.onPressed();
   }
 
-  void _onTapCancel() {
-    _controller.reverse();
-  }
+  void _onTapCancel() => _controller.reverse();
 
   @override
   Widget build(BuildContext context) {
@@ -960,101 +886,4 @@ class __AnimatedEmojiButtonState extends State<_AnimatedEmojiButton>
       ),
     );
   }
-}
-
-class _FootballGridPainter extends CustomPainter {
-  final int mode;
-
-  _FootballGridPainter(this.mode);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.04)
-      ..strokeWidth = 0.5;
-
-    const step = 50.0;
-    for (double x = 0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    final fieldPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    final inset = 40.0;
-    final rect = Rect.fromLTWH(
-      inset,
-      inset * 2,
-      size.width - inset * 2,
-      size.height - inset * 4,
-    );
-    canvas.drawRect(rect, fieldPaint);
-
-    final midX = rect.center.dy;
-    canvas.drawLine(
-      Offset(rect.left + rect.width / 2 - 100, midX),
-      Offset(rect.left + rect.width / 2 + 100, midX),
-      fieldPaint,
-    );
-    canvas.drawCircle(Offset(rect.left + rect.width / 2, midX), 30, fieldPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ScanLinePainter extends CustomPainter {
-  final double progress;
-  final int mode;
-  final Color seedColor;
-
-  _ScanLinePainter({
-    required this.progress,
-    required this.mode,
-    required this.seedColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final line = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.2),
-          AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 0.55, 1.0],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, y - 80, size.width, 160));
-
-    canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
-
-    final glow = Paint()
-      ..shader =
-          RadialGradient(
-            colors: [
-              AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
-              Colors.transparent,
-            ],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width / 2, y),
-              radius: size.width * 0.25,
-            ),
-          );
-
-    canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanLinePainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.mode != mode;
 }

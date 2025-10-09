@@ -9,19 +9,19 @@ import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
-
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -200,7 +200,17 @@ class _RegisterPageState extends State<RegisterPage> {
       final otpResult = await authProvider.sendEmailOtp(_emailController.text.trim());
       if (otpResult['success']) {
         _showSuccessSnackbar(context, Translations.getLoginText('otpSent', currentLang) ?? 'OTP sent to your email', modeProvider.currentMode);
-        Navigator.push(context, MaterialPageRoute(builder: (_) => OtpVerifierPage(email: _emailController.text.trim(), isForRegister: true, password: _passwordController.text, role: _role)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpVerifierPage(
+              email: _emailController.text.trim(),
+              isForRegister: true,
+              password: _passwordController.text,
+              role: _role,
+            ),
+          ),
+        );
       } else {
         _showErrorSnackbar(context, otpResult['error'] ?? 'Failed to send OTP', modeProvider.currentMode);
       }
@@ -254,9 +264,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return null;
   }
 
-  TextDirection _getTextDirection(String lang) {
-    return lang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
-  }
+  TextDirection _getTextDirection(String lang) => lang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
   @override
   Widget build(BuildContext context) {
@@ -271,143 +279,145 @@ class _RegisterPageState extends State<RegisterPage> {
         backgroundColor: AppColors.getSurfaceColor(modeProvider.currentMode),
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: seedColor),
-                child: ClipOval(child: Image.asset('assets/logo.jpg', fit: BoxFit.cover)),
-              ),
-              const SizedBox(width: 10),
-              const Text('VAR X PRO', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
+          title: Row(children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: seedColor),
+              child: ClipOval(child: Image.asset('assets/logo.jpg', fit: BoxFit.cover)),
+            ),
+            const SizedBox(width: 10),
+            const Text('VAR X PRO', style: TextStyle(fontWeight: FontWeight.bold)),
+          ]),
           backgroundColor: seedColor,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.language),
-              onPressed: () => _showLanguageDialog(context, langProvider, modeProvider, currentLang),
-            ),
-            IconButton(
-              icon: const Icon(Icons.brightness_6),
-              onPressed: () => _showModeDialog(context, modeProvider, currentLang),
-            ),
+            IconButton(icon: const Icon(Icons.language), onPressed: () => _showLanguageDialog(context, langProvider, modeProvider, currentLang)),
+            IconButton(icon: const Icon(Icons.brightness_6), onPressed: () => _showModeDialog(context, modeProvider, currentLang)),
           ],
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Text(
-                    Translations.getLoginText('registerTitle', currentLang) ?? 'Create Account',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.getTextColor(modeProvider.currentMode)),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    Translations.getLoginText('welcomeMessage', currentLang) ?? 'Join VAR X PRO',
-                    style: TextStyle(fontSize: 14, color: AppColors.getTextColor(modeProvider.currentMode).withOpacity(0.7)),
-                  ),
-                  const SizedBox(height: 40),
-                  // Name
-                  _CustomTextField(
-                    controller: _nameController,
-                    label: Translations.getLoginText('name', currentLang) ?? 'Name',
-                    validator: _validateName,
-                    prefixEmoji: '👤',
-                    seedColor: seedColor,
-                    mode: modeProvider.currentMode,
-                  ),
-                  const SizedBox(height: 20),
-                  // Email
-                  _CustomTextField(
-                    controller: _emailController,
-                    label: Translations.getLoginText('email', currentLang) ?? 'Email',
-                    validator: _validateEmail,
-                    prefixEmoji: '📧',
-                    seedColor: seedColor,
-                    mode: modeProvider.currentMode,
-                  ),
-                  const SizedBox(height: 20),
-                  // Role chips
-                  Text(
-                    Translations.getLoginText('selectRole', currentLang) ?? 'Select your role:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.getTextColor(modeProvider.currentMode)),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ToggleChip(
-                          emoji: '👤',
-                          label: Translations.getLoginText('user', currentLang) ?? 'User (Read-only access)',
-                          selected: _role == 'user',
-                          onSelected: () => setState(() => _role = 'user'),
+        body: Stack(
+          children: [
+          
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(children: [
+                    Text(Translations.getLoginText('registerTitle', currentLang) ?? 'Create Account',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.getTextColor(modeProvider.currentMode))),
+                    const SizedBox(height: 8),
+                    Text(Translations.getLoginText('welcomeMessage', currentLang) ?? 'Join VAR X PRO',
+                        style: TextStyle(fontSize: 14, color: AppColors.getTextColor(modeProvider.currentMode).withOpacity(0.7))),
+                    const SizedBox(height: 24),
+
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.55),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: seedColor.withOpacity(0.18)),
+                      ),
+                      child: Column(children: [
+                        _CustomTextField(
+                          controller: _nameController,
+                          label: Translations.getLoginText('name', currentLang) ?? 'Name',
+                          validator: _validateName,
+                          prefixEmoji: '👤',
                           seedColor: seedColor,
                           mode: modeProvider.currentMode,
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ToggleChip(
-                          emoji: '🧑‍💼',
-                          label: Translations.getLoginText('supervisor', currentLang) ?? 'Supervisor (Full access, needs admin approval)',
-                          selected: _role == 'supervisor',
-                          onSelected: () => setState(() => _role = 'supervisor'),
+                        const SizedBox(height: 16),
+                        _CustomTextField(
+                          controller: _emailController,
+                          label: Translations.getLoginText('email', currentLang) ?? 'Email',
+                          validator: _validateEmail,
+                          prefixEmoji: '📧',
                           seedColor: seedColor,
                           mode: modeProvider.currentMode,
                         ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            Translations.getLoginText('selectRole', currentLang) ?? 'Select your role:',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.getTextColor(modeProvider.currentMode)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                            child: _ToggleChip(
+                              emoji: '👤',
+                              label: Translations.getLoginText('user', currentLang) ?? 'User (Read-only access)',
+                              selected: _role == 'user',
+                              onSelected: () => setState(() => _role = 'user'),
+                              seedColor: seedColor,
+                              mode: modeProvider.currentMode,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _ToggleChip(
+                              emoji: '🧑‍💼',
+                              label: Translations.getLoginText('supervisor', currentLang) ?? 'Supervisor (Full access, needs admin approval)',
+                              selected: _role == 'supervisor',
+                              onSelected: () => setState(() => _role = 'supervisor'),
+                              seedColor: seedColor,
+                              mode: modeProvider.currentMode,
+                            ),
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
+                        _CustomTextField(
+                          controller: _passwordController,
+                          label: Translations.getLoginText('password', currentLang) ?? 'Password',
+                          obscureText: _obscurePassword,
+                          validator: _validatePassword,
+                          prefixEmoji: '🔒',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          ),
+                          seedColor: seedColor,
+                          mode: modeProvider.currentMode,
+                        ),
+                        const SizedBox(height: 16),
+                        _CustomTextField(
+                          controller: _confirmPasswordController,
+                          label: Translations.getLoginText('confirmPassword', currentLang) ?? 'Confirm Password',
+                          obscureText: _obscureConfirmPassword,
+                          validator: _validateConfirmPassword,
+                          prefixEmoji: '🔑',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
+                            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                          ),
+                          seedColor: seedColor,
+                          mode: modeProvider.currentMode,
+                        ),
+                      ]),
+                    ),
+
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage())),
+                        icon: const Text('🔐', style: TextStyle(fontSize: 20)),
+                        label: Text(Translations.getLoginText('hasAccountLogin', currentLang) ?? 'Have account? Login',
+                            style: TextStyle(color: seedColor, fontWeight: FontWeight.w600)),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: seedColor),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Password
-                  _CustomTextField(
-                    controller: _passwordController,
-                    label: Translations.getLoginText('password', currentLang) ?? 'Password',
-                    obscureText: _obscurePassword,
-                    validator: _validatePassword,
-                    prefixEmoji: '🔒',
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    seedColor: seedColor,
-                    mode: modeProvider.currentMode,
-                  ),
-                  const SizedBox(height: 20),
-                  // Confirm Password
-                  _CustomTextField(
-                    controller: _confirmPasswordController,
-                    label: Translations.getLoginText('confirmPassword', currentLang) ?? 'Confirm Password',
-                    obscureText: _obscureConfirmPassword,
-                    validator: _validateConfirmPassword,
-                    prefixEmoji: '🔑',
-                    suffixIcon: IconButton(
-                      icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
-                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                    ),
-                    seedColor: seedColor,
-                    mode: modeProvider.currentMode,
-                  ),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage())),
-                      icon: const Text('🔐', style: TextStyle(fontSize: 20)),
-                      label: Text(Translations.getLoginText('hasAccountLogin', currentLang) ?? 'Have account? Login', style: TextStyle(color: seedColor, fontWeight: FontWeight.w600)),
-                      style: OutlinedButton.styleFrom(side: BorderSide(color: seedColor), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                  ]),
+                ),
               ),
             ),
-          ),
+          ],
         ),
         bottomNavigationBar: Container(
           padding: const EdgeInsets.all(20),
@@ -415,12 +425,19 @@ class _RegisterPageState extends State<RegisterPage> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _register,
-              icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white))) : const Text('🚀', style: TextStyle(fontSize: 22)),
+              icon: _isLoading
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
+                  : const Text('🚀', style: TextStyle(fontSize: 22)),
               label: Text(
                 _isLoading ? (Translations.getLoginText('loading', currentLang) ?? 'Loading...') : (Translations.getLoginText('registerButton', currentLang) ?? 'CREATE ACCOUNT'),
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
               ),
-              style: ElevatedButton.styleFrom(backgroundColor: seedColor, padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 8),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: seedColor,
+                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 8,
+              ),
             ),
           ),
         ),
@@ -461,7 +478,7 @@ class _CustomTextField extends StatelessWidget {
         prefixIcon: prefixEmoji != null ? Padding(padding: const EdgeInsets.all(12), child: Text(prefixEmoji!, style: const TextStyle(fontSize: 20))) : null,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.5),
+        fillColor: AppColors.getSurfaceColor(mode).withOpacity(0.55),
         labelStyle: TextStyle(color: AppColors.getTextColor(mode).withOpacity(0.7)),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: seedColor.withOpacity(0.2))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: seedColor, width: 2)),
@@ -500,28 +517,15 @@ class _ToggleChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           color: selected ? seedColor.withOpacity(0.2) : AppColors.getSurfaceColor(mode).withOpacity(0.14),
           border: Border.all(color: seedColor.withOpacity(0.40), width: 1.2),
-          boxShadow: selected
-              ? [BoxShadow(color: seedColor.withOpacity(0.20), blurRadius: 16, spreadRadius: 0.6)]
-              : null,
+          boxShadow: selected ? [BoxShadow(color: seedColor.withOpacity(0.20), blurRadius: 16, spreadRadius: 0.6)] : null,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: selected ? seedColor : textColor,
-                  fontSize: 16,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: selected ? seedColor : textColor, fontSize: 16), overflow: TextOverflow.ellipsis),
+          ),
+        ]),
       ),
     );
   }

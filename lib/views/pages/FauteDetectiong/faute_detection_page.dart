@@ -40,19 +40,10 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
   final FoulDetectionController _controller = FoulDetectionController();
   final ScrollController _scrollController = ScrollController();
   bool _showSplash = true;
-  late AnimationController _scanController;
-  late Animation<double> _scanAnimation;
 
   @override
   void initState() {
     super.initState();
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-    _scanAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _scanController, curve: Curves.linear),
-    );
     Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
@@ -67,7 +58,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
   @override
   void dispose() {
     _scrollController.dispose();
-    _scanController.dispose();
     super.dispose();
   }
 
@@ -89,6 +79,7 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -125,61 +116,90 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
             ),
           );
         }
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.getSurfaceColor(mode).withOpacity(0.98),
-                AppColors.getSurfaceColor(mode).withOpacity(0.92),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (ctx, scrollController) => Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.getSurfaceColor(mode).withOpacity(0.98),
+                  AppColors.getSurfaceColor(mode).withOpacity(0.92),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: SafeArea(
             child: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    Translations.getFoulDetectionText('previousRuns', currentLang),
-                    style: GoogleFonts.roboto(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(mode),
-                      letterSpacing: 0.5,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        Translations.getFoulDetectionText('previousRuns', currentLang),
+                        style: GoogleFonts.roboto(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.getTextColor(mode),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 28),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        color: AppColors.getTextColor(mode).withOpacity(0.7),
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
                   child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _controller.runs.length,
                     itemBuilder: (context, i) {
                       final run = _controller.runs[i];
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.only(bottom: 12),
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: AppColors.getSurfaceColor(mode).withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.getSurfaceColor(mode).withOpacity(0.9),
+                                AppColors.getSurfaceColor(mode).withOpacity(0.7),
+                              ],
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
                               ),
                             ],
                           ),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.getSecondaryColor(seedColor, mode).withOpacity(0.2),
+                              child: Icon(
+                                Icons.sports_soccer,
+                                color: AppColors.getSecondaryColor(seedColor, mode),
+                              ),
+                            ),
                             title: Text(
                               run.run,
                               style: GoogleFonts.roboto(
@@ -198,12 +218,20 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            trailing: ElevatedButton(
+                            trailing: ElevatedButton.icon(
                               onPressed: () async {
                                 Navigator.of(ctx).pop();
                                 await _controller.loadPreviousRun(run.run);
                                 setState(() {});
                               },
+                              icon: const Icon(Icons.play_arrow, size: 18),
+                              label: Text(
+                                Translations.getFoulDetectionText('open', currentLang),
+                                style: GoogleFonts.roboto(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.getSecondaryColor(seedColor, mode),
                                 foregroundColor: AppColors.getTextColor(mode),
@@ -211,13 +239,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: Text(
-                                Translations.getFoulDetectionText('open', currentLang),
-                                style: GoogleFonts.roboto(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
                               ),
                             ),
                           ),
@@ -242,43 +263,61 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
 
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: EdgeInsets.all(isPortrait ? 16 : 12),
+      padding: EdgeInsets.all(isPortrait ? 20 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Error Card
           if (_controller.error != null)
             Container(
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: cardColor.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors: [
+                    cardColor.withOpacity(0.9),
+                    cardColor.withOpacity(0.7),
+                  ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        '${Translations.getFoulDetectionText('error', currentLang)}: ${_controller.error!}',
-                        style: GoogleFonts.roboto(
-                          color: Colors.redAccent,
-                          fontSize: isPortrait ? 16 : 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.redAccent,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '${Translations.getFoulDetectionText('error', currentLang)}: ${_controller.error!}',
+                              style: GoogleFonts.roboto(
+                                color: Colors.redAccent,
+                                fontSize: isPortrait ? 16 : 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     IconButton(
                       icon: Icon(
                         Icons.refresh,
                         color: AppColors.getTertiaryColor(seedColor, mode),
+                        size: 24,
                       ),
                       onPressed: () {
                         _controller.pingServer();
@@ -295,145 +334,177 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _controller.isLoading ? null : _pickAndAnalyzeVideo,
-                  icon: Icon(Icons.upload_file, color: textPrimary),
+                  icon: Icon(Icons.upload_file, color: textPrimary, size: 20),
                   label: Text(
                     Translations.getFoulDetectionText('uploadAndAnalyze', currentLang),
                     style: GoogleFonts.roboto(
                       color: textPrimary,
-                      fontSize: isPortrait ? 14 : 12,
+                      fontSize: isPortrait ? 16 : 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.getSecondaryColor(seedColor, mode),
                     foregroundColor: textPrimary,
-                    minimumSize: const Size(double.infinity, 50),
+                    minimumSize: const Size(double.infinity, 56),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    elevation: 2,
+                    elevation: 4,
+                    shadowColor: AppColors.getSecondaryColor(seedColor, mode).withOpacity(0.3),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _controller.isLoading ? null : () => _openPreviousRunDialog(context, currentLang, mode, seedColor),
-                  icon: Icon(Icons.history, color: AppColors.getTertiaryColor(seedColor, mode)),
+                  icon: Icon(Icons.history, color: AppColors.getTertiaryColor(seedColor, mode), size: 20),
                   label: Text(
                     Translations.getFoulDetectionText('openPreviousRun', currentLang),
                     style: GoogleFonts.roboto(
                       color: AppColors.getTertiaryColor(seedColor, mode),
-                      fontSize: isPortrait ? 14 : 12,
+                      fontSize: isPortrait ? 16 : 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.getTertiaryColor(seedColor, mode),
-                    side: BorderSide(color: AppColors.getTertiaryColor(seedColor, mode)),
-                    minimumSize: const Size(double.infinity, 50),
+                    side: BorderSide(color: AppColors.getTertiaryColor(seedColor, mode), width: 2),
+                    minimumSize: const Size(double.infinity, 56),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           // Analysis Summary
           if (_controller.result != null && _controller.result!.ok)
             Container(
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: cardColor.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  colors: [
+                    cardColor.withOpacity(0.9),
+                    cardColor.withOpacity(0.7),
+                  ],
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      Translations.getFoulDetectionText('analysisSummary', currentLang),
-                      style: GoogleFonts.roboto(
-                        fontSize: isPortrait ? 24 : 20,
-                        fontWeight: FontWeight.bold,
-                        color: textPrimary,
-                        letterSpacing: 0.5,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.analytics_outlined,
+                          color: AppColors.getPrimaryColor(seedColor, mode),
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          Translations.getFoulDetectionText('analysisSummary', currentLang),
+                          style: GoogleFonts.roboto(
+                            fontSize: isPortrait ? 24 : 20,
+                            fontWeight: FontWeight.bold,
+                            color: textPrimary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     if (_controller.result!.summary != null) ...[
-                      _buildSummaryItem(
-                        Translations.getFoulDetectionText('fps', currentLang),
-                        _controller.result!.summary!.fps.toStringAsFixed(1),
-                        mode,
-                        seedColor,
-                        isPortrait,
-                      ),
-                      _buildSummaryItem(
-                        Translations.getFoulDetectionText('resolution', currentLang),
-                        '${_controller.result!.summary!.width}x${_controller.result!.summary!.height}',
-                        mode,
-                        seedColor,
-                        isPortrait,
-                      ),
-                      _buildSummaryItem(
-                        Translations.getFoulDetectionText('totalFrames', currentLang),
-                        _controller.result!.summary!.totalFrames.toString(),
-                        mode,
-                        seedColor,
-                        isPortrait,
-                      ),
-                      _buildSummaryItem(
-                        Translations.getFoulDetectionText('eventsDetected', currentLang),
-                        _controller.result!.summary!.eventsCount.toString(),
-                        mode,
-                        seedColor,
-                        isPortrait,
-                      ),
+                      ...[
+                        _buildSummaryItem(
+                          Icons.speed,
+                          Translations.getFoulDetectionText('fps', currentLang),
+                          _controller.result!.summary!.fps.toStringAsFixed(1),
+                          mode,
+                          seedColor,
+                          isPortrait,
+                        ),
+                        _buildSummaryItem(
+                          Icons.aspect_ratio,
+                          Translations.getFoulDetectionText('resolution', currentLang),
+                          '${_controller.result!.summary!.width}x${_controller.result!.summary!.height}',
+                          mode,
+                          seedColor,
+                          isPortrait,
+                        ),
+                        _buildSummaryItem(
+                          Icons.layers,
+                          Translations.getFoulDetectionText('totalFrames', currentLang),
+                          _controller.result!.summary!.totalFrames.toString(),
+                          mode,
+                          seedColor,
+                          isPortrait,
+                        ),
+                        _buildSummaryItem(
+                          Icons.flag,
+                          Translations.getFoulDetectionText('eventsDetected', currentLang),
+                          _controller.result!.summary!.eventsCount.toString(),
+                          mode,
+                          seedColor,
+                          isPortrait,
+                        ),
+                      ].expand((item) => [item, const SizedBox(height: 8)]).toList()..removeLast(),
                     ] else
-                      Text(
-                        Translations.getFoulDetectionText('summaryNotAvailable', currentLang),
-                        style: GoogleFonts.roboto(
-                          color: textSecondary,
-                          fontSize: isPortrait ? 16 : 14,
-                          fontWeight: FontWeight.w500,
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: textSecondary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          Translations.getFoulDetectionText('summaryNotAvailable', currentLang),
+                          style: GoogleFonts.roboto(
+                            color: textSecondary,
+                            fontSize: isPortrait ? 16 : 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                   ],
                 ),
               ),
             ),
-          const SizedBox(height: 16),
           // Video Viewer
-          Text(
+          _buildSectionHeader(
+            Icons.play_circle_outline,
             Translations.getFoulDetectionText('video', currentLang),
-            style: GoogleFonts.roboto(
-              fontSize: isPortrait ? 24 : 20,
-              fontWeight: FontWeight.bold,
-              color: textPrimary,
-              letterSpacing: 0.5,
-            ),
+            textPrimary,
+            isPortrait,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Container(
-            height: isPortrait ? 200 : 150,
+            height: isPortrait ? 220 : 160,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  cardColor.withOpacity(0.9),
+                  cardColor.withOpacity(0.7),
+                ],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -447,42 +518,56 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                   )
                 : Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       color: cardColor.withOpacity(0.8),
                     ),
                     child: Center(
-                      child: Text(
-                        Translations.getFoulDetectionText('noVideoAvailable', currentLang),
-                        style: GoogleFonts.roboto(
-                          color: textSecondary,
-                          fontSize: isPortrait ? 16 : 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.video_file_outlined,
+                            size: 48,
+                            color: textSecondary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            Translations.getFoulDetectionText('noVideoAvailable', currentLang),
+                            style: GoogleFonts.roboto(
+                              color: textSecondary,
+                              fontSize: isPortrait ? 16 : 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           // CSV Viewer
-          Text(
+          _buildSectionHeader(
+            Icons.table_chart,
             Translations.getFoulDetectionText('csv', currentLang),
-            style: GoogleFonts.roboto(
-              fontSize: isPortrait ? 24 : 20,
-              fontWeight: FontWeight.bold,
-              color: textPrimary,
-              letterSpacing: 0.5,
-            ),
+            textPrimary,
+            isPortrait,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Container(
-            height: isPortrait ? 300 : 250,
+            height: isPortrait ? 320 : 260,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  cardColor.withOpacity(0.9),
+                  cardColor.withOpacity(0.7),
+                ],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -495,42 +580,56 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                   )
                 : Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       color: cardColor.withOpacity(0.8),
                     ),
                     child: Center(
-                      child: Text(
-                        Translations.getFoulDetectionText('noCsvAvailable', currentLang),
-                        style: GoogleFonts.roboto(
-                          color: textSecondary,
-                          fontSize: isPortrait ? 16 : 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.table_chart_outlined,
+                            size: 48,
+                            color: textSecondary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            Translations.getFoulDetectionText('noCsvAvailable', currentLang),
+                            style: GoogleFonts.roboto(
+                              color: textSecondary,
+                              fontSize: isPortrait ? 16 : 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           // PDF Viewer
-          Text(
+          _buildSectionHeader(
+            Icons.picture_as_pdf,
             Translations.getFoulDetectionText('pdf', currentLang),
-            style: GoogleFonts.roboto(
-              fontSize: isPortrait ? 24 : 20,
-              fontWeight: FontWeight.bold,
-              color: textPrimary,
-              letterSpacing: 0.5,
-            ),
+            textPrimary,
+            isPortrait,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Container(
-            height: isPortrait ? 400 : 350,
+            height: isPortrait ? 420 : 360,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  cardColor.withOpacity(0.9),
+                  cardColor.withOpacity(0.7),
+                ],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -543,49 +642,108 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                   )
                 : Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                       color: cardColor.withOpacity(0.8),
                     ),
                     child: Center(
-                      child: Text(
-                        Translations.getFoulDetectionText('noPdfAvailable', currentLang),
-                        style: GoogleFonts.roboto(
-                          color: textSecondary,
-                          fontSize: isPortrait ? 16 : 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.picture_as_pdf_outlined,
+                            size: 48,
+                            color: textSecondary,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            Translations.getFoulDetectionText('noPdfAvailable', currentLang),
+                            style: GoogleFonts.roboto(
+                              color: textSecondary,
+                              fontSize: isPortrait ? 16 : 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(
+    IconData icon,
+    String label,
+    String value,
+    int mode,
+    Color seedColor,
+    bool isPortrait,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.6),
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.roboto(
+                    color: AppColors.getTextColor(mode).withOpacity(0.7),
+                    fontSize: isPortrait ? 14 : 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.roboto(
+                    color: AppColors.getTextColor(mode),
+                    fontSize: isPortrait ? 16 : 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, int mode, Color seedColor, bool isPortrait) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: GoogleFonts.roboto(
-              color: AppColors.getTextColor(mode).withOpacity(0.7),
-              fontSize: isPortrait ? 16 : 14,
-              fontWeight: FontWeight.w500,
-            ),
+  Widget _buildSectionHeader(IconData icon, String title, Color textColor, bool isPortrait) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: AppColors.getSecondaryColor(AppColors.seedColors[1]!, 1).withOpacity(0.8),
+          size: 28,
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: GoogleFonts.roboto(
+            fontSize: isPortrait ? 24 : 20,
+            fontWeight: FontWeight.bold,
+            color: textColor,
+            letterSpacing: 0.5,
           ),
-          Text(
-            value,
-            style: GoogleFonts.roboto(
-              color: AppColors.getTextColor(mode),
-              fontSize: isPortrait ? 16 : 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -626,21 +784,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
               ),
             ),
           ),
-          // Scan Line Animation
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _scanAnimation,
-              builder: (context, _) {
-                return CustomPaint(
-                  painter: _ScanLinePainter(
-                    progress: _scanAnimation.value,
-                    mode: mode,
-                    seedColor: seedColor,
-                  ),
-                );
-              },
-            ),
-          ),
           // Main Content
           AnimatedBuilder(
             animation: _controller,
@@ -654,12 +797,12 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                             valueColor: AlwaysStoppedAnimation(AppColors.getLabelColor(seedColor, mode)),
                             strokeWidth: 4,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           Text(
                             Translations.getFoulDetectionText('loading', currentLang),
                             style: GoogleFonts.roboto(
                               color: AppColors.getTextColor(mode).withOpacity(0.7),
-                              fontSize: MediaQuery.of(context).orientation == Orientation.portrait ? 16 : 14,
+                              fontSize: MediaQuery.of(context).orientation == Orientation.portrait ? 18 : 16,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -710,48 +853,4 @@ class _FootballGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ScanLinePainter extends CustomPainter {
-  final double progress;
-  final int mode;
-  final Color seedColor;
-
-  _ScanLinePainter({required this.progress, required this.mode, required this.seedColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final line = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.2),
-          AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 0.55, 1.0],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, y - 80, size.width, 160));
-
-    canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
-
-    final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(
-        center: Offset(size.width / 2, y),
-        radius: size.width * 0.25,
-      ));
-
-    canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanLinePainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.mode != mode;
 }

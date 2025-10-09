@@ -1,4 +1,3 @@
-
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +14,8 @@ import 'package:VarXPro/views/connexion/providers/auth_provider.dart';
 
 // PAGES
 import 'package:VarXPro/views/pages/home/view/home_page.dart';
+
+import 'package:VarXPro/views/connexion/view/login_page.dart';
 
 import 'package:VarXPro/views/pages/FauteDetectiong/service/FoulDetectionService.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
@@ -84,14 +85,20 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
   }
 
   Future<bool> _showExitDialog() async {
+    final langProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final currentLang = langProvider.currentLanguage ?? 'en';
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit App?'),
-        content: const Text('Are you sure you want to exit VAR X PRO?'),
+        title: Text(
+          currentLang == 'en' ? 'Exit App?' : (currentLang == 'fr' ? 'Quitter l\'app ?' : 'خروج من التطبيق؟'),
+        ),
+        content: Text(
+          currentLang == 'en' ? 'Are you sure you want to exit VAR X PRO?' : (currentLang == 'fr' ? 'Voulez-vous quitter VAR X PRO ?' : 'هل تريد الخروج من VAR X PRO؟'),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Stay')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Exit')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(currentLang == 'en' ? 'Stay' : (currentLang == 'fr' ? 'Rester' : 'البقاء'))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(currentLang == 'en' ? 'Exit' : (currentLang == 'fr' ? 'Quitter' : 'خروج'))),
         ],
       ),
     );
@@ -99,6 +106,19 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
       SystemNavigator.pop();
     }
     return shouldExit ?? false;
+  }
+
+  Future<bool> _onWillPop() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
+    if (isVisitor) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+      return false;
+    } else {
+      return await _showExitDialog();
+    }
   }
 
   String _titleForIndex(int pageIndex, String lang) {
@@ -153,7 +173,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
           ];
 
     return WillPopScope(
-      onWillPop: () async => await _showExitDialog(),
+      onWillPop: _onWillPop,
       child: Scaffold(
         extendBody: true,
         backgroundColor: AppColors.getBackgroundColor(modeProvider.currentMode),
@@ -176,8 +196,10 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                   leading: isVisitor
                       ? IconButton(
                           icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () async {
-                            await _showExitDialog();
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                            );
                           },
                         )
                       : null,

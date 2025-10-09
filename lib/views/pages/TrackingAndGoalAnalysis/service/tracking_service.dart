@@ -1,7 +1,7 @@
-
 // lib/views/pages/TrackingAndGoalAnalysis/service/tracking_service.dart
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/model/analysis_result.dart'; 
 
 class TrackingService {
@@ -12,6 +12,8 @@ class TrackingService {
       final response = await _dio.get('/health');
       return HealthResponse.fromJson(response.data);
     } catch (e) {
+      debugPrint('Debug Error in checkHealth: $e');
+      debugPrint('Debug StackTrace: ${StackTrace.current}');
       throw Exception('Failed to check health: $e');
     }
   }
@@ -26,6 +28,11 @@ class TrackingService {
     int? trailLength,
     List<int>? goalLeft,
     List<int>? goalRight,
+    bool? offsideEnabled,
+    String? attackDirection,
+    String? attackingTeam,
+    List<int>? lineStart,
+    List<int>? lineEnd,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -44,10 +51,23 @@ class TrackingService {
           'goal_right_x': goalRight[0],
           'goal_right_y': goalRight[1],
         },
+        if (offsideEnabled == true) 'offside_enabled': '1',
+        if (attackDirection != null) 'attack_direction': attackDirection,
+        if (attackingTeam != null) 'attacking_team': attackingTeam,
+        if (lineStart != null) ...{
+          'line_start_x': lineStart[0],
+          'line_start_y': lineStart[1],
+        },
+        if (lineEnd != null) ...{
+          'line_end_x': lineEnd[0],
+          'line_end_y': lineEnd[1],
+        },
       });
       final response = await _dio.post('/analyze', data: formData);
       return AnalyzeResponse.fromJson(response.data);
     } catch (e) {
+      debugPrint('Debug Error in analyzeVideo: $e');
+      debugPrint('Debug StackTrace: ${StackTrace.current}');
       throw Exception('Failed to analyze video: $e');
     }
   }
@@ -57,6 +77,8 @@ class TrackingService {
       final response = await _dio.post('/clean');
       return CleanResponse.fromJson(response.data);
     } catch (e) {
+      debugPrint('Debug Error in cleanArtifacts: $e');
+      debugPrint('Debug StackTrace: ${StackTrace.current}');
       throw Exception('Failed to clean artifacts: $e');
     }
   }

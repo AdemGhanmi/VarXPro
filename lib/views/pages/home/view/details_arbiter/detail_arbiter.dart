@@ -2,7 +2,7 @@
 import 'package:VarXPro/views/pages/home/service/evaluations_service.dart';
 import 'package:VarXPro/views/pages/home/view/details_arbiter/competitions_tab.dart';
 import 'package:VarXPro/views/pages/home/view/details_arbiter/details_tab.dart';
-import 'package:VarXPro/views/pages/home/view/details_arbiter/evaluations_tab.dart';
+import 'package:VarXPro/views/pages/home/view/details_arbiter/evaluations/evaluations_tab.dart';
 import 'package:VarXPro/views/pages/home/view/details_arbiter/football_grid_painter.dart';
 import 'package:VarXPro/views/pages/home/view/details_arbiter/referee_tracking_tab.dart';
 import 'package:VarXPro/views/pages/home/view/details_arbiter/statistics_tab.dart';
@@ -14,7 +14,7 @@ import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:provider/provider.dart';
 import 'package:VarXPro/views/connexion/providers/auth_provider.dart';
-import 'create_evaluation_page.dart'; // New import for full page
+import 'evaluations/create_evaluation_page.dart'; // New import for full page
 
 class DetailArbiter extends StatefulWidget {
   final Referee referee;

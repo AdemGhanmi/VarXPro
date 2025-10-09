@@ -1,4 +1,3 @@
-// home_page.dart  — Improved splash/home design (no logic changes)
 import 'dart:math';
 import 'package:VarXPro/views/connexion/providers/auth_provider.dart';
 import 'package:VarXPro/views/nav_bar.dart';

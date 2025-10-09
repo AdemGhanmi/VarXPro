@@ -1,5 +1,5 @@
-// lib/views/pages/home/view/home_page.dart (Fixed: Added Directionality wrapper for RTL support in Arabic; Removed setState from _updateDisplayedReferees; used addPostFrameCallback in FutureBuilder to avoid setState during build; computes displayedReferees by assignment only)
 import 'dart:convert';
+import 'dart:math';
 import 'package:VarXPro/views/pages/home/view/details_arbiter/detail_arbiter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -11,7 +11,7 @@ import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:VarXPro/lang/translation.dart';
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,13 +32,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   late AnimationController _glowController;
-  late AnimationController _scanController;
   late Animation<double> _glowAnimation;
   late List<AnimationController> _staggerControllers;
 
   @override
   void initState() {
     super.initState();
+    // Temporary: Clear cache to force fresh load (remove after testing)
+    _clearCacheForTesting();
     futureReferees = _loadReferees();
 
     _glowController = AnimationController(
@@ -49,13 +50,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    _scanController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
-
     _staggerControllers = [];
     _scrollController.addListener(_onScroll);
+  }
+
+  // Temporary method to clear cache for testing
+  Future<void> _clearCacheForTesting() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cached_referees');
+    await prefs.remove('cache_time');
+    debugPrint('Cache cleared for testing');
   }
 
   @override
@@ -63,7 +67,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _scrollController.dispose();
     _searchController.dispose();
     _glowController.dispose();
-    _scanController.dispose();
     for (var controller in _staggerControllers) {
       controller.dispose();
     }
@@ -89,15 +92,95 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return await fetchReferees(); // Load fresh if no valid cache
   }
 
+  Map<String, dynamic> _parseNumericFields(Map<String, dynamic> json) {
+    if (json.containsKey('details') && json['details'] != null) {
+      final details = json['details'] as Map<String, dynamic>;
+      if (details.containsKey('worldfootball') &&
+          details['worldfootball'] != null) {
+        final wf = details['worldfootball'] as Map<String, dynamic>;
+        if (wf.containsKey('overall_totals') && wf['overall_totals'] != null) {
+          final totals = wf['overall_totals'] as Map<String, dynamic>;
+          totals.forEach((key, value) {
+            if (value is String) {
+              final numValue = num.tryParse(value);
+              if (numValue != null) {
+                totals[key] = numValue is double
+                    ? numValue
+                    : numValue.toDouble();
+              }
+            }
+          });
+        }
+        if (wf.containsKey('scraped_at') && wf['scraped_at'] is String) {
+          final numValue = num.tryParse(wf['scraped_at']);
+          if (numValue != null) {
+            wf['scraped_at'] = numValue.toInt();
+          }
+        }
+        // Recurse for competitions if needed
+        if (wf.containsKey('competitions') && wf['competitions'] != null) {
+          final comps = wf['competitions'] as List<dynamic>;
+          for (var comp in comps) {
+            if (comp is Map<String, dynamic> && comp.containsKey('totals')) {
+              final totals = comp['totals'] as Map<String, dynamic>;
+              totals.forEach((key, value) {
+                if (value is String) {
+                  final numValue = num.tryParse(value);
+                  if (numValue != null) {
+                    totals[key] = numValue is double
+                        ? numValue
+                        : numValue.toDouble();
+                  }
+                }
+              });
+            }
+            if (comp.containsKey('seasons') && comp['seasons'] != null) {
+              final seasons = comp['seasons'] as List<dynamic>;
+              for (var season in seasons) {
+                if (season is Map<String, dynamic>) {
+                  season.forEach((key, value) {
+                    if (value is String) {
+                      final numValue = num.tryParse(value);
+                      if (numValue != null) {
+                        season[key] = numValue is double
+                            ? numValue
+                            : numValue.toDouble();
+                      }
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    // Also parse other numeric fields like last_enriched, since
+    if (json.containsKey('last_enriched') && json['last_enriched'] is String) {
+      final numValue = num.tryParse(json['last_enriched']);
+      if (numValue != null) {
+        json['last_enriched'] = numValue.toInt();
+      }
+    }
+    if (json.containsKey('since') && json['since'] is String) {
+      final numValue = num.tryParse(json['since']);
+      if (numValue != null) {
+        json['since'] = numValue.toInt();
+      }
+    }
+    return json;
+  }
+
   Future<List<Referee>> fetchReferees() async {
     List<Referee> referees = [];
     try {
-      final listResponse = await http.get(Uri.parse('https://refereelist.varxpro.com/referees'));
+      final listResponse = await http.get(
+        Uri.parse('https://refereelist.varxpro.com/referees'),
+      );
       if (listResponse.statusCode == 200) {
         final listData = json.decode(listResponse.body);
-        final List<dynamic> listJson = listData['results'] ?? listData; // Handle array or object
+        final List<dynamic> listJson = listData['results'] ?? listData;
 
-        // Name to ID map - improved matching with trim and lower
         final Map<String, String> nameToId = {};
         for (var ref in listJson) {
           final name = ref['name'] as String?;
@@ -108,13 +191,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
 
         try {
-          final detailsResponse = await http.get(Uri.parse('https://refereelistdetail.varxpro.com/json'));
+          final detailsResponse = await http.get(
+            Uri.parse('https://refereelistdetail.varxpro.com/json'),
+          );
           if (detailsResponse.statusCode == 200) {
-            final detailsJson = json.decode(detailsResponse.body) as List<dynamic>;
+            final detailsJson =
+                json.decode(detailsResponse.body) as List<dynamic>;
             for (var det in detailsJson) {
               String id = '';
               final name = det['name'] as String?;
-              if (name != null && nameToId.containsKey(name.toLowerCase().trim())) {
+              if (name != null &&
+                  nameToId.containsKey(name.toLowerCase().trim())) {
                 id = nameToId[name.toLowerCase().trim()]!;
               }
               final refereeJson = Map<String, dynamic>.from(det);
@@ -124,17 +211,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             }
             debugPrint('Loaded ${referees.length} referees with details');
           } else {
-            debugPrint('Details API error: ${detailsResponse.statusCode} - falling back to list');
+            debugPrint(
+              'Details API error: ${detailsResponse.statusCode} - falling back to list',
+            );
           }
         } catch (detailsError) {
-          debugPrint('Details fetch error: $detailsError - falling back to list data');
+          debugPrint(
+            'Details fetch error: $detailsError - falling back to list data',
+          );
         }
 
         // Fallback: if no details or partial, use list data for unmatched
         if (referees.length < listJson.length) {
           for (var ref in listJson) {
             final name = ref['name'] as String?;
-            if (name != null && name.trim().isNotEmpty && !referees.any((r) => r.name.toLowerCase().trim() == name.toLowerCase().trim())) {
+            if (name != null &&
+                name.trim().isNotEmpty &&
+                !referees.any(
+                  (r) =>
+                      r.name.toLowerCase().trim() == name.toLowerCase().trim(),
+                )) {
               final fallbackReferee = Referee.fromJson({
                 'id': ref['_id'] ?? '',
                 'confed': ref['confed'] ?? '',
@@ -160,17 +256,80 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       referees = [];
     }
 
+    // Fetch and merge from new API
+    try {
+      final newApiResponse = await http.get(
+        Uri.parse('https://varxpro.com/storage/federations/all.json'),
+      );
+      if (newApiResponse.statusCode == 200) {
+        final newApiJson = json.decode(newApiResponse.body);
+        final List<dynamic> newData = newApiJson['data'] ?? [];
+        debugPrint('Fetched ${newData.length} items from new API');
+        for (var newItem in newData) {
+          final newName = newItem['name'] as String?;
+          if (newName != null && newName.trim().isNotEmpty) {
+            // Handle country null by setting to empty string if needed
+            if (newItem['country'] == null) {
+              newItem['country'] = '';
+            }
+            final existingIndex = referees.indexWhere(
+              (r) =>
+                  r.name.toLowerCase().trim() == newName.toLowerCase().trim(),
+            );
+            final newRefereeJson = Map<String, dynamic>.from(newItem);
+            newRefereeJson['id'] = newItem['refid'] ?? ''; // Map refid to id
+            // Parse numeric fields for new API
+            final parsedJson = _parseNumericFields(newRefereeJson);
+            final newReferee = Referee.fromJson(parsedJson);
+            if (existingIndex != -1) {
+              // Update existing with new details if available
+              if (newReferee.details != null) {
+                final mergedJson = Map<String, dynamic>.from(
+                  referees[existingIndex].toJson(),
+                );
+                mergedJson['details'] = newReferee.details!.toJson();
+                referees[existingIndex] = Referee.fromJson(mergedJson);
+                debugPrint('Merged details for existing: ${newReferee.name}');
+              }
+            } else {
+              // Add new referee
+              referees.add(newReferee);
+              debugPrint(
+                'Added new referee: ${newReferee.name} (confed: ${newReferee.confed}, country: ${newReferee.country ?? 'ALL'})',
+              );
+            }
+          }
+        }
+        debugPrint('Merged ${newData.length} new referees from federation API');
+      } else {
+        debugPrint('New API error: ${newApiResponse.statusCode}');
+      }
+    } catch (newApiError) {
+      debugPrint('New API fetch error: $newApiError');
+    }
+
+    // Sort the list by name for consistent display
+    referees.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
+
     // Cache full list (even if partial)
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('cached_referees', json.encode(referees.map((r) => r.toJson()).toList()));
+    await prefs.setString(
+      'cached_referees',
+      json.encode(referees.map((r) => r.toJson()).toList()),
+    );
     await prefs.setString('cache_time', DateTime.now().toIso8601String());
 
+    debugPrint('Total referees loaded: ${referees.length}');
     return referees;
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-      if (!_isLoadingMore && displayedReferees.length < getFilteredReferees().length) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      if (!_isLoadingMore &&
+          displayedReferees.length < getFilteredReferees().length) {
         _loadMore();
       }
     }
@@ -191,23 +350,76 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
-  void _updateDisplayedReferees() {
-    final filtered = getFilteredReferees();
-    final sliced = filtered.take(_displayLimit).toList();
-    displayedReferees = sliced;
-    _initializeStaggerAnimations(sliced.length);
-  }
+ void _updateDisplayedReferees() {
+  final filtered = getFilteredReferees();
+  final fullSliced = filtered.take(_displayLimit).toList();
+  List<Referee> sliced = fullSliced;
+
+  // Sort referees to ensure those with emoji "👨‍⚖️" appear at the end
+  sliced.sort((a, b) {
+    // If either referee has the emoji, sort them to the bottom
+    if (a.name.contains('👨‍⚖️')) {
+      return 1; // Move a to the bottom
+    }
+    if (b.name.contains('👨‍⚖️')) {
+      return -1; // Move b to the bottom
+    }
+    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+  });
+
+  // Update the list with the sorted referees
+  displayedReferees = sliced;
+  _initializeStaggerAnimations(sliced.length);
+}
+
+
 
   List<Referee> getFilteredReferees() {
-    return allReferees.where((referee) {
-      final nameMatch = referee.name.toLowerCase().contains(_searchController.text.toLowerCase());
-      final confedMatch = selectedConfed == null || referee.confed == selectedConfed;
-      final countryMatch = selectedCountry == null || referee.country == selectedCountry;
-      return nameMatch && confedMatch && countryMatch;
-    }).toList();
+  final filtered = allReferees.where((referee) {
+    // Exclude referees with "👨‍⚖️" emoji in their name
+    if (referee.name.contains('👨‍⚖️') || referee.name.isEmpty) {
+      return false; // Exclude them
+    }
+    
+    final nameMatch = referee.name.toLowerCase().contains(
+      _searchController.text.toLowerCase(),
+    );
+    final confedMatch =
+        selectedConfed == null || referee.confed == selectedConfed;
+    final countryMatch =
+        selectedCountry == null || (referee.country ?? '') == selectedCountry;
+    return nameMatch && confedMatch && countryMatch;
+  }).toList();
+  
+  // Ensure alphabetical sorting from A to Z (top to bottom) after filtering
+  filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+  return filtered;
+}
+
+
+  Set<String> _getUniqueConfederations() {
+    return allReferees
+        .map((ref) => ref.confed)
+        .where((c) => c != null && c.isNotEmpty)
+        .toSet();
   }
 
-  void _showLanguageDialog(BuildContext context, LanguageProvider langProvider, ModeProvider modeProvider, String currentLang) {
+  Set<String> _getUniqueCountries() {
+    final refs = selectedConfed == null
+        ? allReferees
+        : allReferees.where((r) => r.confed == selectedConfed).toList();
+    return refs
+        .map((ref) => ref.country ?? '')
+        .where((c) => c.isNotEmpty)
+        .toSet();
+  }
+
+  void _showLanguageDialog(
+    BuildContext context,
+    LanguageProvider langProvider,
+    ModeProvider modeProvider,
+    String currentLang,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -221,8 +433,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.98),
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.92),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.98),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.92),
               ],
             ),
             boxShadow: [
@@ -246,16 +462,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 24),
-              ...Translations.getLanguages(currentLang).asMap().entries.map((entry) {
+              ...Translations.getLanguages(currentLang).asMap().entries.map((
+                entry,
+              ) {
                 int idx = entry.key;
                 String lang = entry.value;
-                String code = idx == 0 ? 'en' : idx == 1 ? 'fr' : 'ar';
+                String code = idx == 0
+                    ? 'en'
+                    : idx == 1
+                    ? 'fr'
+                    : 'ar';
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    tileColor: AppColors.getTertiaryColor(AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!, modeProvider.currentMode).withOpacity(0.2),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    tileColor: AppColors.getTertiaryColor(
+                      AppColors.seedColors[modeProvider.currentMode] ??
+                          AppColors.seedColors[1]!,
+                      modeProvider.currentMode,
+                    ).withOpacity(0.2),
                     title: Text(
                       lang,
                       textAlign: TextAlign.center,
@@ -279,12 +510,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  void _showModeDialog(BuildContext context, ModeProvider modeProvider, String currentLang) {
+  void _showModeDialog(
+    BuildContext context,
+    ModeProvider modeProvider,
+    String currentLang,
+  ) {
     final List<Map<String, dynamic>> _modes = [
-      {"name": Translations.getModes(currentLang)[0], "icon": Icons.sports_soccer},
+      {
+        "name": Translations.getModes(currentLang)[0],
+        "icon": Icons.sports_soccer,
+      },
       {"name": Translations.getModes(currentLang)[1], "icon": Icons.light_mode},
       {"name": Translations.getModes(currentLang)[2], "icon": Icons.analytics},
-      {"name": Translations.getModes(currentLang)[3], "icon": Icons.video_camera_front},
+      {
+        "name": Translations.getModes(currentLang)[3],
+        "icon": Icons.video_camera_front,
+      },
       {"name": Translations.getModes(currentLang)[4], "icon": Icons.sports},
     ];
 
@@ -301,8 +542,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.98),
-                AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.92),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.98),
+                AppColors.getSurfaceColor(
+                  modeProvider.currentMode,
+                ).withOpacity(0.92),
               ],
             ),
             boxShadow: [
@@ -333,9 +578,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    tileColor: AppColors.getTertiaryColor(AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!, modeProvider.currentMode).withOpacity(0.2),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    tileColor: AppColors.getTertiaryColor(
+                      AppColors.seedColors[modeProvider.currentMode] ??
+                          AppColors.seedColors[1]!,
+                      modeProvider.currentMode,
+                    ).withOpacity(0.2),
                     leading: Icon(
                       icon,
                       color: AppColors.getTextColor(modeProvider.currentMode),
@@ -370,10 +624,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final currentLang = langProvider.currentLanguage ?? 'en';
     debugPrint('Current language: $currentLang');
     final textColor = AppColors.getTextColor(modeProvider.currentMode);
-    final seedColor = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final seedColor =
+        AppColors.seedColors[modeProvider.currentMode] ??
+        AppColors.seedColors[1]!;
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
-    final textDirection = currentLang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
+    final textDirection = currentLang == 'ar'
+        ? TextDirection.rtl
+        : TextDirection.ltr;
 
     return Directionality(
       textDirection: textDirection,
@@ -385,24 +643,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 painter: _FootballGridPainter(modeProvider.currentMode),
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: AppColors.getBodyGradient(modeProvider.currentMode),
+                    gradient: AppColors.getBodyGradient(
+                      modeProvider.currentMode,
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _scanController,
-                builder: (context, _) {
-                  final t = _scanController.value;
-                  return CustomPaint(
-                    painter: _ScanLinePainter(
-                      progress: t,
-                      mode: modeProvider.currentMode,
-                      seedColor: seedColor,
-                    ),
-                  );
-                },
               ),
             ),
             SafeArea(
@@ -417,7 +662,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       curve: Curves.easeOutCubic,
                       builder: (context, value, child) => Opacity(
                         opacity: value,
-                        child: Transform.scale(scale: value * 1.05, child: child),
+                        child: Transform.scale(
+                          scale: value * 1.05,
+                          child: child,
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -433,7 +681,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.getPrimaryColor(seedColor, modeProvider.currentMode).withOpacity(0.3),
+                                        color: AppColors.getPrimaryColor(
+                                          seedColor,
+                                          modeProvider.currentMode,
+                                        ).withOpacity(0.3),
                                         blurRadius: 12,
                                         spreadRadius: 3,
                                         offset: const Offset(0, 4),
@@ -441,7 +692,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     ],
                                   ),
                                   child: ClipOval(
-                                    child: Image.asset('assets/logo.jpg', fit: BoxFit.cover),
+                                    child: Image.asset(
+                                      'assets/logo.jpg',
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -467,7 +721,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    Translations.getHomeText('subtitle', currentLang),
+                                    Translations.getHomeText(
+                                      'subtitle',
+                                      currentLang,
+                                    ),
                                     style: TextStyle(
                                       color: textColor.withOpacity(0.7),
                                       fontSize: isLargeScreen ? 16 : 12,
@@ -495,13 +752,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                          color: AppColors.getSurfaceColor(
+                            modeProvider.currentMode,
+                          ),
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                              spreadRadius: 1,
                             ),
                           ],
                         ),
@@ -514,68 +774,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           },
                           textDirection: textDirection,
                           decoration: InputDecoration(
-                            hintText: Translations.getRefereeDirectoryText('searchReferees', currentLang),
-                            hintStyle: TextStyle(color: textColor.withOpacity(0.5)),
-                            prefixIcon: Icon(Icons.search_rounded, color: textColor.withOpacity(0.7)),
-                            suffixIcon: Icon(Icons.sports_soccer, color: textColor.withOpacity(0.4), size: 20),
+                            hintText: Translations.getRefereeDirectoryText(
+                              'searchReferees',
+                              currentLang,
+                            ),
+                            hintStyle: TextStyle(
+                              color: textColor.withOpacity(0.5),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: textColor.withOpacity(0.7),
+                            ),
+                            suffixIcon: Icon(
+                              Icons.sports_soccer,
+                              color: textColor.withOpacity(0.4),
+                              size: 20,
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    TweenAnimationBuilder(
-                      tween: Tween<double>(begin: 0, end: 1),
-                      duration: const Duration(milliseconds: 1400),
-                      curve: Curves.easeOut,
-                      builder: (context, value, child) => Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset((1 - value) * 50, 0),
-                          child: child,
-                        ),
-                      ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        reverse: textDirection == TextDirection.rtl,
-                        child: Row(
-                          children: [
-                            _buildFeatureChip(
-                              emoji: '🤖',
-                              label: Translations.getRefereeDirectoryText('aiAnalysis', currentLang),
-                              color: Colors.blueAccent,
-                              textColor: textColor,
-                              modeProvider: modeProvider,
-                            ),
-                            const SizedBox(width: 10),
-                            _buildFeatureChip(
-                              emoji: '📹',
-                              label: Translations.getRefereeDirectoryText('varTechnology', currentLang),
-                              color: Colors.purpleAccent,
-                              textColor: textColor,
-                              modeProvider: modeProvider,
-                            ),
-                            const SizedBox(width: 10),
-                            _buildFeatureChip(
-                              emoji: '📊',
-                              label: Translations.getRefereeDirectoryText('liveDashboard', currentLang),
-                              color: Colors.greenAccent,
-                              textColor: textColor,
-                              modeProvider: modeProvider,
-                            ),
-                            const SizedBox(width: 10),
-                            _buildFeatureChip(
-                              emoji: '🚩',
-                              label: Translations.getRefereeDirectoryText('offsideDetection', currentLang),
-                              color: Colors.orangeAccent,
-                              textColor: textColor,
-                              modeProvider: modeProvider,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 24),
                     TweenAnimationBuilder(
                       tween: Tween<double>(begin: 0, end: 1),
@@ -597,6 +821,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               color: textColor,
                               fontWeight: FontWeight.bold,
                               fontSize: isLargeScreen ? 20 : 18,
+                              letterSpacing: 0.5,
                             ),
                           ),
                           Text(
@@ -604,6 +829,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             style: TextStyle(
                               color: textColor.withOpacity(0.7),
                               fontSize: 14,
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         ],
@@ -617,18 +843,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           if (snapshot.hasData) {
                             if (allReferees.isEmpty) {
                               allReferees = snapshot.data!;
+                              _updateDisplayedReferees();
                               SchedulerBinding.instance.addPostFrameCallback((_) {
                                 if (mounted) {
-                                  setState(() {
-                                    _updateDisplayedReferees();
-                                  });
+                                  setState(() {});
                                 }
                               });
                             }
+
                             if (displayedReferees.isEmpty) {
                               return _buildEmptyState(textColor, currentLang);
                             }
-                            return _buildGrid(displayedReferees, textColor, modeProvider, seedColor, currentLang);
+                            return _buildGrid(
+                              displayedReferees,
+                              textColor,
+                              modeProvider,
+                              seedColor,
+                              currentLang,
+                            );
                           } else if (snapshot.hasError) {
                             return _buildErrorState(textColor, currentLang);
                           }
@@ -651,49 +883,105 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildGrid(List<Referee> referees, Color textColor, ModeProvider modeProvider, Color seedColor, String currentLang) {
+  Widget _buildGrid(
+    List<Referee> referees,
+    Color textColor,
+    ModeProvider modeProvider,
+    Color seedColor,
+    String currentLang,
+  ) {
     return Column(
       children: [
         Row(
           children: [
             Expanded(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: selectedConfed,
-                hint: Text(Translations.getRefereeDirectoryText('allConfederations', currentLang)),
-                items: allReferees.map((ref) => ref.confed).toSet().map(
-                  (conf) => DropdownMenuItem(value: conf, child: Text(conf)),
-                ).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    selectedConfed = val;
-                    selectedCountry = null;
-                    _updateDisplayedReferees();
-                  });
-                },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: DropdownButton<String?>(
+                  isExpanded: true,
+                  value: selectedConfed,
+                  hint: null,
+                  items: <DropdownMenuItem<String?>>[
+                    DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text(
+                        Translations.getRefereeDirectoryText(
+                          'allConfederations',
+                          currentLang,
+                        ),
+                      ),
+                    ),
+                    ..._getUniqueConfederations().map(
+                      (conf) => DropdownMenuItem<String>(
+                        value: conf,
+                        child: Text(conf),
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      selectedConfed = val;
+                      selectedCountry = null;
+                      _updateDisplayedReferees();
+                    });
+                  },
+                ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: DropdownButton<String>(
-                isExpanded: true,
-                value: selectedCountry,
-                hint: Text(Translations.getRefereeDirectoryText('allCountries', currentLang)),
-                items: (selectedConfed == null
-                        ? allReferees
-                        : allReferees.where((r) => r.confed == selectedConfed))
-                    .map((ref) => ref.country)
-                    .toSet()
-                    .map(
-                      (country) => DropdownMenuItem(value: country, child: Text(country)),
-                    )
-                    .toList(),
-                onChanged: (val) {
-                  setState(() {
-                    selectedCountry = val;
-                    _updateDisplayedReferees();
-                  });
-                },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.getSurfaceColor(modeProvider.currentMode),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: DropdownButton<String?>(
+                  isExpanded: true,
+                  value: selectedCountry,
+                  hint: null,
+                  items: <DropdownMenuItem<String?>>[
+                    DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text(
+                        Translations.getRefereeDirectoryText(
+                          'allCountries',
+                          currentLang,
+                        ),
+                      ),
+                    ),
+                    ..._getUniqueCountries().map(
+                      (country) => DropdownMenuItem<String>(
+                        value: country,
+                        child: Text(country),
+                      ),
+                    ),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      selectedCountry = val;
+                      _updateDisplayedReferees();
+                    });
+                  },
+                ),
               ),
             ),
           ],
@@ -714,16 +1002,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 return const Center(child: CircularProgressIndicator());
               }
               final referee = referees[index];
-              final animController = _staggerControllers.length > index ? _staggerControllers[index] : AnimationController(vsync: this, duration: const Duration(milliseconds: 500))..forward();
+              final animController =
+                  _staggerControllers.length > index
+                        ? _staggerControllers[index]
+                        : AnimationController(
+                            vsync: this,
+                            duration: const Duration(milliseconds: 500),
+                          )
+                    ..forward();
               return AnimatedBuilder(
                 animation: animController,
                 builder: (context, child) {
                   return Transform.translate(
                     offset: Offset(0, (1 - animController.value) * 50),
-                    child: Opacity(
-                      opacity: animController.value,
-                      child: child,
-                    ),
+                    child: Opacity(opacity: animController.value, child: child),
                   );
                 },
                 child: InkWell(
@@ -732,11 +1024,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     animController.forward().then((_) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => DetailArbiter(referee: referee)),
+                        MaterialPageRoute(
+                          builder: (context) => DetailArbiter(referee: referee),
+                        ),
                       );
                     });
                   },
-                  child: _buildRefereeCard(referee, textColor, modeProvider, seedColor, currentLang),
+                  child: _buildRefereeCard(
+                    referee,
+                    textColor,
+                    modeProvider,
+                    seedColor,
+                    currentLang,
+                  ),
                 ),
               );
             },
@@ -748,7 +1048,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   void _initializeStaggerAnimations(int count) {
     _staggerControllers.clear();
-    final limitedCount = count > 20 ? 20 : count; // Limit animations to first 20 for perf
+    final limitedCount = count > 20
+        ? 20
+        : count; // Limit animations to first 20 for perf
     for (int i = 0; i < limitedCount; i++) {
       final controller = AnimationController(
         vsync: this,
@@ -774,8 +1076,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+            spreadRadius: 1,
           ),
         ],
       ),
@@ -791,6 +1094,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: textColor,
               fontSize: 14,
               fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -798,11 +1102,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildRefereeCard(Referee referee, Color textColor, ModeProvider modeProvider, Color seedColor, String currentLang) {
+  Widget _buildRefereeCard(
+    Referee referee,
+    Color textColor,
+    ModeProvider modeProvider,
+    Color seedColor,
+    String currentLang,
+  ) {
+    final displayCountry = referee.country ?? 'ALL';
+    final displayConfed = referee.confed ?? 'ALL';
     return Card(
-      elevation: 6,
+      elevation: 8,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      shadowColor: AppColors.getShadowColor(seedColor, modeProvider.currentMode).withOpacity(0.4),
+      shadowColor: AppColors.getShadowColor(
+        seedColor,
+        modeProvider.currentMode,
+      ).withOpacity(0.5),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -811,154 +1126,229 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             end: Alignment.bottomRight,
             colors: [
               AppColors.getSurfaceColor(modeProvider.currentMode),
-              AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.8),
+              AppColors.getSurfaceColor(
+                modeProvider.currentMode,
+              ).withOpacity(0.85),
             ],
+          ),
+          border: Border.all(
+            color: AppColors.getPrimaryColor(
+              seedColor,
+              modeProvider.currentMode,
+            ).withOpacity(0.1),
+            width: 1,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              // Upper column
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '👨‍⚖️ ${referee.name}',
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '👨‍⚖️ ${referee.name}',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: referee.gender == 'Male' ? Colors.blue.withOpacity(0.2) : Colors.pink.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: referee.gender == 'Male'
+                                ? Colors.blue.withOpacity(0.2)
+                                : Colors.pink.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: referee.gender == 'Male'
+                                  ? Colors.blue.withOpacity(0.3)
+                                  : Colors.pink.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            referee.gender == 'Male'
+                                ? Icons.male_rounded
+                                : Icons.female_rounded,
+                            size: 16,
+                            color: referee.gender == 'Male'
+                                ? Colors.blueAccent
+                                : Colors.pinkAccent,
+                          ),
                         ),
-                        child: Icon(
-                          referee.gender == 'Male' ? Icons.male_rounded : Icons.female_rounded,
-                          size: 18,
-                          color: referee.gender == 'Male' ? Colors.blueAccent : Colors.pinkAccent,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const SizedBox(width: 4),
-                      Text(
-                        '🏳️ ${referee.country}',
-                        style: TextStyle(
-                          color: textColor.withOpacity(0.8),
-                          fontSize: 14,
+                  // Country and confed row: Fixed with Flexible for horizontal overflow
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '🏳️ $displayCountry',
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        Icons.account_balance_rounded,
-                        size: 16,
-                        color: textColor.withOpacity(0.7),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '🏆 ${referee.confed}',
-                        style: TextStyle(
-                          color: textColor.withOpacity(0.8),
-                          fontSize: 14,
+                        const SizedBox(width: 8), // Reduced from 12 to save space
+                        Icon(
+                          Icons.account_balance_rounded,
+                          size: 16,
+                          color: textColor.withOpacity(0.7),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '🏆 $displayConfed',
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (referee.roles.isNotEmpty)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: referee.roles
-                          .map(
-                            (role) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _getRoleColor(role).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(_getRoleEmoji(role), style: const TextStyle(fontSize: 14)),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    role,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: _getRoleColor(role),
-                                      fontWeight: FontWeight.w500,
+              // Lower column: Wrapped in Expanded to prevent overflow
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,  // Changed to start for better fitting
+                  children: [
+                    if (referee.roles.isNotEmpty)
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: referee.roles
+                            .map(
+                              (role) => Directionality(
+                                textDirection: TextDirection.ltr,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _getRoleColor(role).withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: _getRoleColor(role).withOpacity(0.3),
+                                      width: 1,
                                     ),
                                   ),
-                                ],
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _getRoleEmoji(role),
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        role,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _getRoleColor(role),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          )
-                          .toList(),
-                    )
-                  else
-                    Text(
-                      Translations.getRefereeDirectoryText('noRolesSpecified', currentLang),
-                      style: TextStyle(
-                        color: textColor.withOpacity(0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.calendar_month_rounded, size: 14, color: Colors.transparent),
-                      const Text('📅', style: TextStyle(fontSize: 14)),
-                      const SizedBox(width: 4),
+                            )
+                            .toList(),
+                      )
+                    else
                       Text(
-                        '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since}',
+                        Translations.getRefereeDirectoryText(
+                          'noRolesSpecified',
+                          currentLang,
+                        ),
                         style: TextStyle(
                           color: textColor.withOpacity(0.6),
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
-                    ],
-                  ),
-                  if (referee.details?.worldfootball?.overallTotals != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Text('🟨', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 4),
-                        Text(
-                          'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: Colors.orange.withOpacity(0.8),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                    const SizedBox(height: 8),
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_rounded,
+                            size: 14,
+                            color: Colors.transparent,
                           ),
-                        ),
-                      ],
+                          const Text('📅', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since}',
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.6),
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    if (referee.details?.worldfootball?.overallTotals !=
+                        null) ...[
+                      const SizedBox(height: 4),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Row(
+                          children: [
+                            const Text('🟨', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                color: Colors.orange.withOpacity(0.8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
+              // Arrow
               Align(
                 alignment: Alignment.bottomRight,
                 child: Icon(
@@ -984,6 +1374,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return '👥';
       case 'reviewer':
         return '🔍';
+      case 'fourth':
+        return '⚽';
       default:
         return '⚽';
     }
@@ -999,6 +1391,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         return Colors.greenAccent;
       case 'reviewer':
         return Colors.orangeAccent;
+      case 'fourth':
+        return Colors.indigoAccent;
       default:
         return Colors.grey;
     }
@@ -1021,6 +1415,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
             textAlign: TextAlign.center,
           ),
@@ -1055,6 +1450,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               color: textColor,
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
             ),
             textAlign: TextAlign.center,
           ),
@@ -1079,7 +1475,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               icon: const Icon(Icons.refresh, color: Colors.white),
               label: Text(
                 Translations.getRefereeDirectoryText('retry', currentLang),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
@@ -1090,6 +1489,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   vertical: 12,
                 ),
                 backgroundColor: Colors.blueAccent,
+                elevation: 4,
+                shadowColor: Colors.blueAccent.withOpacity(0.3),
               ),
             ),
           ),
@@ -1111,6 +1512,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
           ),
         ),
@@ -1126,8 +1534,9 @@ class _FootballGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final random = Random(42); // Seeded for consistency
     final gridPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.04)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.03)
       ..strokeWidth = 0.5;
 
     const step = 50.0;
@@ -1138,10 +1547,20 @@ class _FootballGridPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
+    // Add subtle particles for improved dynamic feel
+    final particlePaint = Paint()
+      ..color = AppColors.getTextColor(mode).withOpacity(0.1);
+    for (int i = 0; i < 20; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final radius = random.nextDouble() * 2 + 1;
+      canvas.drawCircle(Offset(x, y), radius, particlePaint);
+    }
+
     final fieldPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.08)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.06)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.5;
 
     final inset = 40.0;
     final rect = Rect.fromLTWH(
@@ -1163,54 +1582,4 @@ class _FootballGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _ScanLinePainter extends CustomPainter {
-  final double progress;
-  final int mode;
-  final Color seedColor;
-
-  _ScanLinePainter({
-    required this.progress,
-    required this.mode,
-    required this.seedColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final y = size.height * progress;
-    final line = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.2),
-          AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
-          Colors.transparent,
-        ],
-        stops: const [0.0, 0.45, 0.55, 1.0],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(Rect.fromLTWH(0, y - 80, size.width, 160));
-
-    canvas.drawRect(Rect.fromLTWH(0, y - 80, size.width, 160), line);
-
-    final glow = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.1),
-          Colors.transparent,
-        ],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(size.width / 2, y),
-          radius: size.width * 0.25,
-        ),
-      );
-
-    canvas.drawCircle(Offset(size.width / 2, y), size.width * 0.25, glow);
-  }
-
-  @override
-  bool shouldRepaint(covariant _ScanLinePainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.mode != mode;
 }

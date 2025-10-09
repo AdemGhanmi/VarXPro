@@ -63,6 +63,7 @@ flutter:
   - assets/lotties/offside.json
   - assets/lotties/refere.json
   - assets/lotties/terrain.json
+  - assets/lotties/welcom.json
 
 
 flutter_icons:
