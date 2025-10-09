@@ -1,4 +1,4 @@
-// lib/views/pages/home/view/details_arbiter/evaluations_tab.dart (Updated with translations)
+// lib/views/pages/home/view/details_arbiter/evaluations_tab.dart (Updated with translations and fixes)
 import 'package:flutter/material.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/connexion/providers/auth_provider.dart';
@@ -11,7 +11,7 @@ class EvaluationsTab extends StatefulWidget {
   final bool isSupervisor;
   final bool isUser;
   final VoidCallback onCreate;
-  final Future<void> Function(int, Map<String, dynamic>) onUpdate;
+  final Future<void> Function(int, Map<String, dynamic>, String) onUpdate;
   final String currentLang;
   final Color textColor;
   final bool isLargeScreen;
@@ -66,7 +66,7 @@ class _EvaluationsTabState extends State<EvaluationsTab> with AutomaticKeepAlive
 
     setState(() => _isLoading = true);
     try {
-      final result = await EvaluationsService.listRefereeEvaluations(widget.refereeId);
+      final result = await EvaluationsService.listRefereeEvaluations(widget.refereeId, widget.currentLang);
       if (result['success']) {
         setState(() {
           _evaluations = List<Map<String, dynamic>>.from(result['data'] ?? []);
@@ -293,7 +293,7 @@ class _EvaluationsTabState extends State<EvaluationsTab> with AutomaticKeepAlive
                                           IconButton(
                                             icon: const Icon(Icons.edit, color: Colors.blue),
                                             onPressed: () {
-                                              _showEditDialog(context, eval['id'], eval, widget.onUpdate);
+                                              _showEditDialog(context, eval['id'], eval);
                                             },
                                           ),
                                           IconButton(
@@ -386,7 +386,6 @@ class _EvaluationsTabState extends State<EvaluationsTab> with AutomaticKeepAlive
     BuildContext context,
     int id,
     Map<String, dynamic> eval,
-    Future<void> Function(int, Map<String, dynamic>) onUpdate,
   ) {
     print('Debug: Current user ID: ${widget.currentUserId}, Eval author ID: ${eval['evaluator_id']}'); // Added for auth check
     final isAuthor = widget.currentUserId == eval['evaluator_id']?.toString();
@@ -442,7 +441,7 @@ class _EvaluationsTabState extends State<EvaluationsTab> with AutomaticKeepAlive
                 'total_score': newScore,
               };
               Navigator.pop(context);
-              await onUpdate(id, updates);
+              await widget.onUpdate(id, updates, widget.currentLang);
               _loadEvaluations(); // Reload after update
             },
             child: Text(Translations.getEvaluationText('save', widget.currentLang)),
@@ -527,8 +526,6 @@ class _EvaluationsTabState extends State<EvaluationsTab> with AutomaticKeepAlive
   }
 }
 
-
-
 class EvaluationDetailsPage extends StatefulWidget {
   final dynamic evaluation;
   final String currentLang;
@@ -569,7 +566,7 @@ class _EvaluationDetailsPageState extends State<EvaluationDetailsPage> {
   Future<void> _loadDetails() async {
     setState(() => _isLoading = true);
     try {
-      final result = await EvaluationsService.getEvaluation(widget.evaluation['id'].toString());
+      final result = await EvaluationsService.getEvaluation(widget.evaluation['id'].toString(), widget.currentLang);
       print('Debug: Full result from getEvaluation: $result'); // Added for debugging
       if (result['success']) {
         setState(() {
@@ -744,35 +741,59 @@ class _EvaluationDetailsPageState extends State<EvaluationDetailsPage> {
                                     child: _buildDetailRow(
                                       '📊',
                                       '${e.key.replaceAll('_', ' ').toUpperCase()}',
-                                      'Subtotal: ${e.value['subtotal']} (Weight: ${e.value['weight']})',
+                                      'Subtotal: ${e.value['subtotal'] ?? 'N/A'} (Weight: ${e.value['weight'] ?? 'N/A'})',
                                       textColor: widget.textColor,
                                     ),
                                   ),
                                 ),
                               ),
-                              if ((_details?['sections'] as Map?)?['technical_performance']?['items'] != null) ...[
-                                const SizedBox(height: 16),
-                                Text(
-                                  Translations.getEvaluationText('technicalPerformanceItems', widget.currentLang),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: widget.textColor,
-                                  ),
+                              const SizedBox(height: 16),
+                              Text(
+                                Translations.getEvaluationText('detailedItems', widget.currentLang),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: widget.textColor,
                                 ),
-                                const SizedBox(height: 8),
-                                ...((_details?['sections'] as Map?)?['technical_performance']?['items'] as List? ?? []).map(
-                                  (item) => Padding(
-                                    padding: const EdgeInsets.only(left: 16, bottom: 4),
-                                    child: _buildDetailRow(
-                                      '•',
-                                      item['label'] ?? 'N/A',
-                                      '${item['score'] ?? 'N/A'}/${item['out_of'] ?? 'N/A'}',
-                                      textColor: widget.textColor,
+                              ),
+                              const SizedBox(height: 8),
+                              ...(_details?['sections'] as Map? ?? {}).entries.map((sectionEntry) {
+                                final sectionKey = sectionEntry.key;
+                                final sectionItems = (sectionEntry.value['items'] as List?) ?? [];
+                                if (sectionItems.isEmpty) return const SizedBox.shrink();
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8, top: 8),
+                                      child: Text(
+                                        '${sectionKey.replaceAll('_', ' ').toUpperCase()} Items',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                          color: widget.textColor,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ],
+                                    ...sectionItems.asMap().entries.map((itemEntry) {
+                                      final index = itemEntry.key;
+                                      final item = itemEntry.value as Map<String, dynamic>? ?? {};
+                                      final label = item['label'] ?? 'Item ${index + 1}';
+                                      final score = item['score'] ?? 'N/A';
+                                      final outOf = item['out_of'] ?? 'N/A';
+                                      return Padding(
+                                        padding: const EdgeInsets.only(left: 16, bottom: 4),
+                                        child: _buildDetailRow(
+                                          '•',
+                                          label,
+                                          '$score / $outOf',
+                                          textColor: widget.textColor,
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                );
+                              }),
                             ],
                           ],
                         ),

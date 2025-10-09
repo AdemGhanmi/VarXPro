@@ -354,7 +354,12 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       return SingleChildScrollView(
-                        padding: EdgeInsets.all(constraints.maxWidth * 0.04),
+                        padding: EdgeInsets.fromLTRB(
+                          constraints.maxWidth * 0.04,
+                          constraints.maxWidth * 0.04,
+                          constraints.maxWidth * 0.04,
+                          kBottomNavigationBarHeight + constraints.maxWidth * 0.06,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -483,6 +488,7 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
                                 ),
                               ),
                             ],
+                            SizedBox(height: kBottomNavigationBarHeight + 16),
                           ],
                         ),
                       );

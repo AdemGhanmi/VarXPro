@@ -1,8 +1,7 @@
-// lib/views/pages/home/service/evaluations_service.dart
+// lib/views/pages/home/service/evaluations_service.dart (Fixed with lang params)
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:VarXPro/views/connexion/service/auth_service.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // ✅ <--- AJOUTE CECI
 
 const String baseUrl = 'https://varxpro.com';
 
@@ -12,7 +11,7 @@ class EvaluationsService {
     return str.substring(0, maxLen) + '...';
   }
 
-  static Future<Map<String, dynamic>> fetchMeta() async {
+  static Future<Map<String, dynamic>> fetchMeta(String lang) async {
     final token = await AuthService.getToken();
     if (token == null) {
       return {'success': false, 'error': 'No token found - Login again 🔑'};
@@ -20,7 +19,7 @@ class EvaluationsService {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/evaluations/meta'),
+        Uri.parse('$baseUrl/api/evaluations/meta?lang=$lang'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 
@@ -113,9 +112,14 @@ class EvaluationsService {
         return {'success': true, 'data': createData};
       } else if (response.statusCode == 422) {
         final errorBody = json.decode(response.body);
+        final allowedTypes = errorBody['allowed_types'] ?? [];
+        String errorMsg = errorBody['message'] ?? 'Validation failed - Check fields (e.g., date format YYYY-MM-DD) ❌';
+        if (allowedTypes.isNotEmpty) {
+          errorMsg += ' Allowed types: ${allowedTypes.join(', ')}';
+        }
         return {
           'success': false,
-          'error': errorBody['message'] ?? 'Validation failed - Check fields (e.g., date format YYYY-MM-DD) ❌',
+          'error': errorMsg,
         };
       } else {
         return _parseErrorResponse(response);
@@ -126,43 +130,36 @@ class EvaluationsService {
     }
   }
 
-  static Future<Map<String, dynamic>> getEvaluation(String id) async {
-  final token = await AuthService.getToken();
-  if (token == null) {
-    return {'success': false, 'error': 'No token found 🔑'};
-  }
-
-  // 🔥 Lire la langue stockée
-  final prefs = await SharedPreferences.getInstance();
-  final lang = prefs.getString('app_language') ?? 'en';
-
-  try {
-    final uri = Uri.parse('$baseUrl/api/evaluations/$id').replace(
-      queryParameters: {'lang': lang},
-    );
-
-    final response = await http.get(
-      uri,
-      headers: {'Authorization': 'Bearer $token'},
-    ).timeout(const Duration(seconds: 10));
-
-    print('Get eval response: ${response.statusCode} - ${_truncate(response.body, 200)}');
-
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      final evalData = jsonData['data'] ?? (jsonData is Map<String, dynamic> ? jsonData : {});
-      return {'success': true, 'data': evalData};
-    } else {
-      return _parseErrorResponse(response);
+  static Future<Map<String, dynamic>> getEvaluation(String id, String lang) async {
+    final token = await AuthService.getToken();
+    if (token == null) {
+      return {'success': false, 'error': 'No token found 🔑'};
     }
-  } catch (e) {
-    print('Get eval error: $e');
-    return {'success': false, 'error': 'Network error: $e 🌐'};
+
+    try {
+      final uri = Uri.parse('$baseUrl/api/evaluations/$id?lang=$lang');
+
+      final response = await http.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+
+      print('Get eval response: ${response.statusCode} - ${_truncate(response.body, 200)}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        final evalData = jsonData['data'] ?? (jsonData is Map<String, dynamic> ? jsonData : {});
+        return {'success': true, 'data': evalData};
+      } else {
+        return _parseErrorResponse(response);
+      }
+    } catch (e) {
+      print('Get eval error: $e');
+      return {'success': false, 'error': 'Network error: $e 🌐'};
+    }
   }
-}
 
-
-  static Future<Map<String, dynamic>> updateEvaluation(int id, Map<String, dynamic> data) async {
+  static Future<Map<String, dynamic>> updateEvaluation(int id, Map<String, dynamic> data, String lang) async {
     final token = await AuthService.getToken();
     if (token == null) {
       return {'success': false, 'error': 'No token found 🔑'};
@@ -171,7 +168,7 @@ class EvaluationsService {
     try {
       print('Updating eval data: $data'); // Debug
       final response = await http.put(
-        Uri.parse('$baseUrl/api/evaluations/$id'),
+        Uri.parse('$baseUrl/api/evaluations/$id?lang=$lang'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -223,7 +220,7 @@ class EvaluationsService {
     }
   }
 
-  static Future<Map<String, dynamic>> listRefereeEvaluations(String refereeId) async {
+  static Future<Map<String, dynamic>> listRefereeEvaluations(String refereeId, String lang) async {
     if (refereeId.isEmpty) {
       return {'success': false, 'error': 'Invalid referee ID 👨‍⚖️'};
     }
@@ -234,7 +231,7 @@ class EvaluationsService {
 
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/external-referees/$refereeId/evaluations'),
+        Uri.parse('$baseUrl/api/external-referees/$refereeId/evaluations?lang=$lang'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 10));
 

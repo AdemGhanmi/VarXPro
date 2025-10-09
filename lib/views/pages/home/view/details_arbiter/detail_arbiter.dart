@@ -264,6 +264,7 @@ void _setupTabs(String currentUserId) {
   Future<void> _updateEvaluation(
     int evalId,
     Map<String, dynamic> updates,
+    String lang,
   ) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final role = authProvider.user?.role ?? 'visitor';
@@ -276,7 +277,7 @@ void _setupTabs(String currentUserId) {
     // For safety, proceed as is, since service will return 403 if not author
 
     try {
-      final result = await EvaluationsService.updateEvaluation(evalId, updates);
+      final result = await EvaluationsService.updateEvaluation(evalId, updates, lang);
       if (result['success']) {
         if (mounted) {
           _showSnackBar('Evaluation updated successfully! ✅', Colors.green);

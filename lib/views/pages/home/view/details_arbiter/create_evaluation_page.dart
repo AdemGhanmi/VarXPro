@@ -1,4 +1,4 @@
-// lib/views/pages/home/view/create_evaluation_page.dart (Updated with translations)
+// lib/views/pages/home/view/create_evaluation_page.dart (Updated with type selection and dynamic sections)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:VarXPro/model/appcolor.dart';
@@ -38,6 +38,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
   Map<String, Map<String, dynamic>> _sections = {}; // Dynamic sections
   bool _isLoading = false;
   bool _canCreate = false;
+  String? selectedType;
 
   @override
   void initState() {
@@ -70,50 +71,66 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
   }
 
   Future<void> _loadMeta() async {
-    final result = await EvaluationsService.fetchMeta();
+    final currentLang = _getLang();
+    final result = await EvaluationsService.fetchMeta(currentLang);
     if (result['success']) {
       if (mounted) {
         setState(() {
           _meta = result['data'];
           _metaLoaded = true;
-          // Initialize sections from meta for type 'referee'
-          _sections = Map<String, Map<String, dynamic>>.from(_meta['sections']['referee'] ?? {});
-          // Add score tracking for items
-          _sections.forEach((key, section) {
-            if (section['items'] != null) {
-              final items = <String, Map<String, dynamic>>{};
-              for (var item in (section['items'] as List)) {
-                final itemKey = item['key'];
-                items[itemKey] = {'score': 0, 'out_of': 10}; // Assume out_of 10 unless specified
-              }
-              section['items_map'] = items; // Store as map for easy access
-            }
-          });
+          // Initialize sections from first type
+          final types = _meta['types'] as List? ?? [];
+          if (types.isNotEmpty) {
+            selectedType = types[0].toString();
+            _updateSections(selectedType!);
+          }
         });
       }
     } else {
       // Fallback to hardcoded if meta fails
       if (mounted) {
         setState(() {
-          _metaLoaded = true;
-          _sections = {
-            'technical_performance': {
-              'weight': 40,
-              'title': {'en': 'Technical Performance'},
-              'items': [
-                {'key': 'laws_application', 'label': {'en': 'Application of the Laws'}},
-                // Add more hardcoded items as needed
-              ],
-              'items_map': {
-                'laws_application': {'score': 0, 'out_of': 10},
-                // ...
+          _meta = {
+            'types': ['referee'],
+            'overall_ratings': ['excellent', 'very_good', 'good', 'acceptable', 'weak'],
+            'sections': {
+              'referee': {
+                'weight': 100,
+                'title': {'en': 'Technical Performance'},
+                'items': [
+                  {'key': 'laws_application', 'label': {'en': 'Application of the Laws'}, 'out_of': 10},
+                  {'key': 'positioning', 'label': {'en': 'Positioning'}, 'out_of': 10},
+                ],
               },
             },
-            // Add other fallback sections...
           };
+          _metaLoaded = true;
+          selectedType = 'referee';
+          _updateSections(selectedType!);
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['error'] ?? Translations.getEvaluationText('usingFallbackForm', _getLang()))));
       }
+    }
+  }
+
+  void _updateSections(String type) {
+    final sectionsData = Map<String, dynamic>.from(_meta['sections'][type] ?? {});
+    _sections.clear();
+    for (var entry in sectionsData.entries) {
+      final key = entry.key;
+      final section = Map<String, dynamic>.from(entry.value);
+      if (section['items'] != null) {
+        final items = <String, Map<String, dynamic>>{};
+        for (var item in (section['items'] as List)) {
+          final itemKey = item['key'].toString();
+          items[itemKey] = {
+            'score': 0,
+            'out_of': item['out_of'] ?? 10,
+          };
+        }
+        section['items_map'] = items;
+      }
+      _sections[key] = section;
     }
   }
 
@@ -133,22 +150,23 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
       for (var item in itemsMap.values) {
         subtotal += (item as Map)['score'] as int;
       }
-      total += (subtotal * (section['weight'] as int)) ~/ 100; // Weighted
+      final weight = section['weight'] as int? ?? 0;
+      total += (subtotal * weight) ~/ 100; // Weighted
     }
     return total.clamp(0, 100);
   }
 
   String _getOverallRating(int totalScore) {
-    final ratings = _meta['overall_ratings'] ?? ['excellent', 'very_good', 'good', 'acceptable', 'weak'];
-    if (totalScore >= 90) return ratings[0];
-    if (totalScore >= 80) return ratings[1];
-    if (totalScore >= 70) return ratings[2];
-    if (totalScore >= 50) return ratings[3];
-    return ratings[4];
+    final ratings = (_meta['overall_ratings'] as List?) ?? ['excellent', 'very_good', 'good', 'acceptable', 'weak'];
+    if (totalScore >= 90) return ratings.length > 0 ? ratings[0] : 'excellent';
+    if (totalScore >= 80) return ratings.length > 1 ? ratings[1] : 'very_good';
+    if (totalScore >= 70) return ratings.length > 2 ? ratings[2] : 'good';
+    if (totalScore >= 50) return ratings.length > 3 ? ratings[3] : 'acceptable';
+    return ratings.length > 4 ? ratings[4] : 'weak';
   }
 
   Future<void> _createEvaluation() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || selectedType == null) return;
     setState(() => _isLoading = true);
 
     final totalScore = _calculateTotalScore();
@@ -170,10 +188,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
         final item = itemEntry.value as Map;
         final score = item['score'] as int;
         subtotal += score;
-        final labelKey = itemEntry.key;
-        final label = _getLocalizedLabel(sectionData['items'], labelKey, _getLang());
         items.add({
-          'label': label,
           'score': score,
           'out_of': item['out_of'],
         });
@@ -187,7 +202,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
 
     final data = {
       'external_ref_id': widget.externalRefId,
-      'type': 'referee',
+      'type': selectedType,
       'match': _controllers['match']!.text,
       'stadium': _controllers['stadium']!.text,
       'competition': _controllers['competition']!.text,
@@ -301,7 +316,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
                     controller: _controllers['match']!,
                     label: Translations.getEvaluationText('match', currentLang),
                     validator: (v) => (v?.isEmpty ?? true) ? Translations.getEvaluationText('required', currentLang) : null,
-                    prefixEmoji: '🏟️',
+                    prefixEmoji: '⚽',
                     seedColor: seedColor,
                     mode: modeProvider.currentMode,
                     textDirection: textDirection,
@@ -323,6 +338,27 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
                     seedColor: seedColor,
                     mode: modeProvider.currentMode,
                     textDirection: textDirection,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedType,
+                    decoration: InputDecoration(
+                      labelText: Translations.getEvaluationText('evaluationType', currentLang),
+                      prefixIcon: const Icon(Icons.category),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                      filled: true,
+                      fillColor: AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.5),
+                    ),
+                    items: (_meta['types'] as List? ?? []).map((t) => DropdownMenuItem(value: t.toString(), child: Text(t.toString()))).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedType = value;
+                          _updateSections(value);
+                        });
+                      }
+                    },
+                    validator: (v) => v == null ? Translations.getEvaluationText('typeRequired', currentLang) : null,
                   ),
                   const SizedBox(height: 12),
                   _CustomTextField(
@@ -402,7 +438,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
   Widget _buildSectionWidget(String sectionName, Map<String, dynamic> sectionData, Color seedColor, Color textColor, int mode, String lang) {
     final itemsList = sectionData['items'] as List? ?? [];
     final itemsMap = sectionData['items_map'] as Map<String, dynamic>? ?? {};
-    final weight = sectionData['weight'] as int;
+    final weight = sectionData['weight'] as int? ?? 0;
     int subtotal = 0;
     for (var item in itemsMap.values) {
       subtotal += (item as Map)['score'] as int;
@@ -412,7 +448,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
         leading: Text('📊 ', style: TextStyle(fontSize: 20, color: seedColor)),
-        title: Text('${sectionData['title'][lang] ?? sectionName.replaceAll('_', ' ').toUpperCase()} (${Translations.getEvaluationText('weight', lang)}: $weight%)'),
+        title: Text('${sectionData['title']?[lang] ?? sectionName.replaceAll('_', ' ').toUpperCase()} (${Translations.getEvaluationText('weight', lang)}: $weight%)'),
         subtitle: Text('${Translations.getEvaluationText('subtotal', lang)}: $subtotal'),
         children: itemsMap.isEmpty
             ? [Padding(padding: const EdgeInsets.all(16), child: Text(Translations.getEvaluationText('noItemsToScore', lang)))]

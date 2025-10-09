@@ -1,9 +1,3 @@
-// lib/views/nav/nav_page.dart
-// Navbar: emojis only, Home-only for Visitor (no overflow / no giant emoji).
-// Updates:
-// - bottomNavigationBar wrapped with MediaQuery(textScaler: 1.0)
-// - _EmojiOnlyNavBar & _SingleNavItem now use SizedBox + FittedBox for emoji
-// - Fixed height constraints for stable layout
 
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
