@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 class AppColors {
   static const Map<int, Color> seedColors = {
     1: Color(0xFF0D47A1), 
@@ -145,37 +144,16 @@ class AppColors {
   }
 
   static LinearGradient getBodyGradient(int mode) {
-    switch (mode) {
-      case 2:
-        return LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.grey[50]!, Colors.teal[50]!],
-        );
-      case 3:
-        return LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.grey[850]!, Colors.cyan[900]!],
-        );
-      case 4:
-        return LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.black87, Colors.purple[900]!],
-        );
-      case 5:
-        return LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.grey[900]!, Colors.orange[900]!],
-        );
-      default:
-        return const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF071628), Color(0xFF0D47A1)],
-        );
-    }
+    final baseColor = seedColors[mode] ?? seedColors[1]!;
+    final bgColor = getBackgroundColor(mode);
+    final subtleTop = Color.lerp(bgColor, baseColor, 0.02)!;
+    final subtleMid = Color.lerp(bgColor, baseColor, 0.08)!;
+    final subtleBottom = Color.lerp(bgColor, baseColor, 0.04)!;
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [subtleTop, subtleMid, subtleBottom],
+      stops: const [0.0, 0.6, 1.0],
+    );
   }
 }

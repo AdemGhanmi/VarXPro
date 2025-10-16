@@ -1,4 +1,6 @@
 import 'dart:ui' show ImageFilter;
+import 'package:VarXPro/views/pages/FiledLinesPages/service/ballgoal_service.dart';
+import 'package:VarXPro/views/pages/FiledLinesPages/view/ball_goal_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -20,8 +22,7 @@ import 'package:VarXPro/views/connexion/view/login_page.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/service/FoulDetectionService.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
 
-import 'package:VarXPro/views/pages/FiledLinesPages/service/perspective_service.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/view/key_field_lines_page.dart';
+
 
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/view/offside_page.dart';
@@ -56,7 +57,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     _pages = [
       const HomePage(), // 0
       RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()), // 1
-      RepositoryProvider(create: (_) => PerspectiveService(), child: const KeyFieldLinesPage()), // 2
+      RepositoryProvider(create: (_) => BallGoalService(), child: const BallGoalPage()), // 2
       RepositoryProvider(create: (_) => OffsideService(), child: const OffsidePage()), // 3
       RepositoryProvider(create: (_) => TrackingService(), child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage()), // 4
       RepositoryProvider(create: (_) => LiveStreamController(), child: const LiveStreamDashboard()), // 5
@@ -132,7 +133,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
       case 1:
         return '🚨'; // Faute detection
       case 2:
-        return '📐'; // Field lines
+        return '⚽'; // Ball IN/OUT
       case 3:
         return '🚩'; // Offside
       case 4:
@@ -166,7 +167,7 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         : const [
             _NavItem(emoji: '🏠', pageIndex: 0),
             _NavItem(emoji: '🚨', pageIndex: 1),
-            _NavItem(emoji: '📐', pageIndex: 2),
+            _NavItem(emoji: '⚽', pageIndex: 2),
             _NavItem(emoji: '🚩', pageIndex: 3),
             _NavItem(emoji: '📊', pageIndex: 4),
             _NavItem(emoji: '📡', pageIndex: 5),

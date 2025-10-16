@@ -1,3 +1,4 @@
+// views/pages/RefereeTraking/model/referee_analysis.dart
 
 class HealthResponse {
   final String status;
@@ -12,8 +13,8 @@ class HealthResponse {
 
   factory HealthResponse.fromJson(Map<String, dynamic> json) {
     return HealthResponse(
-      status: json['status'] as String,
-      modelLoaded: json['model_loaded'] as bool,
+      status: (json['ok'] as bool?) ?? false ? 'ok' : 'error',
+      modelLoaded: (json['model_loaded'] as bool?) ?? true,
       classes: json['classes'] != null
           ? Map<String, String>.from(json['classes'])
           : null,
@@ -22,108 +23,92 @@ class HealthResponse {
 }
 
 class AnalyzeResponse {
-  final bool ok;
-  final double confThreshold;
-  final Artifacts artifacts;
-  final Summary summary;
-  final String? reportText;
+  final List<AiEvent> aiEvents;
+  final Evaluation? evaluation;
 
   AnalyzeResponse({
-    required this.ok,
-    required this.confThreshold,
-    required this.artifacts,
-    required this.summary,
-    this.reportText,
+    required this.aiEvents,
+    this.evaluation,
   });
 
   factory AnalyzeResponse.fromJson(Map<String, dynamic> json) {
     return AnalyzeResponse(
-      ok: json['ok'] as bool,
-      confThreshold: (json['conf_threshold'] as num).toDouble(),
-      artifacts: Artifacts.fromJson(json['artifacts'] as Map<String, dynamic>),
-      summary: Summary.fromJson(json['summary'] as Map<String, dynamic>),
-      reportText: json['report_text'] as String?,
+      aiEvents: (json['ai_events'] as List<dynamic>?)
+              ?.map((e) => AiEvent.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      evaluation: json['evaluation'] != null 
+          ? Evaluation.fromJson(json['evaluation'] as Map<String, dynamic>)
+          : null,
     );
   }
 }
 
-class Artifacts {
-  final String reportUrl;
-  final String metricsUrl;
-  final String heatmapUrl;
-  final String speedPlotUrl;
-  final String proximityPlotUrl;
-  final String outputVideoUrl;
-  final List<String> sampleFramesUrls;
+class AiEvent {
+  final double t;
+  final String type;
+  final Map<String, dynamic> details;
 
-  Artifacts({
-    required this.reportUrl,
-    required this.metricsUrl,
-    required this.heatmapUrl,
-    required this.speedPlotUrl,
-    required this.proximityPlotUrl,
-    required this.outputVideoUrl,
-    required this.sampleFramesUrls,
+  AiEvent({
+    required this.t,
+    required this.type,
+    required this.details,
   });
 
-  factory Artifacts.fromJson(Map<String, dynamic> json) {
-    return Artifacts(
-      reportUrl: json['report_url'] as String,
-      metricsUrl: json['metrics_url'] as String,
-      heatmapUrl: json['heatmap_url'] as String,
-      speedPlotUrl: json['speed_plot_url'] as String,
-      proximityPlotUrl: json['proximity_plot_url'] as String,
-      outputVideoUrl: json['output_video_url'] as String,
-      sampleFramesUrls: (json['sample_frames_urls'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
+  factory AiEvent.fromJson(Map<String, dynamic> json) {
+    return AiEvent(
+      t: (json['t'] as num).toDouble(),
+      type: json['type'] as String,
+      details: json['details'] as Map<String, dynamic>,
     );
   }
 }
 
-class Summary {
-  final double totalDistanceKm;
-  final double avgSpeedKmH;
-  final double maxSpeedKmH;
-  final int sprints;
-  final double distanceFirstHalfKm;
-  final double distanceSecondHalfKm;
+class Evaluation {
+  final double accuracy;
+  final int correct;
+  final int total;
+  final List<PerDecision> perDecision;
 
-  Summary({
-    required this.totalDistanceKm,
-    required this.avgSpeedKmH,
-    required this.maxSpeedKmH,
-    required this.sprints,
-    required this.distanceFirstHalfKm,
-    required this.distanceSecondHalfKm,
+  Evaluation({
+    required this.accuracy,
+    required this.correct,
+    required this.total,
+    required this.perDecision,
   });
 
-  factory Summary.fromJson(Map<String, dynamic> json) {
-    return Summary(
-      totalDistanceKm: (json['total_distance_km'] as num).toDouble(),
-      avgSpeedKmH: (json['avg_speed_km_h'] as num).toDouble(),
-      maxSpeedKmH: (json['max_speed_km_h'] as num).toDouble(),
-      sprints: json['sprints'] as int,
-      distanceFirstHalfKm: (json['distance_first_half_km'] as num).toDouble(),
-      distanceSecondHalfKm: (json['distance_second_half_km'] as num).toDouble(),
+  factory Evaluation.fromJson(Map<String, dynamic> json) {
+    return Evaluation(
+      accuracy: (json['accuracy'] as num).toDouble(),
+      correct: json['correct'] as int,
+      total: json['total'] as int,
+      perDecision: (json['per_decision'] as List<dynamic>?)
+              ?.map((e) => PerDecision.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }
 
-class CleanResponse {
-  final bool ok;
-  final int removed;
+class PerDecision {
+  final double t;
+  final String type;
+  final String decision;
+  final bool match;
 
-  CleanResponse({
-    required this.ok,
-    required this.removed,
+  PerDecision({
+    required this.t,
+    required this.type,
+    required this.decision,
+    required this.match,
   });
 
-  factory CleanResponse.fromJson(Map<String, dynamic> json) {
-    return CleanResponse(
-      ok: json['ok'] as bool,
-      removed: json['removed'] as int,
+  factory PerDecision.fromJson(Map<String, dynamic> json) {
+    return PerDecision(
+      t: (json['t'] as num).toDouble(),
+      type: json['type'] as String,
+      decision: json['decision'] as String,
+      match: json['match'] as bool,
     );
   }
 }
-

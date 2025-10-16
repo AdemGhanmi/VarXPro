@@ -123,4 +123,3 @@ class FilePickerWidget extends StatelessWidget {
     );
   }
 }
-

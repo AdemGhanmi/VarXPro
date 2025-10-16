@@ -5,10 +5,10 @@ import 'package:dio/dio.dart';
 
 class RefereeService {
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://refereetrackingsystem.varxpro.com',
-    connectTimeout: const Duration(seconds: 30), // Increased for connection
-    sendTimeout: Duration.zero, // No timeout for sending large files
-    receiveTimeout: Duration.zero, // No timeout for receiving
+    baseUrl: 'https://allvarx.varxpro.com',
+    connectTimeout: const Duration(seconds: 30),
+    sendTimeout: Duration.zero,
+    receiveTimeout: Duration.zero,
   ));
 
   RefereeService() {
@@ -19,14 +19,14 @@ class RefereeService {
       },
       onResponse: (response, handler) {
         print('Response: ${response.statusCode}');
+        print('Response data: ${response.data}');
         return handler.next(response);
       },
       onError: (DioException e, handler) async {
-        print('Dio error type: ${e.type}, message: ${e.message}'); // More logging
+        print('Dio error type: ${e.type}, message: ${e.message}');
         if (e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.sendTimeout ||
             e.type == DioExceptionType.receiveTimeout) {
-          // Retry once on timeout
           try {
             final response = await _dio.request(
               e.requestOptions.path,
@@ -59,39 +59,38 @@ class RefereeService {
 
   Future<AnalyzeResponse> analyzeVideo({
     required File video,
-    double confThreshold = 0.3,
+    String attack = 'left',
+    String attacking_team = 'team1',
+    File? refLog,
+    String? decisionsJson,
   }) async {
     try {
-      final formData = FormData.fromMap({
+      final Map<String, dynamic> formMap = {
         'video': await MultipartFile.fromFile(
           video.path,
-          filename: 'video.mp4',
+          filename: 'match.mp4',
         ),
-        'conf_threshold': confThreshold,
-      });
-      final response = await _dio.post('/analyze', data: formData);
-      return AnalyzeResponse.fromJson(response.data);
+        'attack': attack,
+        'attacking_team': attacking_team,
+      };
+      if (refLog != null) {
+        formMap['ref_log'] = await MultipartFile.fromFile(
+          refLog.path,
+          filename: 'referee_log.json',
+        );
+      }
+      if (decisionsJson != null) {
+        formMap['decisions_json'] = decisionsJson;
+      }
+      final formData = FormData.fromMap(formMap);
+      final response = await _dio.post('/api/decision/auto/video', data: formData);
+      final data = response.data;
+      if (data is Map<String, dynamic> && data.containsKey('error')) {
+        throw Exception(data['error']);
+      }
+      return AnalyzeResponse.fromJson(data);
     } catch (e) {
-      throw Exception('Failed to analyze video: $e');
-    }
-  }
-
-  Future<String> getArtifactText(String path) async {
-    try {
-      final response = await _dio.get(path);
-      return response.data as String;
-    } catch (e) {
-      throw Exception('Failed to fetch artifact text: $e');
-    }
-  }
-
-  Future<CleanResponse> clean() async {
-    try {
-      final response = await _dio.post('/clean');
-      return CleanResponse.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Failed to clean files: $e');
+      throw Exception('analysis_failed: $e');
     }
   }
 }
-

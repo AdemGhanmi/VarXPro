@@ -1,4 +1,3 @@
-// ⬅️ ضروريين لتحميل ملفات الخصائص
 import java.util.Properties
 import java.io.FileInputStream
 
@@ -8,7 +7,6 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// 📁 تحميل local.properties للحصول على versionCode/versionName
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
@@ -18,7 +16,6 @@ if (localPropertiesFile.exists()) {
 val flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: "1"
 val flutterVersionName = localProperties.getProperty("flutter.versionName") ?: "1.0"
 
-// 📁 تحميل بيانات keystore
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -26,11 +23,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.varxpro"
-    compileSdk = 36 // Android 15
+    namespace = "com.elite.varxpro"
+    compileSdk = 36 
 
     defaultConfig {
-        applicationId = "com.varxpro"
+        applicationId = "com.elite.varxpro"
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
 
@@ -70,15 +67,9 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
 
-            // لو تحب تضيف بروغارد:
-            // proguardFiles(
-            //     getDefaultProguardFile("proguard-android-optimize.txt"),
-            //     "proguard-rules.pro"
-            // )
         }
     }
 
-    // ✅ تقليل استهلاك RAM أثناء build
     androidResources {
         noCompress += listOf(
             "mp4", "webm", "mkv",
@@ -87,7 +78,6 @@ android {
         )
     }
 
-    // ✅ استبعاد ملفات META-INF الزائدة
     packaging {
         resources {
             excludes += setOf(

@@ -46,12 +46,19 @@ class _OffsideFormState extends State<OffsideForm> {
   }
 
   Future<void> _pickImage(BuildContext context) async {
-    final currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLanguage;
+    final currentLang = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    ).currentLanguage;
     final status = await Permission.photos.request();
     if (!status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(Translations.getOffsideText('photoAccessDenied', currentLang)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            Translations.getOffsideText('photoAccessDenied', currentLang),
+          ),
+        ),
+      );
       return;
     }
     final picker = ImagePicker();
@@ -60,18 +67,26 @@ class _OffsideFormState extends State<OffsideForm> {
 
     if (_formKey.currentState!.validate()) {
       context.read<OffsideBloc>().add(
-            DetectOffsideSingleEvent(
-              image: File(pickedFile.path),
-              attackDirection: _attackDirection,
-              lineStart: _useFixedLine
-                  ? [int.parse(_lineStartXController.text), int.parse(_lineStartYController.text)]
-                  : null,
-              lineEnd: _useFixedLine
-                  ? [int.parse(_lineEndXController.text), int.parse(_lineEndYController.text)]
-                  : null,
-            ),
-          );
-      context.read<OffsideBloc>().add(UpdatePickedImageEvent(File(pickedFile.path)));
+        DetectOffsideSingleEvent(
+          image: File(pickedFile.path),
+          attackDirection: _attackDirection,
+          lineStart: _useFixedLine
+              ? [
+                  int.parse(_lineStartXController.text),
+                  int.parse(_lineStartYController.text),
+                ]
+              : null,
+          lineEnd: _useFixedLine
+              ? [
+                  int.parse(_lineEndXController.text),
+                  int.parse(_lineEndYController.text),
+                ]
+              : null,
+        ),
+      );
+      context.read<OffsideBloc>().add(
+        UpdatePickedImageEvent(File(pickedFile.path)),
+      );
     }
   }
 
@@ -81,17 +96,23 @@ class _OffsideFormState extends State<OffsideForm> {
 
     final video = File(result.files.first.path!);
     context.read<OffsideBloc>().add(
-          DetectOffsideVideoEvent(
-            video: video,
-            attackDirection: _attackDirection,
-            lineStart: _useFixedLine
-                ? [int.parse(_lineStartXController.text), int.parse(_lineStartYController.text)]
-                : null,
-            lineEnd: _useFixedLine
-                ? [int.parse(_lineEndXController.text), int.parse(_lineEndYController.text)]
-                : null,
-          ),
-        );
+      DetectOffsideVideoEvent(
+        video: video,
+        attackDirection: _attackDirection,
+        lineStart: _useFixedLine
+            ? [
+                int.parse(_lineStartXController.text),
+                int.parse(_lineStartYController.text),
+              ]
+            : null,
+        lineEnd: _useFixedLine
+            ? [
+                int.parse(_lineEndXController.text),
+                int.parse(_lineEndYController.text),
+              ]
+            : null,
+      ),
+    );
   }
 
   @override
@@ -99,7 +120,10 @@ class _OffsideFormState extends State<OffsideForm> {
     return Card(
       color: AppColors.getSurfaceColor(widget.mode).withOpacity(0.88),
       elevation: 8,
-      shadowColor: AppColors.getTertiaryColor(widget.seedColor, widget.mode).withOpacity(0.35),
+      shadowColor: AppColors.getTertiaryColor(
+        widget.seedColor,
+        widget.mode,
+      ).withOpacity(0.35),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -112,15 +136,31 @@ class _OffsideFormState extends State<OffsideForm> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _pickImage(context),
-                      icon: Icon(Icons.photo_camera, color: AppColors.getTextColor(widget.mode)),
+                      icon: Icon(
+                        Icons.photo_camera,
+                        color: AppColors.getTextColor(widget.mode),
+                      ),
                       label: Text(
-                        Translations.getOffsideText('pickAndAnalyze', widget.currentLang),
-                        style: TextStyle(color: AppColors.getTextColor(widget.mode)),
+                        Translations.getOffsideText(
+                          'pickAndAnalyze',
+                          widget.currentLang,
+                        ),
+                        style: TextStyle(
+                          color: AppColors.getTextColor(widget.mode),
+                        ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.getTertiaryColor(widget.seedColor, widget.mode),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: AppColors.getTertiaryColor(
+                          widget.seedColor,
+                          widget.mode,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 4,
                       ),
                     ),
@@ -129,15 +169,32 @@ class _OffsideFormState extends State<OffsideForm> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => _pickVideo(context),
-                      icon: Icon(Icons.video_file, color: AppColors.getTextColor(widget.mode)),
-                      label: Text(
-                        'Pick Video and Analyze',
-                        style: TextStyle(color: AppColors.getTextColor(widget.mode)),
+                      icon: Icon(
+                        Icons.video_file,
+                        color: AppColors.getTextColor(widget.mode),
                       ),
+                      label: Text(
+                        Translations.getPlayerTrackingText(
+                          'pickAndAnalyzeVideo',
+                          widget.currentLang,
+                        ),
+                         style: TextStyle(
+                          color: AppColors.getTextColor(widget.mode),
+                        ),
+                      ),
+
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.getSecondaryColor(widget.seedColor, widget.mode),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: AppColors.getSecondaryColor(
+                          widget.seedColor,
+                          widget.mode,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 4,
                       ),
                     ),
@@ -148,22 +205,43 @@ class _OffsideFormState extends State<OffsideForm> {
               DropdownButtonFormField<String>(
                 value: _attackDirection,
                 decoration: InputDecoration(
-                  labelText: Translations.getOffsideText('attackDirection', widget.currentLang),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  labelText: Translations.getOffsideText(
+                    'attackDirection',
+                    widget.currentLang,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
-                  fillColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.6),
+                  fillColor: AppColors.getSurfaceColor(
+                    widget.mode,
+                  ).withOpacity(0.6),
                 ),
                 dropdownColor: AppColors.getSurfaceColor(widget.mode),
                 items: ['right', 'left', 'up', 'down']
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e.toUpperCase())))
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e.toUpperCase()),
+                      ),
+                    )
                     .toList(),
-                onChanged: (v) => setState(() => _attackDirection = v ?? 'right'),
+                onChanged: (v) =>
+                    setState(() => _attackDirection = v ?? 'right'),
               ),
               const SizedBox(height: 8),
               SwitchListTile(
-                title: Text(Translations.getOffsideText('useFixedLine', widget.currentLang)),
+                title: Text(
+                  Translations.getOffsideText(
+                    'useFixedLine',
+                    widget.currentLang,
+                  ),
+                ),
                 value: _useFixedLine,
-                activeColor: AppColors.getTertiaryColor(widget.seedColor, widget.mode),
+                activeColor: AppColors.getTertiaryColor(
+                  widget.seedColor,
+                  widget.mode,
+                ),
                 onChanged: (v) => setState(() => _useFixedLine = v),
               ),
               if (_useFixedLine) ...[
@@ -174,13 +252,21 @@ class _OffsideFormState extends State<OffsideForm> {
                       child: TextFormField(
                         controller: _lineStartXController,
                         decoration: InputDecoration(
-                          labelText: Translations.getOffsideText('startX', widget.currentLang),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: Translations.getOffsideText(
+                            'startX',
+                            widget.currentLang,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           filled: true,
-                          fillColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.6),
+                          fillColor: AppColors.getSurfaceColor(
+                            widget.mode,
+                          ).withOpacity(0.6),
                         ),
                         keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -188,13 +274,21 @@ class _OffsideFormState extends State<OffsideForm> {
                       child: TextFormField(
                         controller: _lineStartYController,
                         decoration: InputDecoration(
-                          labelText: Translations.getOffsideText('startY', widget.currentLang),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: Translations.getOffsideText(
+                            'startY',
+                            widget.currentLang,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           filled: true,
-                          fillColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.6),
+                          fillColor: AppColors.getSurfaceColor(
+                            widget.mode,
+                          ).withOpacity(0.6),
                         ),
                         keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                     ),
                   ],
@@ -206,13 +300,21 @@ class _OffsideFormState extends State<OffsideForm> {
                       child: TextFormField(
                         controller: _lineEndXController,
                         decoration: InputDecoration(
-                          labelText: Translations.getOffsideText('endX', widget.currentLang),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: Translations.getOffsideText(
+                            'endX',
+                            widget.currentLang,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           filled: true,
-                          fillColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.6),
+                          fillColor: AppColors.getSurfaceColor(
+                            widget.mode,
+                          ).withOpacity(0.6),
                         ),
                         keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -220,13 +322,21 @@ class _OffsideFormState extends State<OffsideForm> {
                       child: TextFormField(
                         controller: _lineEndYController,
                         decoration: InputDecoration(
-                          labelText: Translations.getOffsideText('endY', widget.currentLang),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          labelText: Translations.getOffsideText(
+                            'endY',
+                            widget.currentLang,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           filled: true,
-                          fillColor: AppColors.getSurfaceColor(widget.mode).withOpacity(0.6),
+                          fillColor: AppColors.getSurfaceColor(
+                            widget.mode,
+                          ).withOpacity(0.6),
                         ),
                         keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                     ),
                   ],

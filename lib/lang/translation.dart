@@ -5,12 +5,11 @@ class Translations {
       'titles': [
         'Home',
         'Fault Detection',
-        'Field Lines',
+        'Ball IN/OUT',
         'Offside',
         'Player Tracking',
         'Live Streaming',
       ],
-
       'settingsPage': {
         'settingsTitle': 'Settings',
         'languageSection': 'Language',
@@ -140,6 +139,36 @@ class Translations {
         'Tic-Tac-Toe': 'Tic-Tac-Toe',
         'Supported: MP4 • Max length depends on server config.':
             'Supported: MP4 • Max length depends on server config.',
+        // New keys for Referee Tracking System
+        'Referee Tracking System': 'Referee Tracking System',
+        'Decision evaluation analysis completed': 'Decision evaluation analysis completed',
+        'Evaluation complete! View results.': 'Evaluation complete! View results.',
+        'Evaluating referee decisions... This may take a few minutes.': 'Evaluating referee decisions... This may take a few minutes.',
+        'Decision Evaluation Setup': 'Decision Evaluation Setup',
+        'Attack Direction': 'Attack Direction',
+        'Attacking Team': 'Attacking Team',
+        'Referee Decisions Input (Optional for AI-only analysis)': 'Referee Decisions Input (Optional for AI-only analysis)',
+        'No Referee Log (AI Events Only)': 'No Referee Log (AI Events Only)',
+        'Referee Log File (JSON)': 'Referee Log File (JSON)',
+        'Inline Decisions JSON': 'Inline Decisions JSON',
+        'Pick Referee Log (JSON)': 'Pick Referee Log (JSON)',
+        'Decisions JSON Array': 'Decisions JSON Array',
+        'Match Video': 'Match Video',
+        'Pick Match Video (MP4)': 'Pick Match Video (MP4)',
+        'Supported: MP4 • Referee log optional for full evaluation.': 'Supported: MP4 • Referee log optional for full evaluation.',
+        'Analyze Video': 'Analyze Video',
+        'AI Detected Events': 'AI Detected Events',
+        'detailsEvent': 'detailsEvent',
+        'Evaluation Summary': 'Evaluation Summary',
+        'Accuracy': 'Accuracy',
+        'Correct': 'Correct',
+        'Per Decision Details': 'Per Decision Details',
+        'Time (s)': 'Time (s)',
+        'Type': 'Type',
+        'Decision': 'Decision',
+        'Match': 'Match',
+        'No referee decisions provided. Only AI events are shown.': 'No referee decisions provided. Only AI events are shown.',
+        'missingVideoFile': 'Video file is required',
       },
       'homePage': {
         'subtitle': 'AI-Powered Football Video Analytics',
@@ -149,9 +178,9 @@ class Translations {
         'foulDetectionTitle': 'Foul Detection',
         'foulDetectionDesc':
             'Detect and analyze fouls using machine learning, generating reports on events, videos, and data summaries.',
-        'keyFieldLinesTitle': 'Key Field Lines',
+        'keyFieldLinesTitle': 'Ball IN/OUT',
         'keyFieldLinesDesc':
-            'Identify key field lines, perform perspective transformations, and calibrate videos for accurate analysis.',
+            'Detect ball in/out and goal/no-goal using AI analysis on images.',
         'offsideTitle': 'Offside Detection',
         'offsideDesc':
             'Accurate offside detection for single frames or batch processing, with options for custom lines and attack directions.',
@@ -164,14 +193,7 @@ class Translations {
         'enterApp': 'Enter the App',
         'mainTitle': 'Advanced VAR Technology',
       },
-      'navLabels': [
-        'Tracking',
-        'Faults',
-        'Lines',
-        'Offside',
-        'Referee',
-        'Live',
-      ],
+      'navLabels': ['Tracking', 'Faults', 'Ball', 'Offside', 'Referee', 'Live'],
       'chooseLanguage': 'Choose Language',
       'chooseMode': 'Choose Mode',
       'languages': ['English', 'French', 'Arabic'],
@@ -184,8 +206,8 @@ class Translations {
       ],
       'offsidePage': {
         'apiStatus': 'API Status',
-        'singleFrameDetection': 'Single Frame Offside Detection',
-        'batchDetection': 'Batch Offside Detection',
+        'singleFrameDetection': 'Single Frame Detection 📸',
+        'batchDetection': 'Batch Detection',
         'previousRuns': 'Previous Analysis Runs',
         'pickAndAnalyze': 'Pick and Analyze Image',
         'attackDirection': 'Attack Direction',
@@ -294,6 +316,48 @@ class Translations {
             'Detect and calibrate football field lines for tactical analysis.',
         'fieldLinesDetected': 'Field lines detected',
         'noFieldLinesDetected': 'No field lines detected',
+        // New keys for OffsidePage hardcoded strings
+        'permissionRequiredSaveDownloads':
+            'Permission required to save in downloads ❌',
+        'mediaStoreNotInitialized': 'MediaStore not initialized ❌',
+        'videoSaved': 'Video saved 📹',
+        'imageSaved': 'Image saved 📸',
+        'videoSavedDownloads': 'Video saved in Downloads 📹',
+        'imageSavedDownloads': 'Image saved in Downloads 📸',
+        'saveFailure': 'Save failed ❌',
+        'saveError': 'Save error: ❌',
+        'saveNotSupportedPlatform': 'Save not supported on this platform ❌',
+        'imageSavedDownloadsSuccess': 'Image saved in Downloads 📸',
+        'saveFailureGeneric': 'Save failed ❌',
+        'errorGeneric': 'Error: ❌',
+        'uploading': 'Uploading 📤',
+        'processingDownloading': 'Processing/Downloading ⚙️',
+        'upload': 'Upload 📤',
+        'processingDownload': 'Processing/Download ⚙️',
+        'pickedImageLabel': 'Picked Image 📷',
+        'annotatedImageLabel': 'Annotated Image 🎯',
+        'annotatedVideoLabel': 'Annotated Video 🎥',
+        'generationInProgress': 'Generation in progress…',
+        'pleaseWaitAnalyzing':
+            'Please wait, we are analyzing your video and drawing offside lines.',
+        'miniGameKeepyUp': 'Mini-game: Keepy-Up ⚽',
+        'score': r'Score: $score',
+        'speed': r'Speed: ${(speedMultiplier * 100).round()}%',
+        'gameOverScore': r'Game Over! Score: $score',
+        'tapToRestart': 'Tap to restart ⚡',
+      },
+      // New section for Ball Goal Page
+      'ballGoalPage': {
+        'ballInOut': 'Ball IN/OUT',
+        'goalCheck': 'Goal Check',
+        'selectImageForBallInOut': 'Select an video to analyze ball position',
+        'selectImageForGoalCheck': 'Select an video to check if it\'s a goal',
+        'success': 'Success',
+        'result': 'Result',
+        'confidence': 'Confidence',
+        'boundarySide': 'Boundary Side',
+        'boundaryType': 'Boundary Type',
+        'isGoal': 'Is Goal',
       },
       'historyPage': {
         'title': 'History',
@@ -580,7 +644,7 @@ class Translations {
       'titles': [
         'Accueil',
         'Détection de Fautes',
-        'Lignes de Terrain',
+        'Ball IN/OUT',
         'Hors-jeu',
         'Suivi des Joueurs',
         'Diffusion en Direct',
@@ -717,6 +781,36 @@ class Translations {
         'Tic-Tac-Toe': 'Morpion',
         'Supported: MP4 • Max length depends on server config.':
             'Supporté : MP4 • La longueur max dépend de la config du serveur.',
+        // New keys for Referee Tracking System
+        'Referee Tracking System': 'Système de Suivi des Arbitres',
+        'Decision evaluation analysis completed': 'Analyse d\'évaluation des décisions terminée',
+        'Evaluation complete! View results.': 'Évaluation terminée ! Voir les résultats.',
+        'Evaluating referee decisions... This may take a few minutes.': 'Évaluation des décisions de l\'arbitre... Cela peut prendre quelques minutes.',
+        'Decision Evaluation Setup': 'Configuration de l\'Évaluation des Décisions',
+        'Attack Direction': 'Direction de l\'Attaque',
+        'Attacking Team': 'Équipe Attaquante',
+        'Referee Decisions Input (Optional for AI-only analysis)': 'Entrée des Décisions de l\'Arbitre (Optionnel pour l\'analyse IA seule)',
+        'No Referee Log (AI Events Only)': 'Aucun Journal d\'Arbitre (Événements IA Seulement)',
+        'Referee Log File (JSON)': 'Fichier Journal d\'Arbitre (JSON)',
+        'Inline Decisions JSON': 'JSON des Décisions en Ligne',
+        'Pick Referee Log (JSON)': 'Choisir Journal d\'Arbitre (JSON)',
+        'Decisions JSON Array': 'Tableau JSON des Décisions',
+        'Match Video': 'Vidéo du Match',
+        'Pick Match Video (MP4)': 'Choisir Vidéo du Match (MP4)',
+        'Supported: MP4 • Referee log optional for full evaluation.': 'Supporté : MP4 • Journal d\'arbitre optionnel pour évaluation complète.',
+        'Analyze Video': 'Analyser la Vidéo',
+        'AI Detected Events': 'Événements Détectés par IA',
+        'detailsEvent': 'Détails de l\'Événement',
+        'Evaluation Summary': 'Résumé de l\'Évaluation',
+        'Accuracy': 'Précision',
+        'Correct': 'Correct',
+        'Per Decision Details': 'Détails par Décision',
+        'Time (s)': 'Temps (s)',
+        'Type': 'Type',
+        'Decision': 'Décision',
+        'Match': 'Correspondance',
+        'No referee decisions provided. Only AI events are shown.': 'Aucune décision d\'arbitre fournie. Seuls les événements IA sont affichés.',
+        'missingVideoFile': 'Le fichier vidéo est requis',
       },
       'homePage': {
         'subtitle': 'Analyse vidéo de football propulsée par l\'IA',
@@ -726,9 +820,9 @@ class Translations {
         'foulDetectionTitle': 'Détection de fautes',
         'foulDetectionDesc':
             'Détecter et analyser les fautes en utilisant l\'apprentissage automatique, en générant des rapports sur les événements, les vidéos et les résumés de données.',
-        'keyFieldLinesTitle': 'Lignes de terrain clés',
+        'keyFieldLinesTitle': 'Ball IN/OUT',
         'keyFieldLinesDesc':
-            'Identifier les lignes clés du terrain, effectuer des transformations de perspective et calibrer les vidéos pour une analyse précise.',
+            'Détecter la balle dedans/dehors et but/non-but en utilisant l\'analyse IA sur les images.',
         'offsideTitle': 'Détection de hors-jeu',
         'offsideDesc':
             'Détection précise du hors-jeu pour des images uniques ou un traitement par lots, avec des options pour des lignes personnalisées et des directions d\'attaque.',
@@ -741,7 +835,7 @@ class Translations {
         'enterApp': 'Entrer dans l\'application',
         'mainTitle': 'Technologie VAR avancée',
       },
-      'navLabels': ['Suivi', 'Fautes', 'Lignes', 'Hors-jeu', 'Arbitre', 'Live'],
+      'navLabels': ['Suivi', 'Fautes', 'Ball', 'Hors-jeu', 'Arbitre', 'Live'],
       'chooseLanguage': 'Choisir la Langue',
       'chooseMode': 'Choisir le Mode',
       'languages': ['Anglais', 'Français', 'Arabe'],
@@ -754,7 +848,7 @@ class Translations {
       ],
       'offsidePage': {
         'apiStatus': 'Statut de l\'API',
-        'singleFrameDetection': 'Détection de Hors-jeu à Image Unique',
+        'singleFrameDetection': 'Détection de Hors-jeu à Image Unique 📸',
         'batchDetection': 'Détection de Hors-jeu par Lot',
         'previousRuns': 'Analyses Précédentes',
         'pickAndAnalyze': 'Choisir et Analyser l\'Image',
@@ -867,6 +961,50 @@ class Translations {
             'Détecter et calibrer les lignes du terrain de football pour l\'analyse tactique.',
         'fieldLinesDetected': 'Lignes du terrain détectées',
         'noFieldLinesDetected': 'Aucune ligne détectée',
+        // New keys for OffsidePage hardcoded strings
+        'permissionRequiredSaveDownloads':
+            'Permission requise pour enregistrer dans les téléchargements ❌',
+        'mediaStoreNotInitialized': 'MediaStore non initialisé ❌',
+        'videoSaved': 'Vidéo enregistrée 📹',
+        'imageSaved': 'Image enregistrée 📸',
+        'videoSavedDownloads': 'Vidéo enregistrée dans Téléchargements 📹',
+        'imageSavedDownloads': 'Image enregistrée dans Téléchargements 📸',
+        'saveFailure': 'Échec de l’enregistrement ❌',
+        'saveError': 'Erreur enregistrement: ❌',
+        'saveNotSupportedPlatform':
+            'Sauvegarde non supportée sur cette plateforme ❌',
+        'imageSavedDownloadsSuccess':
+            'Image enregistrée dans Téléchargements 📸',
+        'saveFailureGeneric': 'Échec de l’enregistrement ❌',
+        'errorGeneric': 'Erreur: ❌',
+        'uploading': 'Téléversement 📤',
+        'processingDownloading': 'Traitement/Téléchargement ⚙️',
+        'upload': 'Téléversement 📤',
+        'processingDownload': 'Traitement/Téléchargement ⚙️',
+        'pickedImageLabel': 'Image Choisie 📷',
+        'annotatedImageLabel': 'Image Annotée 🎯',
+        'annotatedVideoLabel': 'Vidéo Annotée 🎥',
+        'generationInProgress': 'Génération en cours…',
+        'pleaseWaitAnalyzing':
+            'Veuillez patienter, nous analysons votre vidéo et traçons les lignes offside.',
+        'miniGameKeepyUp': 'Mini-jeu : Keepy-Up ⚽',
+        'score': r'Score : $score',
+        'speed': r'Vitesse : ${(speedMultiplier * 100).round()}%',
+        'gameOverScore': r'Game Over ! Score : $score',
+        'tapToRestart': 'Appuyez pour redémarrer ⚡',
+      },
+      // New section for Ball Goal Page in French
+      'ballGoalPage': {
+        'ballInOut': 'Ballon DEDANS/DEHORS',
+        'goalCheck': 'Vérification But',
+        'selectImageForBallInOut': 'Sélectionnez une video pour analyser la position du ballon',
+        'selectImageForGoalCheck': 'Sélectionnez une video pour vérifier si c\'est un but',
+        'success': 'Succès',
+        'result': 'Résultat',
+        'confidence': 'Confiance',
+        'boundarySide': 'Côté Limite',
+        'boundaryType': 'Type de Limite',
+        'isGoal': 'Est un But',
       },
       'historyPage': {
         'title': 'Historique',
@@ -1161,7 +1299,7 @@ class Translations {
       'titles': [
         'الرئيسية',
         'كشف الأخطاء',
-        'خطوط الملعب',
+        'كرة داخل/خارج',
         'تسلل',
         'تتبع اللاعبين',
         'البث المباشر',
@@ -1295,6 +1433,36 @@ class Translations {
         'Tic-Tac-Toe': 'تيك تاك تو',
         'Supported: MP4 • Max length depends on server config.':
             'مدعوم: MP4 • الطول الأقصى يعتمد على إعدادات الخادم.',
+        // New keys for Referee Tracking System
+        'Referee Tracking System': 'نظام تتبع الحكام',
+        'Decision evaluation analysis completed': 'اكتملت تحليل تقييم القرارات',
+        'Evaluation complete! View results.': 'اكتملت التقييم! عرض النتائج.',
+        'Evaluating referee decisions... This may take a few minutes.': 'تقييم قرارات الحكم... قد يستغرق ذلك بضع دقائق.',
+        'Decision Evaluation Setup': 'إعداد تقييم القرارات',
+        'Attack Direction': 'اتجاه الهجوم',
+        'Attacking Team': 'الفريق الهجومي',
+        'Referee Decisions Input (Optional for AI-only analysis)': 'إدخال قرارات الحكم (اختياري للتحليل بالذكاء الاصطناعي فقط)',
+        'No Referee Log (AI Events Only)': 'لا يوجد سجل حكم (أحداث الذكاء الاصطناعي فقط)',
+        'Referee Log File (JSON)': 'ملف سجل الحكم (JSON)',
+        'Inline Decisions JSON': 'JSON قرارات داخلية',
+        'Pick Referee Log (JSON)': 'اختر سجل الحكم (JSON)',
+        'Decisions JSON Array': 'مصفوفة JSON للقرارات',
+        'Match Video': 'فيديو المباراة',
+        'Pick Match Video (MP4)': 'اختر فيديو المباراة (MP4)',
+        'Supported: MP4 • Referee log optional for full evaluation.': 'مدعوم: MP4 • سجل الحكم اختياري للتقييم الكامل.',
+        'Analyze Video': 'تحليل الفيديو',
+        'AI Detected Events': 'الأحداث المكتشفة بالذكاء الاصطناعي',
+        'detailsEvent': 'تفاصيل الحدث',
+        'Evaluation Summary': 'ملخص التقييم',
+        'Accuracy': 'الدقة',
+        'Correct': 'صحيح',
+        'Per Decision Details': 'تفاصيل لكل قرار',
+        'Time (s)': 'الوقت (ث)',
+        'Type': 'النوع',
+        'Decision': 'القرار',
+        'Match': 'التطابق',
+        'No referee decisions provided. Only AI events are shown.': 'لم يتم توفير قرارات حكم. يتم عرض أحداث الذكاء الاصطناعي فقط.',
+        'missingVideoFile': 'ملف الفيديو مطلوب',
       },
       'homePage': {
         'subtitle': 'تحليل فيديو كرة القدم باستخدام الذكاء الاصطناعي',
@@ -1304,9 +1472,9 @@ class Translations {
         'foulDetectionTitle': 'كشف الأخطاء',
         'foulDetectionDesc':
             'كشف وتحليل الأخطاء باستخدام التعلم الآلي، وإنشاء تقارير حول الأحداث والفيديوهات والبيانات الملخصة.',
-        'keyFieldLinesTitle': 'خطوط الملعب الرئيسية',
+        'keyFieldLinesTitle': 'كرة داخل/خارج',
         'keyFieldLinesDesc':
-            'تحديد خطوط الملعب الرئيسية، وإجراء تحويلات المنظور، ومعايرة الفيديوهات لتحليل دقيق.',
+            'كشف الكرة داخل/خارج والهدف/غير هدف باستخدام التحليل بالذكاء الاصطناعي على الصور.',
         'offsideTitle': 'كشف التسلل',
         'offsideDesc':
             'كشف التسلل بدقة للإطارات الفردية أو المعالجة بالجملة، مع خيارات لخطوط مخصصة واتجاهات الهجوم.',
@@ -1319,7 +1487,7 @@ class Translations {
         'enterApp': 'دخول التطبيق',
         'mainTitle': 'تقنية VAR المتقدمة',
       },
-      'navLabels': ['تتبع', 'أخطاء', 'خطوط', 'تسلل', 'حكم', 'البث المباشر'],
+      'navLabels': ['تتبع', 'أخطاء', 'كرة', 'تسلل', 'حكم', 'البث المباشر'],
       'chooseLanguage': 'اختر اللغة',
       'chooseMode': 'اختر الوضع',
       'languages': ['الإنجليزية', 'الفرنسية', 'العربية'],
@@ -1332,7 +1500,7 @@ class Translations {
       ],
       'offsidePage': {
         'apiStatus': 'حالة واجهة برمجة التطبيقات',
-        'singleFrameDetection': 'كشف التسلل لإطار واحد',
+        'singleFrameDetection': 'كشف التسلل لإطار واحد 📸',
         'batchDetection': 'كشف التسلل الدفعي',
         'previousRuns': 'التشغيلات السابقة',
         'pickAndAnalyze': 'اختيار وتحليل الصورة',
@@ -1442,6 +1610,47 @@ class Translations {
             'كشف ومعايرة خطوط ملعب كرة القدم للتحليل التكتيكي.',
         'fieldLinesDetected': 'تم اكتشاف خطوط الملعب',
         'noFieldLinesDetected': 'لم يتم اكتشاف أي خطوط',
+        // New keys for OffsidePage hardcoded strings
+        'permissionRequiredSaveDownloads': 'الإذن مطلوب لحفظ التنزيلات ❌',
+        'mediaStoreNotInitialized': 'MediaStore غير مُهيأ ❌',
+        'videoSaved': 'تم حفظ الفيديو 📹',
+        'imageSaved': 'تم حفظ الصورة 📸',
+        'videoSavedDownloads': 'تم حفظ الفيديو في التنزيلات 📹',
+        'imageSavedDownloads': 'تم حفظ الصورة في التنزيلات 📸',
+        'saveFailure': 'فشل في الحفظ ❌',
+        'saveError': 'خطأ في الحفظ: ❌',
+        'saveNotSupportedPlatform': 'الحفظ غير مدعوم على هذه المنصة ❌',
+        'imageSavedDownloadsSuccess': 'تم حفظ الصورة في التنزيلات 📸',
+        'saveFailureGeneric': 'فشل في الحفظ ❌',
+        'errorGeneric': 'خطأ: ❌',
+        'uploading': 'جاري الرفع 📤',
+        'processingDownloading': 'جاري المعالجة/التنزيل ⚙️',
+        'upload': 'رفع 📤',
+        'processingDownload': 'معالجة/تنزيل ⚙️',
+        'pickedImageLabel': 'الصورة المختارة 📷',
+        'annotatedImageLabel': 'الصورة المُعلَّمة 🎯',
+        'annotatedVideoLabel': 'الفيديو المُعلَّم 🎥',
+        'generationInProgress': 'جاري الإنشاء…',
+        'pleaseWaitAnalyzing':
+            'يرجى الانتظار، نحن نحلل فيديوك ونرسم خطوط التسلل.',
+        'miniGameKeepyUp': 'لعبة مصغرة: Keepy-Up ⚽',
+        'score': r'النتيجة: $score',
+        'speed': r'السرعة: ${(speedMultiplier * 100).round()}%',
+        'gameOverScore': r'انتهت اللعبة! النتيجة: $score',
+        'tapToRestart': 'اضغط لإعادة البدء ⚡',
+      },
+      // New section for Ball Goal Page in Arabic
+      'ballGoalPage': {
+        'ballInOut': 'كرة داخل/خارج',
+        'goalCheck': 'فحص الهدف',
+        'selectImageForBallInOut': 'اختر فيديو لتحليل موقع الكرة',
+        'selectImageForGoalCheck': 'اختر فيديو للتحقق إذا كان هدفًا',
+        'success': 'نجاح',
+        'result': 'النتيجة',
+        'confidence': 'الثقة',
+        'boundarySide': 'جانب الحدود',
+        'boundaryType': 'نوع الحدود',
+        'isGoal': 'هل هو هدف',
       },
       'historyPage': {
         'title': 'التاريخ',
@@ -1724,7 +1933,6 @@ class Translations {
       },
     },
   };
-
   static String getRefereeDetailsText(String key, String lang) {
     final validLang = ['en', 'fr', 'ar'].contains(lang) ? lang : 'en';
     final translation =
@@ -1733,31 +1941,26 @@ class Translations {
         key; // Default to key if not found
     return translation ?? 'Missing translation for $key';
   }
-
   static String getSettingsText(String key, String lang) {
     return pageTitles[lang]?['settingsPage']?[key] ??
         pageTitles['en']?['settingsPage']?[key] ??
         key;
   }
-
   static String getHistoryText(String key, String lang) {
     // New method for History
     return pageTitles[lang]?['historyPage']?[key] ??
         pageTitles['en']?['historyPage']?[key] ??
         key;
   }
-
   static String translate(String key, String lang) {
     return pageTitles[lang]?[key] ?? pageTitles['en']?[key] ?? key;
   }
-
   static String getTitle(int index, String lang) {
     final titles = pageTitles[lang]?['titles'] ?? pageTitles['en']?['titles'];
     return titles != null && index < titles.length
         ? titles[index]
         : 'Title $index';
   }
-
   static String getNavLabel(int index, String lang) {
     final labels =
         pageTitles[lang]?['navLabels'] ?? pageTitles['en']?['navLabels'];
@@ -1765,88 +1968,79 @@ class Translations {
         ? labels[index]
         : 'Nav $index';
   }
-
   static String getChooseLanguage(String lang) {
     return pageTitles[lang]?['chooseLanguage'] ??
         pageTitles['en']?['chooseLanguage'] ??
         'Choose Language';
   }
-
   static String getChooseMode(String lang) {
     return pageTitles[lang]?['chooseMode'] ??
         pageTitles['en']?['chooseMode'] ??
         'Choose Mode';
   }
-
   static List<String> getLanguages(String lang) {
     return List<String>.from(
       pageTitles[lang]?['languages'] ?? pageTitles['en']?['languages'] ?? [],
     );
   }
-
   static List<String> getModes(String lang) {
     return List<String>.from(
       pageTitles[lang]?['modes'] ?? pageTitles['en']?['modes'] ?? [],
     );
   }
-
   static String getOffsideText(String key, String lang) {
     return pageTitles[lang]?['offsidePage']?[key] ??
         pageTitles['en']?['offsidePage']?[key] ??
         key;
   }
-
   static String getFoulDetectionText(String key, String lang) {
     return pageTitles[lang]?['foulDetectionPage']?[key] ??
         pageTitles['en']?['foulDetectionPage']?[key] ??
         key;
   }
-
   static String getRefereeTrackingText(String key, String lang) {
     return pageTitles[lang]?['refereeTrackingPage']?[key] ??
         pageTitles['en']?['refereeTrackingPage']?[key] ??
         key;
   }
-
   static String getPlayerTrackingText(String key, String lang) {
     return pageTitles[lang]?['playerTrackingPage']?[key] ??
         pageTitles['en']?['playerTrackingPage']?[key] ??
         key;
   }
-
   static String getHomeText(String key, String lang) {
     return pageTitles[lang]?['homePage']?[key] ??
         pageTitles['en']?['homePage']?[key] ??
         key;
   }
-
   static String getRefereeDirectoryText(String key, String lang) {
     return pageTitles[lang]?['refereeDirectory']?[key] ??
         pageTitles['en']?['refereeDirectory']?[key] ??
         key;
   }
-
   static String getLoginText(String key, String lang) {
     return pageTitles[lang]?['loginPage']?[key] ??
         pageTitles['en']?['loginPage']?[key] ??
         key;
   }
-
   static String getTranslation(String key, String lang) {
     return pageTitles[lang]?['Referpage']?[key] ??
         pageTitles['en']?['Referpage']?[key] ??
         key;
   }
-
   // New method for evaluation page texts
   static String getEvaluationText(String key, String lang) {
     return pageTitles[lang]?['evaluationPage']?[key] ??
         pageTitles['en']?['evaluationPage']?[key] ??
         key;
   }
-
-  // lib/lang/translation.dart  (أضف الدالة التالية داخل class Translations)
-
+  // New method for ball goal page texts
+  static String getBallGoalText(String key, String lang) {
+    return pageTitles[lang]?['ballGoalPage']?[key] ??
+        pageTitles['en']?['ballGoalPage']?[key] ??
+        key;
+  }
+  // lib/lang/translation.dart (أضف الدالة التالية داخل class Translations)
   static String getAppBarTitle(int pageIndex, String lang) {
     final validLang = ['en', 'fr', 'ar'].contains(lang) ? lang : 'en';
     final titles =

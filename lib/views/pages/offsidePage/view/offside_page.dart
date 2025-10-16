@@ -1501,14 +1501,14 @@ class _GrassPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
+// Updated _FootballGridPainter with subtler opacities for a fuller yet less intense background
 class _FootballGridPainter extends CustomPainter {
   final int mode;
   _FootballGridPainter(this.mode);
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.06)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.03)  // Reduced from 0.06 for subtler grid
       ..strokeWidth = 0.5;
     const step = 50.0;
     for (double x = 0; x <= size.width; x += step) {
@@ -1518,7 +1518,7 @@ class _FootballGridPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
     final fieldPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.12)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.06)  // Reduced from 0.12 for softer field outline
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     final inset = 40.0;

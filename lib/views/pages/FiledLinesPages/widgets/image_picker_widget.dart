@@ -1,3 +1,4 @@
+// lib/views/pages/BallGoalPage/widgets/image_picker_widget.dart
 // Updated ImagePickerWidget to support enabled parameter
 import 'dart:io';
 import 'package:VarXPro/provider/langageprovider.dart';
@@ -8,7 +9,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
-
 class ImagePickerWidget extends StatelessWidget {
   final Function(File) onImagePicked;
   final String buttonText;
@@ -17,7 +17,6 @@ class ImagePickerWidget extends StatelessWidget {
   final int mode;
   final Color seedColor;
   final bool enabled;
-
   const ImagePickerWidget({
     super.key,
     required this.onImagePicked,
@@ -28,10 +27,8 @@ class ImagePickerWidget extends StatelessWidget {
     required this.seedColor,
     this.enabled = true,
   });
-
   Future<void> _pickFile(BuildContext context) async {
     PermissionStatus status;
-
     if (Platform.isAndroid) {
       status = isVideo
           ? await Permission.videos.request()
@@ -41,7 +38,6 @@ class ImagePickerWidget extends StatelessWidget {
     } else {
       status = isVideo ? await Permission.photos.request() : await Permission.photos.request();
     }
-
     if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -83,7 +79,6 @@ class ImagePickerWidget extends StatelessWidget {
       );
       return;
     }
-
     try {
       File? file;
       if (isCalibration) {
@@ -167,13 +162,12 @@ class ImagePickerWidget extends StatelessWidget {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: enabled ? () => _pickFile(context) : null,
       style: ElevatedButton.styleFrom(
-        backgroundColor: enabled 
+        backgroundColor: enabled
             ? AppColors.getTertiaryColor(seedColor, mode)
             : Colors.grey.withOpacity(0.5),
         foregroundColor: AppColors.getTextColor(mode),

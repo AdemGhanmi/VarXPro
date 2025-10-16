@@ -1,4 +1,4 @@
-package com.varxpro
+package com.elite.varxpro
 
 import io.flutter.embedding.android.FlutterActivity
 
