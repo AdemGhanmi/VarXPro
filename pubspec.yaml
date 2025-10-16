@@ -4,7 +4,7 @@ description: "A Flutter application for football VAR analysis."
 publish_to: 'none'
 
 
-version: 1.0.0+4
+version: 1.0.0+6
 
 environment:
   sdk: ^3.8.1
@@ -43,7 +43,8 @@ dependencies:
   confetti: ^0.7.0
   glassmorphism: ^3.0.0
   particles_flutter: ^0.1.4
-  
+  gallery_saver_plus: ^3.2.9
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,4 +1,4 @@
-// lib/models/referee.dart
+// lib/models/referee.dart (unchanged, but included for completeness)
 class Referee {
   final String id;
   final String confed;
@@ -278,4 +278,3 @@ class Source {
     return {'site': site, 'url': url};
   }
 }
-//

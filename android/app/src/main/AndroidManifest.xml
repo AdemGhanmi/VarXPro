@@ -29,6 +29,7 @@
 
     <!-- Android 12/13+ extras from working manifest -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:maxSdkVersion="31" />
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
 
     <application
         android:name="${applicationName}"

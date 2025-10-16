@@ -1,5 +1,6 @@
-
+// lib/views/pages/home/create_evaluation_page.dart
 import 'dart:ui';
+import 'package:VarXPro/views/pages/home/model/home_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -41,6 +42,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
   bool _isLoading = false;
   bool _canCreate = false;
   String? selectedType;
+  bool _refereeLoaded = false;
 
   // simple background animation
   late final AnimationController _bgAnim;
@@ -51,9 +53,10 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
     final now = DateTime.now();
     _controllers['matchDate']!.text =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    _loadMeta();
 
     _bgAnim = AnimationController(vsync: this, duration: const Duration(seconds: 18))..repeat(reverse: true);
+
+    _loadRefereeAndSetType();
   }
 
   @override
@@ -76,6 +79,33 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
     }
   }
 
+  Future<void> _loadRefereeAndSetType() async {
+    final result = await EvaluationsService.fetchRefereeById(widget.externalRefId);
+    if (result['success'] && mounted) {
+      final refereeJson = result['data'];
+      final referee = Referee.fromJson(refereeJson);
+      String autoType = 'referee';  // Default
+      if (referee.roles.contains('assistant')) {
+        autoType = 'assistant';
+      }
+      // Add more logic for other roles if needed (e.g., 'var' -> 'video_assistant')
+      setState(() {
+        selectedType = autoType;
+        _refereeLoaded = true;
+      });
+      await _loadMeta();  // Now load meta after setting type
+    } else {
+      if (mounted) {
+        setState(() {
+          selectedType = 'referee';  // Fallback
+          _refereeLoaded = true;
+        });
+        await _loadMeta();
+        _showSnackBar('Failed to load referee details: ${result['error']}', Colors.orange);
+      }
+    }
+  }
+
   Future<void> _loadMeta() async {
     final currentLang = _getLang();
     final result = await EvaluationsService.fetchMeta(currentLang);
@@ -84,11 +114,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
       setState(() {
         _meta = result['data'];
         _metaLoaded = true;
-        final types = (_meta['types'] as List?) ?? [];
-        if (types.isNotEmpty) {
-          selectedType = types.first.toString();
-          _updateSections(selectedType!);
-        }
+        _updateSections(selectedType!);
       });
     } else {
       if (!mounted) return;
@@ -119,7 +145,6 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
           },
         };
         _metaLoaded = true;
-        selectedType = 'referee';
         _updateSections(selectedType!);
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -187,6 +212,13 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
 
   Future<void> _createEvaluation() async {
     if (!_formKey.currentState!.validate() || selectedType == null) return;
+
+    // Check if selectedType is allowed (from meta types)
+    final allowedTypes = (_meta['types'] as List?)?.map((e) => e.toString()).toList() ?? ['referee'];
+    if (!allowedTypes.contains(selectedType)) {
+      _showSnackBar('Invalid type for this referee. Allowed: ${allowedTypes.join(', ')}', Colors.red);
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -272,7 +304,7 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
     final isLarge = MediaQuery.of(context).size.width > 720;
     final textDirection = lang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
-    if (!_metaLoaded || !_canCreate) {
+    if (!_refereeLoaded || !_metaLoaded || !_canCreate) {
       return Directionality(
         textDirection: textDirection,
         child: Scaffold(

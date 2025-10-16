@@ -7,7 +7,7 @@ import 'package:csv/csv.dart';
 import '../model/foul_detection.dart';
 
 class FoulDetectionService {
-  static const String _host = 'https://fouldetection.varxpro.com';
+  static const String _host = 'https://foulv3.varxpro.com';
   static const String _baseApi = '$_host/api';
 
   Future<Map<String, dynamic>> ping() async {

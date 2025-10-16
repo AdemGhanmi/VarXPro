@@ -4,7 +4,6 @@ import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/controller/foul_detection_controller.dart';
-import 'package:VarXPro/views/pages/FauteDetectiong/view/csv_viewer.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/view/pdf_viewer.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/view/video_viewer.dart';
 import 'package:VarXPro/views/setting/provider/history_provider.dart';
@@ -14,20 +13,6 @@ import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
-
-class RunData {
-  final String run;
-  final int? eventsCount;
-  final bool? annotatedVideo;
-  final bool? reportPdf;
-
-  RunData({
-    required this.run,
-    this.eventsCount,
-    this.annotatedVideo,
-    this.reportPdf,
-  });
-}
 
 class FoulDetectionPage extends StatefulWidget {
   const FoulDetectionPage({super.key});
@@ -50,7 +35,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
           _showSplash = false;
         });
         _controller.pingServer();
-        _controller.fetchRuns();
       }
     });
   }
@@ -73,186 +57,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
       }
       setState(() {});
     }
-  }
-
-  void _openPreviousRunDialog(BuildContext context, String currentLang, int mode, Color seedColor) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        if (_controller.runs.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.getSurfaceColor(mode).withOpacity(0.98),
-                  AppColors.getSurfaceColor(mode).withOpacity(0.92),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: Text(
-              Translations.getFoulDetectionText('noRuns', currentLang),
-              style: GoogleFonts.roboto(
-                color: AppColors.getTextColor(mode),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (ctx, scrollController) => Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.getSurfaceColor(mode).withOpacity(0.98),
-                  AppColors.getSurfaceColor(mode).withOpacity(0.92),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        Translations.getFoulDetectionText('previousRuns', currentLang),
-                        style: GoogleFonts.roboto(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.getTextColor(mode),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 28),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        color: AppColors.getTextColor(mode).withOpacity(0.7),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _controller.runs.length,
-                    itemBuilder: (context, i) {
-                      final run = _controller.runs[i];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.getSurfaceColor(mode).withOpacity(0.9),
-                                AppColors.getSurfaceColor(mode).withOpacity(0.7),
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: CircleAvatar(
-                              backgroundColor: AppColors.getSecondaryColor(seedColor, mode).withOpacity(0.2),
-                              child: Icon(
-                                Icons.sports_soccer,
-                                color: AppColors.getSecondaryColor(seedColor, mode),
-                              ),
-                            ),
-                            title: Text(
-                              run.run,
-                              style: GoogleFonts.roboto(
-                                color: AppColors.getTextColor(mode),
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${Translations.getFoulDetectionText('events', currentLang)}: ${run.eventsCount ?? "N/A"}, '
-                              '${Translations.getFoulDetectionText('video', currentLang)}: ${run.annotatedVideo == true ? Translations.getFoulDetectionText('yes', currentLang) : Translations.getFoulDetectionText('no', currentLang)}, '
-                              '${Translations.getFoulDetectionText('pdf', currentLang)}: ${run.reportPdf == true ? Translations.getFoulDetectionText('yes', currentLang) : Translations.getFoulDetectionText('no', currentLang)}',
-                              style: GoogleFonts.roboto(
-                                color: AppColors.getTextColor(mode).withOpacity(0.7),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            trailing: ElevatedButton.icon(
-                              onPressed: () async {
-                                Navigator.of(ctx).pop();
-                                await _controller.loadPreviousRun(run.run);
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.play_arrow, size: 18),
-                              label: Text(
-                                Translations.getFoulDetectionText('open', currentLang),
-                                style: GoogleFonts.roboto(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.getSecondaryColor(seedColor, mode),
-                                foregroundColor: AppColors.getTextColor(mode),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildSummaryView(BuildContext context, String currentLang, int mode, Color seedColor) {
@@ -321,64 +125,37 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                       ),
                       onPressed: () {
                         _controller.pingServer();
-                        _controller.fetchRuns();
                       },
                     ),
                   ],
                 ),
               ),
             ),
-          // Upload and Open Previous Run Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _controller.isLoading ? null : _pickAndAnalyzeVideo,
-                  icon: Icon(Icons.upload_file, color: textPrimary, size: 20),
-                  label: Text(
-                    Translations.getFoulDetectionText('uploadAndAnalyze', currentLang),
-                    style: GoogleFonts.roboto(
-                      color: textPrimary,
-                      fontSize: isPortrait ? 16 : 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.getSecondaryColor(seedColor, mode),
-                    foregroundColor: textPrimary,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 4,
-                    shadowColor: AppColors.getSecondaryColor(seedColor, mode).withOpacity(0.3),
-                  ),
+          // Upload and Analyze Button
+          Container(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _controller.isLoading ? null : _pickAndAnalyzeVideo,
+              icon: Icon(Icons.upload_file, color: textPrimary, size: 20),
+              label: Text(
+                Translations.getFoulDetectionText('uploadAndAnalyze', currentLang),
+                style: GoogleFonts.roboto(
+                  color: textPrimary,
+                  fontSize: isPortrait ? 16 : 14,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _controller.isLoading ? null : () => _openPreviousRunDialog(context, currentLang, mode, seedColor),
-                  icon: Icon(Icons.history, color: AppColors.getTertiaryColor(seedColor, mode), size: 20),
-                  label: Text(
-                    Translations.getFoulDetectionText('openPreviousRun', currentLang),
-                    style: GoogleFonts.roboto(
-                      color: AppColors.getTertiaryColor(seedColor, mode),
-                      fontSize: isPortrait ? 16 : 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.getTertiaryColor(seedColor, mode),
-                    side: BorderSide(color: AppColors.getTertiaryColor(seedColor, mode), width: 2),
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.getSecondaryColor(seedColor, mode),
+                foregroundColor: textPrimary,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                elevation: 4,
+                shadowColor: AppColors.getSecondaryColor(seedColor, mode).withOpacity(0.3),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 24),
           // Analysis Summary
@@ -533,68 +310,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage> with TickerProvid
                           const SizedBox(height: 8),
                           Text(
                             Translations.getFoulDetectionText('noVideoAvailable', currentLang),
-                            style: GoogleFonts.roboto(
-                              color: textSecondary,
-                              fontSize: isPortrait ? 16 : 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-          ),
-          const SizedBox(height: 24),
-          // CSV Viewer
-          _buildSectionHeader(
-            Icons.table_chart,
-            Translations.getFoulDetectionText('csv', currentLang),
-            textPrimary,
-            isPortrait,
-          ),
-          const SizedBox(height: 12),
-          Container(
-            height: isPortrait ? 320 : 260,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: [
-                  cardColor.withOpacity(0.9),
-                  cardColor.withOpacity(0.7),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: _controller.csvData != null
-                ? CsvViewer(
-                    csvData: _controller.csvData!,
-                    mode: mode,
-                    seedColor: seedColor,
-                    currentLang: currentLang,
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: cardColor.withOpacity(0.8),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.table_chart_outlined,
-                            size: 48,
-                            color: textSecondary,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            Translations.getFoulDetectionText('noCsvAvailable', currentLang),
                             style: GoogleFonts.roboto(
                               color: textSecondary,
                               fontSize: isPortrait ? 16 : 14,

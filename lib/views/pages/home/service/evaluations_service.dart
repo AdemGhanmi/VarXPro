@@ -1,4 +1,4 @@
-// lib/views/pages/home/service/evaluations_service.dart (Fixed with lang params)
+// lib/views/pages/home/service/evaluations_service.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:VarXPro/views/connexion/service/auth_service.dart';
@@ -258,6 +258,25 @@ class EvaluationsService {
     } catch (e) {
       print('Referee evals error: $e');
       return {'success': false, 'error': 'Network error: $e - Check referee ID: $refereeId 🌐'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchRefereeById(String id) async {
+    final token = await AuthService.getToken();
+    if (token == null) {
+      return {'success': false, 'error': 'No token 🔑'};
+    }
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/external-referees/$id'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': json.decode(response.body)};
+      }
+      return _parseErrorResponse(response);
+    } catch (e) {
+      return {'success': false, 'error': 'Network error: $e 🌐'};
     }
   }
 

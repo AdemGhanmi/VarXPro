@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
@@ -6,13 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-
 class ImagePickerWidget extends StatelessWidget {
   final Function(File) onImagePicked;
   final String buttonText;
   final int mode;
   final Color seedColor;
-
   const ImagePickerWidget({
     super.key,
     required this.onImagePicked,
@@ -20,17 +19,14 @@ class ImagePickerWidget extends StatelessWidget {
     required this.mode,
     required this.seedColor,
   });
-
   Future<void> _pickImage(BuildContext context) async {
     final currentLang = Provider.of<LanguageProvider>(context, listen: false).currentLanguage;
-
     PermissionStatus status;
     if (Platform.isAndroid) {
       status = await Permission.photos.request();
     } else {
       status = await Permission.photos.request();
     }
-
     if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -76,7 +72,6 @@ class ImagePickerWidget extends StatelessWidget {
       );
       return;
     }
-
     final picker = ImagePicker();
     try {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -121,7 +116,6 @@ class ImagePickerWidget extends StatelessWidget {
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
@@ -147,3 +141,4 @@ class ImagePickerWidget extends StatelessWidget {
     );
   }
 }
+//
