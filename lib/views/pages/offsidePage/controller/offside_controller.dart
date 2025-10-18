@@ -1,9 +1,10 @@
+// File: lib/views/pages/offsidePage/controller/offside_controller.dart
 import 'dart:io';
+import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
+import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
 
-import '../model/offside_model.dart';
-import '../service/offside_service.dart';
 
 abstract class OffsideEvent {}
 
@@ -47,8 +48,8 @@ class UpdatePickedImageEvent extends OffsideEvent {
 class CancelCurrentRequestEvent extends OffsideEvent {}
 
 class _ProgressEvent extends OffsideEvent {
-  final double? upload;   // 0..1
-  final double? download; // 0..1
+  final double? upload;
+  final double? download;
   _ProgressEvent({this.upload, this.download});
 }
 
@@ -59,10 +60,15 @@ class OffsideState {
   final OffsideFrameResponse? offsideFrameResponse;
   final OffsideVideoResponse? videoResponse;
   final File? pickedImage;
+  final File? lastVideo;
 
   final double uploadProgress;
   final double downloadProgress;
   final bool cancellable;
+
+  final String lastAttackDirection;
+  final List<int>? lastLineStart;
+  final List<int>? lastLineEnd;
 
   OffsideState({
     this.isLoading = false,
@@ -71,9 +77,13 @@ class OffsideState {
     this.offsideFrameResponse,
     this.videoResponse,
     this.pickedImage,
+    this.lastVideo,
     this.uploadProgress = 0.0,
     this.downloadProgress = 0.0,
     this.cancellable = false,
+    this.lastAttackDirection = 'right',
+    this.lastLineStart,
+    this.lastLineEnd,
   });
 
   OffsideState copyWith({
@@ -83,20 +93,28 @@ class OffsideState {
     OffsideFrameResponse? offsideFrameResponse,
     OffsideVideoResponse? videoResponse,
     File? pickedImage,
+    File? lastVideo,
     double? uploadProgress,
     double? downloadProgress,
     bool? cancellable,
+    String? lastAttackDirection,
+    List<int>? lastLineStart,
+    List<int>? lastLineEnd,
   }) {
     return OffsideState(
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: error ?? this.error,
       pingResponse: pingResponse ?? this.pingResponse,
       offsideFrameResponse: offsideFrameResponse ?? this.offsideFrameResponse,
       videoResponse: videoResponse ?? this.videoResponse,
       pickedImage: pickedImage ?? this.pickedImage,
+      lastVideo: lastVideo ?? this.lastVideo,
       uploadProgress: uploadProgress ?? this.uploadProgress,
       downloadProgress: downloadProgress ?? this.downloadProgress,
       cancellable: cancellable ?? this.cancellable,
+      lastAttackDirection: lastAttackDirection ?? this.lastAttackDirection,
+      lastLineStart: lastLineStart ?? this.lastLineStart,
+      lastLineEnd: lastLineEnd ?? this.lastLineEnd,
     );
   }
 }
@@ -133,6 +151,9 @@ class OffsideBloc extends Bloc<OffsideEvent, OffsideState> {
       uploadProgress: 0,
       downloadProgress: 0,
       cancellable: true,
+      lastAttackDirection: event.attackDirection,
+      lastLineStart: event.lineStart,
+      lastLineEnd: event.lineEnd,
     ));
     try {
       final resp = await service.detectOffsideSingle(
@@ -171,6 +192,10 @@ class OffsideBloc extends Bloc<OffsideEvent, OffsideState> {
       uploadProgress: 0,
       downloadProgress: 0,
       cancellable: true,
+      lastAttackDirection: event.attackDirection,
+      lastLineStart: event.lineStart,
+      lastLineEnd: event.lineEnd,
+      lastVideo: event.video,
     ));
     try {
       final resp = await service.detectOffsideVideo(

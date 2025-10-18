@@ -350,52 +350,51 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
- void _updateDisplayedReferees() {
-  final filtered = getFilteredReferees();
-  final fullSliced = filtered.take(_displayLimit).toList();
-  List<Referee> sliced = fullSliced;
+  void _updateDisplayedReferees() {
+    final filtered = getFilteredReferees();
+    final fullSliced = filtered.take(_displayLimit).toList();
+    List<Referee> sliced = fullSliced;
 
-  // Sort referees to ensure those with emoji "👨‍⚖️" appear at the end
-  sliced.sort((a, b) {
-    // If either referee has the emoji, sort them to the bottom
-    if (a.name.contains('👨‍⚖️')) {
-      return 1; // Move a to the bottom
-    }
-    if (b.name.contains('👨‍⚖️')) {
-      return -1; // Move b to the bottom
-    }
-    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-  });
+    // Sort referees to ensure those with emoji "👨‍⚖️" appear at the end
+    sliced.sort((a, b) {
+      // If either referee has the emoji, sort them to the bottom
+      if (a.name.contains('👨‍⚖️')) {
+        return 1; // Move a to the bottom
+      }
+      if (b.name.contains('👨‍⚖️')) {
+        return -1; // Move b to the bottom
+      }
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    });
 
-  // Update the list with the sorted referees
-  displayedReferees = sliced;
-  _initializeStaggerAnimations(sliced.length);
-}
-
-
+    // Update the list with the sorted referees
+    displayedReferees = sliced;
+    _initializeStaggerAnimations(sliced.length);
+  }
 
   List<Referee> getFilteredReferees() {
-  final filtered = allReferees.where((referee) {
-    // Exclude referees with "👨‍⚖️" emoji in their name
-    if (referee.name.contains('👨‍⚖️') || referee.name.isEmpty) {
-      return false; // Exclude them
-    }
-    
-    final nameMatch = referee.name.toLowerCase().contains(
-      _searchController.text.toLowerCase(),
-    );
-    final confedMatch =
-        selectedConfed == null || referee.confed == selectedConfed;
-    final countryMatch =
-        selectedCountry == null || (referee.country ?? '') == selectedCountry;
-    return nameMatch && confedMatch && countryMatch;
-  }).toList();
-  
-  // Ensure alphabetical sorting from A to Z (top to bottom) after filtering
-  filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-  return filtered;
-}
+    final filtered = allReferees.where((referee) {
+      // Exclude referees with "👨‍⚖️" emoji in their name
+      if (referee.name.contains('👨‍⚖️') || referee.name.isEmpty) {
+        return false; // Exclude them
+      }
 
+      final nameMatch = referee.name.toLowerCase().contains(
+        _searchController.text.toLowerCase(),
+      );
+      final confedMatch =
+          selectedConfed == null || referee.confed == selectedConfed;
+      final countryMatch =
+          selectedCountry == null || (referee.country ?? '') == selectedCountry;
+      return nameMatch && confedMatch && countryMatch;
+    }).toList();
+
+    // Ensure alphabetical sorting from A to Z (top to bottom) after filtering
+    filtered.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
+    return filtered;
+  }
 
   Set<String> _getUniqueConfederations() {
     return allReferees
@@ -844,7 +843,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             if (allReferees.isEmpty) {
                               allReferees = snapshot.data!;
                               _updateDisplayedReferees();
-                              SchedulerBinding.instance.addPostFrameCallback((_) {
+                              SchedulerBinding.instance.addPostFrameCallback((
+                                _,
+                              ) {
                                 if (mounted) {
                                   setState(() {});
                                 }
@@ -1102,274 +1103,291 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
- Widget _buildRefereeCard(
-  Referee referee,
-  Color textColor,
-  ModeProvider modeProvider,
-  Color seedColor,
-  String currentLang,
-) {
-  final displayCountry = referee.country ?? 'ALL';
-  final displayConfed = referee.confed ?? 'ALL';
-  return Card(
-    elevation: 8,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    shadowColor: AppColors.getShadowColor(
-      seedColor,
-      modeProvider.currentMode,
-    ).withOpacity(0.5),
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.getSurfaceColor(modeProvider.currentMode),
-            AppColors.getSurfaceColor(
+  Widget _buildRefereeCard(
+    Referee referee,
+    Color textColor,
+    ModeProvider modeProvider,
+    Color seedColor,
+    String currentLang,
+  ) {
+    final displayCountry = referee.country ?? 'ALL';
+    final displayConfed = referee.confed ?? 'ALL';
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shadowColor: AppColors.getShadowColor(
+        seedColor,
+        modeProvider.currentMode,
+      ).withOpacity(0.5),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.getSurfaceColor(modeProvider.currentMode),
+              AppColors.getSurfaceColor(
+                modeProvider.currentMode,
+              ).withOpacity(0.85),
+            ],
+          ),
+          border: Border.all(
+            color: AppColors.getPrimaryColor(
+              seedColor,
               modeProvider.currentMode,
-            ).withOpacity(0.85),
-          ],
+            ).withOpacity(0.1),
+            width: 1,
+          ),
         ),
-        border: Border.all(
-          color: AppColors.getPrimaryColor(
-            seedColor,
-            modeProvider.currentMode,
-          ).withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),  // Reduced bottom padding
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,  // Changed from spaceBetween
-          children: [
-            // Upper column
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          '👨‍⚖️ ${referee.name}',
-                          textAlign: TextAlign.left,
-                          style: TextStyle(
-                            color: textColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            letterSpacing: 0.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: referee.gender == 'Male'
-                              ? Colors.blue.withOpacity(0.2)
-                              : Colors.pink.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: referee.gender == 'Male'
-                                ? Colors.blue.withOpacity(0.3)
-                                : Colors.pink.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Icon(
-                          referee.gender == 'Male'
-                              ? Icons.male_rounded
-                              : Icons.female_rounded,
-                          size: 16,
-                          color: referee.gender == 'Male'
-                              ? Colors.blueAccent
-                              : Colors.pinkAccent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Country and confed row
-                Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '🏳️ $displayCountry',
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.8),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.account_balance_rounded,
-                        size: 16,
-                        color: textColor.withOpacity(0.7),
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '🏆 $displayConfed',
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.8),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // Lower column (including arrow to avoid spacing issues)
-            Expanded(
-              child: Column(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            20.0,
+            20.0,
+            20.0,
+            16.0,
+          ), // Reduced bottom padding
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment:
+                MainAxisAlignment.start, // Changed from spaceBetween
+            children: [
+              // Upper column
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,  // Now spaceBetween here for arrow push
                 children: [
-                  // Content
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      if (referee.roles.isNotEmpty)
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: referee.roles
-                              .map(
-                                (role) => Directionality(
-                                  textDirection: TextDirection.ltr,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _getRoleColor(role).withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: _getRoleColor(role).withOpacity(0.3),
-                                        width: 1,
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '👨‍⚖️ ${referee.name}',
+                            textAlign: TextAlign.left,
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: referee.gender == 'Male'
+                                ? Colors.blue.withOpacity(0.2)
+                                : Colors.pink.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: referee.gender == 'Male'
+                                  ? Colors.blue.withOpacity(0.3)
+                                  : Colors.pink.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            referee.gender == 'Male'
+                                ? Icons.male_rounded
+                                : Icons.female_rounded,
+                            size: 16,
+                            color: referee.gender == 'Male'
+                                ? Colors.blueAccent
+                                : Colors.pinkAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Country and confed row
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '🏳️ $displayCountry',
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.account_balance_rounded,
+                          size: 16,
+                          color: textColor.withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '🏆 $displayConfed',
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Lower column (including arrow to avoid spacing issues)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment
+                      .spaceBetween, // Now spaceBetween here for arrow push
+                  children: [
+                    // Content
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        if (referee.roles.isNotEmpty)
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: referee.roles
+                                .map(
+                                  (role) => Directionality(
+                                    textDirection: TextDirection.ltr,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getRoleColor(
+                                          role,
+                                        ).withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: _getRoleColor(
+                                            role,
+                                          ).withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _getRoleEmoji(role),
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            role,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: _getRoleColor(role),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          _getRoleEmoji(role),
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          role,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: _getRoleColor(role),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ),
-                                ),
-                              )
-                              .toList(),
-                        )
-                      else
-                        Text(
-                          Translations.getRefereeDirectoryText(
-                            'noRolesSpecified',
-                            currentLang,
-                          ),
-                          style: TextStyle(
-                            color: textColor.withOpacity(0.6),
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      const SizedBox(height: 8),
-                      Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_month_rounded,
-                              size: 14,
-                              color: Colors.transparent,
+                                )
+                                .toList(),
+                          )
+                        else
+                          Text(
+                            Translations.getRefereeDirectoryText(
+                              'noRolesSpecified',
+                              currentLang,
                             ),
-                            const Text('📅', style: TextStyle(fontSize: 14)),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since}',
-                              style: TextStyle(
-                                color: textColor.withOpacity(0.6),
-                                fontSize: 12,
-                                fontStyle: FontStyle.italic,
-                              ),
+                            style: TextStyle(
+                              color: textColor.withOpacity(0.6),
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
                             ),
-                          ],
-                        ),
-                      ),
-                      if (referee.details?.worldfootball?.overallTotals !=
-                          null) ...[
-                        const SizedBox(height: 4),
+                          ),
+                        const SizedBox(height: 8),
                         Directionality(
                           textDirection: TextDirection.ltr,
                           child: Row(
                             children: [
-                              const Text('🟨', style: TextStyle(fontSize: 14)),
+                              const Icon(
+                                Icons.calendar_month_rounded,
+                                size: 14,
+                                color: Colors.transparent,
+                              ),
+                              const Text('📅', style: TextStyle(fontSize: 14)),
                               const SizedBox(width: 4),
                               Text(
-                                'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
+                                '${Translations.getRefereeDirectoryText('since', currentLang)} ${referee.since}',
                                 style: TextStyle(
-                                  color: Colors.orange.withOpacity(0.8),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
+                                  color: textColor.withOpacity(0.6),
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        if (referee.details?.worldfootball?.overallTotals !=
+                            null) ...[
+                          const SizedBox(height: 4),
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Row(
+                              children: [
+                                const Text(
+                                  '🟨',
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'YPG: ${referee.details!.worldfootball!.overallTotals!.yellowPerGame.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    color: Colors.orange.withOpacity(0.8),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  // Arrow (now inside Expanded for better spacing)
-                  Align(
-                    alignment: Alignment.bottomRight,
-                    child: Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 16,
-                      color: textColor.withOpacity(0.6),
                     ),
-                  ),
-                ],
+                    // Arrow (now inside Expanded for better spacing)
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: textColor.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   String _getRoleEmoji(String role) {
     switch (role.toLowerCase()) {
       case 'var':

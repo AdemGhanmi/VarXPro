@@ -9,6 +9,7 @@ import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/controller/referee_controller.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/service/referee_api_service.dart';
 import 'package:VarXPro/views/pages/RefereeTraking/widgets/file_picker_widget.dart';
+import 'package:VarXPro/views/pages/RefereeTraking/widgets/video_player_widget.dart';
 import 'package:VarXPro/views/setting/provider/history_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 const String baseUrl = 'https://allvarx.varxpro.com';
 
@@ -663,6 +665,15 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                                           languageProvider.currentLanguage),
                                       allowedExtensions: const ['mp4'],
                                     ),
+                                    if (_videoFile != null) ...[
+                                      const SizedBox(height: 12),
+                                      _SubTitle(
+                                        emoji: '▶️',
+                                        title: 'Selected Video Preview',
+                                        mode: modeProvider.currentMode,
+                                      ),
+                                      VideoPlayerWidget(videoUrl: _videoFile!.path),
+                                    ],
                                     const SizedBox(height: 10),
                                     Text(
                                       Translations.getTranslation(
@@ -706,71 +717,58 @@ class _RefereeTrackingSystemPageState extends State<RefereeTrackingSystemPage>
                           // Results
                           if (state.analyzeResponse != null) ...[
                             const SizedBox(height: 16),
-                            _SectionTitle(
-                              emoji: '📊',
-                              title: Translations.getTranslation(
-                                  'Analysis Results',
-                                  languageProvider.currentLanguage),
-                              mode: modeProvider.currentMode,
-                            ),
-
-                            // AI Events (always shown)
-                            _SectionTitle(
-                              emoji: '🤖',
-                              title: Translations.getTranslation(
-                                  'AI Detected Events',
-                                  languageProvider.currentLanguage),
-                              mode: modeProvider.currentMode,
-                            ),
-                            ...state.analyzeResponse!.aiEvents.map((event) =>
-                                Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _GlassCard(
-                                mode: modeProvider.currentMode,
-                                seedColor: seedColor,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            '⏱️ ${event.t.toStringAsFixed(2)}s',
-                                            style: GoogleFonts.roboto(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w600,
+                           
+                            if (state.analyzeResponse!.aiEvents.isEmpty)
+                            
+                              ...state.analyzeResponse!.aiEvents.map((event) =>
+                                  Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _GlassCard(
+                                  mode: modeProvider.currentMode,
+                                  seedColor: seedColor,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '⏱️ ${event.t.toStringAsFixed(2)}s',
+                                              style: GoogleFonts.roboto(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            event.type,
-                                            style: GoogleFonts.roboto(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.getTertiaryColor(
-                                                  seedColor,
-                                                  modeProvider.currentMode),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              event.type,
+                                              style: GoogleFonts.roboto(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.getTertiaryColor(
+                                                    seedColor,
+                                                    modeProvider.currentMode),
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        Translations.getTranslation('detailsEvent', languageProvider.currentLanguage) + ': ${jsonEncode(event.details)}',
-                                        style: GoogleFonts.roboto(
-                                          fontSize: 14,
-                                          color: AppColors.getTextColor(
-                                              modeProvider.currentMode)
-                                              .withOpacity(0.8),
+                                          ],
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          Translations.getTranslation('detailsEvent', languageProvider.currentLanguage) + ': ${jsonEncode(event.details)}',
+                                          style: GoogleFonts.roboto(
+                                            fontSize: 14,
+                                            color: AppColors.getTextColor(
+                                                modeProvider.currentMode)
+                                                .withOpacity(0.8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )),
+                              )),
 
                             // Evaluation (only if provided)
                             if (state.analyzeResponse!.evaluation != null) ...[

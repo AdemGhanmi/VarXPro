@@ -32,14 +32,30 @@ class AnalyzeResponse {
   });
 
   factory AnalyzeResponse.fromJson(Map<String, dynamic> json) {
+    List<AiEvent> aiEvents = (json['ai_events'] as List<dynamic>?)
+            ?.map((e) => AiEvent.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    // Handle fallback structure where evaluation is top-level
+    Evaluation? evaluation;
+    if (json['evaluation'] != null) {
+      evaluation = Evaluation.fromJson(json['evaluation'] as Map<String, dynamic>);
+    } else if (json['accuracy'] != null && json['incidents'] != null) {
+      evaluation = Evaluation(
+        accuracy: (json['accuracy'] as num).toDouble(),
+        correct: json['correct'] as int? ?? 0,
+        total: json['total'] as int? ?? 0,
+        perDecision: (json['incidents'] as List<dynamic>?)
+                ?.map((e) => PerDecision.fromJson(e as Map<String, dynamic>))
+                .toList() ??
+            [],
+      );
+    }
+
     return AnalyzeResponse(
-      aiEvents: (json['ai_events'] as List<dynamic>?)
-              ?.map((e) => AiEvent.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      evaluation: json['evaluation'] != null 
-          ? Evaluation.fromJson(json['evaluation'] as Map<String, dynamic>)
-          : null,
+      aiEvents: aiEvents,
+      evaluation: evaluation,
     );
   }
 }
@@ -107,7 +123,7 @@ class PerDecision {
     return PerDecision(
       t: (json['t'] as num).toDouble(),
       type: json['type'] as String,
-      decision: json['decision'] as String,
+      decision: json['expected'] ?? json['decision'] as String,
       match: json['match'] as bool,
     );
   }

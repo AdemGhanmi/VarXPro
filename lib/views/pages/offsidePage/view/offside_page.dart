@@ -1,11 +1,7 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 import 'dart:ui';
-
-import 'package:VarXPro/model/appColor.dart';
+import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:VarXPro/views/pages/offsidePage/controller/offside_controller.dart';
@@ -13,9 +9,8 @@ import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/widgets/OffsideForm.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
@@ -33,52 +28,64 @@ class OffsidePage extends StatefulWidget {
 
 class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin {
   bool _showSplash = true;
+
   late AnimationController _glowController;
   late Animation<double> _glowAnimation;
+
   VideoPlayerController? _videoController;
   String? _lastVideoUrl;
   MediaStore? _mediaStore;
 
-  // Overlay timer
+  late final OffsideBloc _bloc;
+
   final ValueNotifier<int> _waitSeconds = ValueNotifier<int>(0);
   Timer? _waitTicker;
+
+  /// 0 = original / 1 = 2D / 2 = 3D
+  final ValueNotifier<int> _globalViewMode = ValueNotifier<int>(0);
 
   @override
   void initState() {
     super.initState();
-    debugPrint('=== OffsidePage initState started ===');
-    _glowController = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000))..repeat(reverse: true);
-    _glowAnimation = Tween(begin: 0.95, end: 1.05).animate(CurvedAnimation(parent: _glowController, curve: Curves.easeInOut));
+
+    _bloc = OffsideBloc(OffsideService())..add(PingEvent());
+
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+
+    _glowAnimation = Tween(begin: 0.94, end: 1.06).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _showSplash = false);
     });
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await MediaStore.ensureInitialized();
-      MediaStore.appFolder = 'VarXPro'; // Fix: Set the app folder to resolve AppFolderNotSetException
-      if (mounted) {
-        setState(() {
-          _mediaStore = MediaStore();
-        });
-      }
+      MediaStore.appFolder = 'VarXPro';
+      if (mounted) setState(() => _mediaStore = MediaStore());
     });
-    debugPrint('=== OffsidePage initState completed ===');
   }
 
   @override
   void dispose() {
-    debugPrint('=== OffsidePage dispose started ===');
     _waitTicker?.cancel();
     _waitSeconds.dispose();
     _glowController.dispose();
     _videoController?.dispose();
+    _globalViewMode.dispose();
+    _bloc.close();
     super.dispose();
-    debugPrint('=== OffsidePage dispose completed ===');
   }
 
+  // ---------------------- Video helpers ----------------------
   void _initVideoPlayer(String url) {
-    debugPrint('=== _initVideoPlayer called with URL: $url ===');
-    if (_lastVideoUrl == url && _videoController != null && _videoController!.value.isInitialized) {
-      debugPrint('=== Video already initialized, skipping ===');
+    if (_lastVideoUrl == url &&
+        _videoController != null &&
+        _videoController!.value.isInitialized) {
       return;
     }
     _videoController?.dispose();
@@ -90,55 +97,45 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
       c.play();
       c.setLooping(false);
       _lastVideoUrl = url;
-    }).catchError((e) => debugPrint('=== Video init error: $e ==='));
+    }).catchError((e) => debugPrint('video init error: $e'));
   }
 
-  /// Downloads a remote media to a temp file and returns the local path.
+  // ---------------------- Download helpers ----------------------
   Future<String> _downloadToTemp(String url, {required bool isVideo}) async {
-    try {
-      final dir = await getTemporaryDirectory();
-      String ext = '';
-      final seg = Uri.parse(url).pathSegments;
-      if (seg.isNotEmpty && seg.last.contains('.')) {
-        ext = '.${seg.last.split('.').last}';
-      } else {
-        ext = isVideo ? '.mp4' : '.jpg';
-      }
-      final savePath = '${dir.path}/varx_${DateTime.now().millisecondsSinceEpoch}$ext';
-      debugPrint('=== Downloading to $savePath ===');
-      final dio = Dio();
-      await dio.download(url, savePath, options: Options(responseType: ResponseType.bytes));
-      return savePath;
-    } catch (e) {
-      debugPrint('=== Download error: $e ===');
-      rethrow;
+    final dir = await getTemporaryDirectory();
+    String ext = '';
+    final seg = Uri.parse(url).pathSegments;
+    if (seg.isNotEmpty && seg.last.contains('.')) {
+      ext = '.${seg.last.split('.').last}';
+    } else {
+      ext = isVideo ? '.mp4' : '.jpg';
     }
+    final savePath = '${dir.path}/varx_${DateTime.now().millisecondsSinceEpoch}$ext';
+    final dio = Dio();
+    await dio.download(url, savePath, options: Options(responseType: ResponseType.bytes));
+    return savePath;
   }
 
-  Future<bool> _ensureStoragePermission() async {
+  Future<bool> _ensureStoragePermission(BuildContext context) async {
     if (Platform.isAndroid) {
-      // Try modern read permissions first (Android 13+), fall back to storage
-      final perms = await [
-        Permission.storage,
-        Permission.photos, // no-op on some versions but harmless if supported
-        Permission.videos, // idem
-      ].request();
-      final granted = perms.values.any((s) => s.isGranted);
+      final statuses = await [Permission.storage, Permission.photos, Permission.videos].request();
+      final granted = statuses.values.any((s) => s.isGranted || s.isLimited);
       if (!granted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permission requise pour enregistrer dans les téléchargements ❌'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Permission requise pour enregistrer dans Téléchargements ❌'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
       return granted;
     }
-    // iOS: Assume handled by file ops or fallback
     return true;
   }
 
-  Future<void> _saveToDownloads(String url, {bool isVideo = false}) async {
+  Future<void> _saveToDownloads(BuildContext context, String url, {bool isVideo = false}) async {
     try {
-      debugPrint('=== Saving to downloads: $url (video: $isVideo) ===');
-      final ok = await _ensureStoragePermission();
+      final ok = await _ensureStoragePermission(context);
       if (!ok) return;
 
       if (_mediaStore == null) {
@@ -149,56 +146,281 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
       }
 
       if (!Platform.isAndroid) {
-        // For iOS, save to documents directory
         final dir = await getApplicationDocumentsDirectory();
         final fileName = 'VarXPro_${DateTime.now().millisecondsSinceEpoch}${isVideo ? '.mp4' : '.jpg'}';
         final savePath = '${dir.path}/$fileName';
         final dio = Dio();
         await dio.download(url, savePath);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVideo ? 'Vidéo enregistrée 📹' : 'Image enregistrée 📸'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        _toastSuccess(context, isVideo ? 'Vidéo enregistrée 📹' : 'Image enregistrée 📸');
         return;
       }
 
-      // Download to temp first
       final tempPath = await _downloadToTemp(url, isVideo: isVideo);
-
       final success = await _mediaStore!.saveFile(
         tempFilePath: tempPath,
         dirType: DirType.download,
         dirName: DirName.download,
-        // relativePath removed since appFolder is set globally
       );
 
       if (success != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isVideo ? 'Vidéo enregistrée dans Téléchargements 📹' : 'Image enregistrée dans Téléchargements 📸'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        _toastSuccess(context, isVideo ? 'Vidéo enregistrée dans Téléchargements 📹' : 'Image enregistrée dans Téléchargements 📸');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Échec de l’enregistrement ❌'), backgroundColor: Colors.red),
-        );
+        _toastError(context, 'Échec de l’enregistrement ❌');
       }
     } catch (e) {
-      debugPrint('=== Save error: $e ===');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur enregistrement: $e ❌'), backgroundColor: Colors.red),
-      );
+      _toastError(context, 'Erreur enregistrement: $e ❌');
     }
   }
 
-  /// ---------- Fullscreen viewer (Image)
+  void _toastSuccess(BuildContext ctx, String msg) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _toastError(BuildContext ctx, String msg) {
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  // ---------------------- Wait timer ----------------------
+  void _startWaitTimer() {
+    _waitTicker?.cancel();
+    _waitSeconds.value = 0;
+    _waitTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      _waitSeconds.value++;
+    });
+  }
+
+  void _stopWaitTimer() {
+    _waitTicker?.cancel();
+  }
+
+  // ========================================================
+  @override
+  Widget build(BuildContext context) {
+    final langProvider = Provider.of<LanguageProvider>(context);
+    final modeProvider = Provider.of<ModeProvider>(context);
+    final currentLang = langProvider.currentLanguage;
+    final mode = modeProvider.currentMode;
+    final seedColor = AppColors.seedColors[mode] ?? AppColors.seedColors[1]!;
+
+    if (_showSplash) {
+      return Scaffold(
+        backgroundColor: AppColors.getBackgroundColor(mode),
+        body: Stack(
+          children: [
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _FootballGridPainter(mode),
+                child: Container(decoration: BoxDecoration(gradient: AppColors.getBodyGradient(mode))),
+              ),
+            ),
+            Center(
+              child: ScaleTransition(
+                scale: _glowAnimation,
+                child: Lottie.asset('assets/lotties/offside.json', width: MediaQuery.of(context).size.width * 0.7),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return BlocProvider.value(
+      value: _bloc,
+      child: Builder(
+        builder: (blocContext) {
+          return BlocConsumer<OffsideBloc, OffsideState>(
+            listener: (context, state) {
+              if (state.isLoading) {
+                _startWaitTimer();
+              } else {
+                _stopWaitTimer();
+              }
+
+              if (state.videoResponse?.fileUrl != null) {
+                _initVideoPlayer(state.videoResponse!.fileUrl!);
+              }
+
+              final r = state.offsideFrameResponse;
+              if (r != null) {
+                final has3D = r.field3D != null &&
+                    ((r.field3D!.pitch != null && r.field3D!.pitch!.isNotEmpty) ||
+                        r.field3D!.offsideLine != null ||
+                        r.field3D!.players.isNotEmpty ||
+                        r.field3D!.homographyAvailable);
+
+                final has2D = r.field2D != null &&
+                    ((r.field2D!.pitch != null && r.field2D!.pitch!.isNotEmpty) ||
+                        r.field2D!.offsideLine != null ||
+                        r.field2D!.players.isNotEmpty);
+
+                if (has3D) {
+                  _globalViewMode.value = 2;
+                } else if (has2D) {
+                  _globalViewMode.value = 1;
+                } else {
+                  _globalViewMode.value = 0;
+                }
+              }
+
+              if (state.error != null && state.error!.isNotEmpty) {
+                _toastError(context, state.error!);
+              }
+            },
+            builder: (context, state) {
+              return Scaffold(
+                backgroundColor: AppColors.getBackgroundColor(mode),
+                body: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _FootballGridPainter(mode),
+                        child: Container(
+                          decoration: BoxDecoration(gradient: AppColors.getBodyGradient(mode)),
+                        ),
+                      ),
+                    ),
+
+                    // =============== CONTENT ===============
+                    SafeArea(
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        final hPad = constraints.maxWidth * 0.04;
+                        return SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(
+                            hPad,
+                            hPad,
+                            hPad,
+                            kBottomNavigationBarHeight + constraints.maxWidth * 0.06,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Top header neon
+
+                              const SizedBox(height: 16),
+
+                              _SectionHeader('Single Frame Detection 📸', mode, seedColor),
+                              const SizedBox(height: 8),
+                              _GlassCard(
+                                seedColor: seedColor,
+                                mode: mode,
+                                child: OffsideForm(
+                                  constraints: constraints,
+                                  currentLang: currentLang,
+                                  mode: mode,
+                                  seedColor: seedColor,
+                                ),
+                              ),
+
+                              if (state.isLoading) ...[
+                                const SizedBox(height: 18),
+                                _ProgressCard(
+                                  upload: state.uploadProgress,
+                                  download: state.downloadProgress,
+                                  cancellable: state.cancellable,
+                                  onCancel: () {
+                                    final bloc = context.read<OffsideBloc>();
+                                    if (!bloc.isClosed) {
+                                      bloc.add(CancelCurrentRequestEvent());
+                                    }
+                                  },
+                                  mode: mode,
+                                  seedColor: seedColor,
+                                ),
+                              ],
+
+                              if (state.offsideFrameResponse != null) ...[
+                                const SizedBox(height: 20),
+                                _FrameResultCard(
+                                  resp: state.offsideFrameResponse!,
+                                  picked: state.pickedImage,
+                                  mode: mode,
+                                  seedColor: seedColor,
+                                  globalViewMode: _globalViewMode,
+                                  onOpenImage: (fileOrUrl) => _openImageFullscreen(file: fileOrUrl.$1, url: fileOrUrl.$2),
+                                  onSaveImage: (url) => _saveToDownloads(context, url),
+                                  onSaveFile: (file) async {
+                                    if (_mediaStore == null || !Platform.isAndroid) {
+                                      _toastError(context, 'Sauvegarde non supportée sur cette plateforme ❌');
+                                      return;
+                                    }
+                                    try {
+                                      final tempDir = await getTemporaryDirectory();
+                                      final tempPath = '${tempDir.path}/temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+                                      await file.copy(tempPath);
+                                      final success = await _mediaStore!.saveFile(
+                                        tempFilePath: tempPath,
+                                        dirType: DirType.download,
+                                        dirName: DirName.download,
+                                      );
+                                      if (success != null) {
+                                        _toastSuccess(context, 'Image enregistrée dans Téléchargements 📸');
+                                      } else {
+                                        _toastError(context, 'Échec de l’enregistrement ❌');
+                                      }
+                                    } catch (e) {
+                                      _toastError(context, 'Erreur: $e ❌');
+                                    }
+                                  },
+                                ),
+                              ],
+
+                              const SizedBox(height: 20),
+
+                              if (state.videoResponse != null) ...[
+                                _SectionHeader('Video Analysis 🎥', mode, seedColor),
+                                const SizedBox(height: 12),
+                                _VideoResultCard(
+                                  resp: state.videoResponse!,
+                                  controller: _videoController,
+                                  mode: mode,
+                                  seedColor: seedColor,
+                                  globalViewMode: _globalViewMode,
+                                  onOpenVideo: (url) => _openVideoFullscreen(url),
+                                  onSaveVideo: () {
+                                    final u = state.videoResponse!.fileUrl;
+                                    if (u != null) _saveToDownloads(context, u, isVideo: true);
+                                  },
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
+
+                    if (state.isLoading)
+                      _LoadingOverlay(
+                        seedColor: seedColor,
+                        mode: mode,
+                        secondsNotifier: _waitSeconds,
+                        upload: state.uploadProgress,
+                        download: state.downloadProgress,
+                      ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // =================== Fullscreen viewers ===================
   void _openImageFullscreen({File? file, String? url}) {
     double scale = 1.0;
     showDialog(
@@ -209,16 +431,13 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
           return GestureDetector(
             onDoubleTap: () => setSt(() => scale = (scale == 1.0 ? 2.0 : 1.0)),
             child: Dialog(
-              backgroundColor: Colors.black.withOpacity(0.9),
+              backgroundColor: Colors.black.withOpacity(0.92),
               insetPadding: const EdgeInsets.all(0),
               child: Stack(
                 children: [
                   InteractiveViewer(
                     minScale: 0.5,
                     maxScale: 4.0,
-                    scaleEnabled: true,
-                    panEnabled: true,
-                    boundaryMargin: const EdgeInsets.all(80),
                     child: Center(
                       child: Transform.scale(
                         scale: scale,
@@ -231,9 +450,9 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                   Positioned(
                     top: 40,
                     right: 16,
-                    child: IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close, size: 28, color: Colors.white),
+                    child: _HoloIconButton(
+                      icon: Icons.close,
+                      onTap: () => Navigator.of(ctx).pop(),
                     ),
                   ),
                 ],
@@ -245,7 +464,6 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     );
   }
 
-  /// ---------- Fullscreen viewer (Video + enhanced controls)
   void _openVideoFullscreen(String url) {
     final isReadyNotifier = ValueNotifier(false);
     final scaleNotifier = ValueNotifier(1.0);
@@ -256,7 +474,7 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     dialogController.initialize().then((_) {
       isReadyNotifier.value = true;
       dialogController!.play();
-    }).catchError((e) => debugPrint('=== Dialog video init error: $e ==='));
+    }).catchError((e) => debugPrint('dialog video init error: $e'));
 
     showDialog(
       context: context,
@@ -318,65 +536,65 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Rewind 10s
-                                    IconButton(
-                                      iconSize: 56,
-                                      onPressed: () {
+                                    _HoloRoundButton(
+                                      icon: Icons.replay_10,
+                                      onTap: () {
                                         final currentPos = dialogController!.value.position;
-                                        Duration target = currentPos - const Duration(seconds: 10);
-                                        Duration newPos = target < Duration.zero ? Duration.zero : (target > dialogController.value.duration ? dialogController.value.duration : target);
+                                        final target = currentPos - const Duration(seconds: 10);
+                                        final newPos = target < Duration.zero
+                                            ? Duration.zero
+                                            : (target > dialogController.value.duration
+                                                ? dialogController.value.duration
+                                                : target);
                                         dialogController.seekTo(newPos);
                                       },
-                                      icon: const Icon(Icons.replay_10, color: Colors.white),
                                     ),
-                                    // Play/Pause
-                                    IconButton(
-                                      iconSize: 56,
-                                      onPressed: () {
+                                    const SizedBox(width: 12),
+                                    _HoloRoundButton(
+                                      icon: dialogController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                                      onTap: () {
                                         if (dialogController!.value.isPlaying) {
-                                          dialogController.pause();
+                                          dialogController!.pause();
                                         } else {
-                                          dialogController.play();
+                                          dialogController!.play();
                                         }
                                       },
-                                      icon: Icon(
-                                        dialogController.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                                        color: Colors.white,
-                                      ),
                                     ),
-                                    // Forward 10s
-                                    IconButton(
-                                      iconSize: 56,
-                                      onPressed: () {
+                                    const SizedBox(width: 12),
+                                    _HoloRoundButton(
+                                      icon: Icons.forward_10,
+                                      onTap: () {
                                         final currentPos = dialogController!.value.position;
-                                        Duration target = currentPos + const Duration(seconds: 10);
-                                        Duration newPos = target < Duration.zero ? Duration.zero : (target > dialogController.value.duration ? dialogController.value.duration : target);
+                                        final target = currentPos + const Duration(seconds: 10);
+                                        final newPos = target < Duration.zero
+                                            ? Duration.zero
+                                            : (target > dialogController.value.duration
+                                                ? dialogController.value.duration
+                                                : target);
                                         dialogController.seekTo(newPos);
                                       },
-                                      icon: const Icon(Icons.forward_10, color: Colors.white),
                                     ),
                                   ],
                                 ),
                               ),
-                            // Download button in controls
                             if (showControls && isReady)
                               Positioned(
                                 bottom: 50,
                                 right: 16,
-                                child: IconButton(
-                                  onPressed: () => _saveToDownloads(url, isVideo: true),
-                                  icon: const Icon(Icons.download, color: Colors.green, size: 28),
+                                child: _HoloIconButton(
+                                  icon: Icons.download,
+                                  onTap: () => _saveToDownloads(context, url, isVideo: true),
                                 ),
                               ),
                             Positioned(
                               top: 40,
                               right: 16,
-                              child: IconButton(
-                                onPressed: () {
+                              child: _HoloIconButton(
+                                icon: Icons.close,
+                                onTap: () {
                                   dialogController?.dispose();
                                   Navigator.of(ctx).pop();
                                 },
-                                icon: const Icon(Icons.close, size: 28, color: Colors.white),
                               ),
                             ),
                           ],
@@ -397,210 +615,74 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
       showControlsNotifier.dispose();
     });
   }
+}
 
-  // Overlay control
-  void _startWaitTimer() {
-    _waitTicker?.cancel();
-    _waitSeconds.value = 0;
-    _waitTicker = Timer.periodic(const Duration(seconds: 1), (_) {
-      _waitSeconds.value++;
-    });
+// =======================================================
+// =================== Styled components =================
+// =======================================================
+
+
+
+class _GlowDot extends StatefulWidget {
+  const _GlowDot();
+  @override
+  State<_GlowDot> createState() => _GlowDotState();
+}
+
+class _GlowDotState extends State<_GlowDot> with SingleTickerProviderStateMixin {
+  late AnimationController _c;
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat(reverse: true);
   }
 
-  void _stopWaitTimer() {
-    _waitTicker?.cancel();
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final langProvider = Provider.of<LanguageProvider>(context);
-    final modeProvider = Provider.of<ModeProvider>(context);
-    final currentLang = langProvider.currentLanguage;
-    final mode = modeProvider.currentMode;
-    final seedColor = AppColors.seedColors[mode] ?? AppColors.seedColors[1]!;
-
-    if (_showSplash) {
-      return Scaffold(
-        backgroundColor: AppColors.getBackgroundColor(mode),
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _FootballGridPainter(mode),
-                child: Container(decoration: BoxDecoration(gradient: AppColors.getBodyGradient(mode))),
-              ),
-            ),
-            Center(
-              child: ScaleTransition(
-                scale: _glowAnimation,
-                child: Lottie.asset('assets/lotties/offside.json', width: MediaQuery.of(context).size.width * 0.7),
-              ),
-            ),
-          ],
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.9, end: 1.15).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut)),
+      child: Container(
+        width: 12,
+        height: 12,
+        decoration: BoxDecoration(
+          color: Colors.greenAccent.withOpacity(0.85),
+          shape: BoxShape.circle,
+          boxShadow: const [BoxShadow(color: Colors.greenAccent, blurRadius: 18, spreadRadius: 2)],
         ),
-      );
-    }
-
-    return BlocProvider(
-      create: (_) {
-        final bloc = OffsideBloc(OffsideService())..add(PingEvent());
-        return bloc;
-      },
-      child: Builder(builder: (blocContext) {
-        return BlocConsumer<OffsideBloc, OffsideState>(
-          listener: (context, state) {
-            if (state.isLoading) {
-              _startWaitTimer();
-            } else {
-              _stopWaitTimer();
-            }
-
-            if (state.videoResponse?.annotatedVideoUrl != null) {
-              _initVideoPlayer(state.videoResponse!.annotatedVideoUrl!);
-            }
-            if (state.error != null && state.error!.isNotEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.error!, style: GoogleFonts.roboto(color: Colors.white)),
-                  backgroundColor: Colors.redAccent,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              );
-            }
-          },
-          builder: (context, state) {
-            return Scaffold(
-              backgroundColor: AppColors.getBackgroundColor(mode),
-              body: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _FootballGridPainter(mode),
-                      child: Container(decoration: BoxDecoration(gradient: AppColors.getBodyGradient(mode))),
-                    ),
-                  ),
-                  SafeArea(
-                    child: LayoutBuilder(builder: (context, constraints) {
-                      return SingleChildScrollView(
-                        padding: EdgeInsets.fromLTRB(
-                          constraints.maxWidth * 0.04,
-                          constraints.maxWidth * 0.04,
-                          constraints.maxWidth * 0.04,
-                          kBottomNavigationBarHeight + constraints.maxWidth * 0.06,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _SectionHeader('Single Frame Detection 📸', mode, seedColor),
-                            const SizedBox(height: 8),
-                            OffsideForm(
-                              constraints: constraints,
-                              currentLang: currentLang,
-                              mode: mode,
-                              seedColor: seedColor,
-                            ),
-                            if (state.isLoading) ...[
-                              const SizedBox(height: 18),
-                              _ProgressCard(
-                                upload: state.uploadProgress,
-                                download: state.downloadProgress,
-                                cancellable: state.cancellable,
-                                onCancel: () => context.read<OffsideBloc>().add(CancelCurrentRequestEvent()),
-                                mode: mode,
-                                seedColor: seedColor,
-                              ),
-                            ],
-                            if (state.offsideFrameResponse != null) ...[
-                              const SizedBox(height: 20),
-                              _FrameResultCard(
-                                resp: state.offsideFrameResponse!,
-                                picked: state.pickedImage,
-                                mode: mode,
-                                seedColor: seedColor,
-                                onOpenImage: (fileOrUrl) => _openImageFullscreen(file: fileOrUrl.$1, url: fileOrUrl.$2),
-                                onSaveImage: (url) => _saveToDownloads(url),
-                                onSaveFile: (file) async {
-                                  if (_mediaStore == null || !Platform.isAndroid) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Sauvegarde non supportée sur cette plateforme ❌'), backgroundColor: Colors.red),
-                                    );
-                                    return;
-                                  }
-                                  try {
-                                    final tempDir = await getTemporaryDirectory();
-                                    final tempPath = '${tempDir.path}/temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-                                    await file.copy(tempPath);
-                                    final success = await _mediaStore!.saveFile(
-                                      tempFilePath: tempPath,
-                                      dirType: DirType.download,
-                                      dirName: DirName.download,
-                                      // relativePath removed since appFolder is set
-                                    );
-                                    if (success != null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Image enregistrée dans Téléchargements 📸'), backgroundColor: Colors.green),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Échec de l’enregistrement ❌'), backgroundColor: Colors.red),
-                                      );
-                                    }
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Erreur: $e ❌'), backgroundColor: Colors.red),
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
-                            const SizedBox(height: 20),
-                            if (state.videoResponse != null) ...[
-                              const SizedBox(height: 12),
-                              _VideoResultCard(
-                                resp: state.videoResponse!,
-                                controller: _videoController,
-                                mode: mode,
-                                seedColor: seedColor,
-                                onOpenVideo: (url) => _openVideoFullscreen(url),
-                                onSaveVideo: () => _saveToDownloads(state.videoResponse!.annotatedVideoUrl!, isVideo: true),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    }),
-                  ),
-
-                  // ===== Fancy waiting overlay with mini-game =====
-                  if (state.isLoading)
-                    _LoadingOverlay(
-                      seedColor: seedColor,
-                      mode: mode,
-                      secondsNotifier: _waitSeconds,
-                      upload: state.uploadProgress,
-                      download: state.downloadProgress,
-                    ),
-                ],
-              ),
-            );
-          },
-        );
-      }),
+      ),
     );
   }
 }
-
-/// ---------- UI WIDGETS + Glass helpers
 
 class _GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
-  const _GlassCard({required this.child, this.padding = const EdgeInsets.all(16), this.radius = 16, super.key});
+  final Color? overrideBorderColor;
+  final Color seedColor;
+  final int mode;
+
+  const _GlassCard({
+    super.key,
+    required this.child,
+    required this.seedColor,
+    required this.mode,
+    this.padding = const EdgeInsets.all(16),
+    this.radius = 16,
+    this.overrideBorderColor,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final borderC = overrideBorderColor ?? AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.22);
+    final glow = AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.12);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: BackdropFilter(
@@ -616,14 +698,10 @@ class _GlassCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            border: Border.all(color: Colors.white.withOpacity(0.18)),
+            border: Border.all(color: borderC),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.25),
-                blurRadius: 18,
-                spreadRadius: 2,
-                offset: const Offset(0, 8),
-              ),
+              BoxShadow(color: glow, blurRadius: 26, spreadRadius: 1, offset: const Offset(0, 10)),
+              BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 18, spreadRadius: 2, offset: const Offset(0, 8)),
             ],
           ),
           child: child,
@@ -663,11 +741,85 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Container(width: 4, height: 24, color: AppColors.getTertiaryColor(seedColor, mode)),
         const SizedBox(width: 10),
-        Text(title, style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800)),
+        _GradientText(
+          title,
+          gradient: LinearGradient(
+            colors: [
+              AppColors.getTertiaryColor(seedColor, mode),
+              AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.6),
+            ],
+          ),
+          style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800),
+        ),
       ],
     );
   }
 }
+
+class _GradientText extends StatelessWidget {
+  final String text;
+  final TextStyle style;
+  final Gradient gradient;
+  const _GradientText(this.text, {required this.style, required this.gradient, super.key});
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (bounds) => gradient.createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
+      child: Text(text, style: style.copyWith(color: Colors.white)),
+    );
+  }
+}
+
+class _HoloIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HoloIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Material(
+          color: Colors.white.withOpacity(0.08),
+          child: InkWell(
+            onTap: onTap,
+            child: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Icon(Icons.close, size: 26, color: Colors.white),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HoloRoundButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HoloRoundButton({required this.icon, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withOpacity(0.08),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Icon(icon, color: Colors.white, size: 28),
+        ),
+      ),
+    );
+  }
+}
+
+// =======================================================
+// ===================== Progress card ===================
+// =======================================================
 
 class _ProgressCard extends StatefulWidget {
   final double upload;
@@ -697,7 +849,9 @@ class _ProgressCardState extends State<_ProgressCard> with SingleTickerProviderS
   void initState() {
     super.initState();
     _downloadController = AnimationController(vsync: this, duration: const Duration(seconds: 5));
-    _downloadAnimation = Tween<double>(begin: 0.0, end: widget.download).animate(CurvedAnimation(parent: _downloadController, curve: Curves.easeInOut));
+    _downloadAnimation = Tween<double>(begin: 0.0, end: widget.download).animate(
+      CurvedAnimation(parent: _downloadController, curve: Curves.easeInOut),
+    );
     if (widget.download > 0) _downloadController.forward();
   }
 
@@ -705,7 +859,10 @@ class _ProgressCardState extends State<_ProgressCard> with SingleTickerProviderS
   void didUpdateWidget(_ProgressCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.download != oldWidget.download) {
-      _downloadAnimation = Tween<double>(begin: _downloadAnimation.value, end: widget.download).animate(
+      _downloadAnimation = Tween<double>(
+        begin: _downloadAnimation.value,
+        end: widget.download,
+      ).animate(
         CurvedAnimation(parent: _downloadController, curve: Curves.easeInOut),
       );
       _downloadController.forward(from: 0.0);
@@ -721,6 +878,8 @@ class _ProgressCardState extends State<_ProgressCard> with SingleTickerProviderS
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
+      seedColor: widget.seedColor,
+      mode: widget.mode,
       child: Column(
         children: [
           _LabeledBar(label: 'Uploading 📤', value: widget.upload, mode: widget.mode, seedColor: widget.seedColor),
@@ -739,6 +898,11 @@ class _ProgressCardState extends State<_ProgressCard> with SingleTickerProviderS
           if (widget.cancellable) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: AppColors.getTertiaryColor(widget.seedColor, widget.mode).withOpacity(0.5)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: widget.onCancel,
               icon: const Icon(Icons.stop_circle_outlined),
               label: const Text('Cancel'),
@@ -755,7 +919,12 @@ class _LabeledBar extends StatelessWidget {
   final double value;
   final int mode;
   final Color seedColor;
-  const _LabeledBar({required this.label, required this.value, required this.mode, required this.seedColor});
+  const _LabeledBar({
+    required this.label,
+    required this.value,
+    required this.mode,
+    required this.seedColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -783,7 +952,11 @@ class _LabeledBar extends StatelessWidget {
   }
 }
 
-class _FrameResultCard extends StatelessWidget {
+// =======================================================
+// ===================== RESULT: Frame ===================
+// =======================================================
+
+class _FrameResultCard extends StatefulWidget {
   final OffsideFrameResponse resp;
   final File? picked;
   final int mode;
@@ -791,6 +964,7 @@ class _FrameResultCard extends StatelessWidget {
   final void Function((File?, String?)) onOpenImage;
   final void Function(String) onSaveImage;
   final void Function(File) onSaveFile;
+  final ValueListenable<int> globalViewMode;
 
   const _FrameResultCard({
     required this.resp,
@@ -800,98 +974,217 @@ class _FrameResultCard extends StatelessWidget {
     required this.onOpenImage,
     required this.onSaveImage,
     required this.onSaveFile,
+    required this.globalViewMode,
   });
 
   @override
+  State<_FrameResultCard> createState() => _FrameResultCardState();
+}
+
+class _FrameResultCardState extends State<_FrameResultCard> {
+  bool _hasMeaningfulData(dynamic m) {
+    if (m is Field2DModel) {
+      return m.pitch != null || (m.frameSize['w'] ?? 0) > 0 || m.offsideLine != null || m.players.isNotEmpty;
+    }
+    if (m is Field3DModel) {
+      return m.pitch != null || (m.fieldSizeM['length'] ?? 0) > 0 || m.homographyAvailable || m.offsideLine != null || m.players.isNotEmpty;
+    }
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isOff = resp.offsideResolved;
+    bool isOff = widget.resp.offsideResolved;
+
+    if (widget.resp.offsideLine != null) {
+      isOff = true;
+    } else {
+      final offsideEnable = widget.resp.meta?['offside_enable'] == true;
+      isOff = offsideEnable ? true : false;
+    }
+
     final String verdictText = isOff ? 'OFFSIDE 🚩' : 'ONSIDE ⚽';
     final Color verdictColor = isOff ? Colors.redAccent : Colors.lightGreenAccent;
 
+    final has2D = widget.resp.field2D != null && _hasMeaningfulData(widget.resp.field2D!);
+    final has3D = widget.resp.field3D != null && _hasMeaningfulData(widget.resp.field3D!);
+
+    final numPlayers = (widget.resp.meta?['meta']?['num_players'] as num?)?.toInt() ?? 0;
+
     return _GlassCard(
+      seedColor: widget.seedColor,
+      mode: widget.mode,
       radius: 18,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: verdictColor.withOpacity(0.15),
-                border: Border.all(color: verdictColor.withOpacity(0.4)),
-                borderRadius: BorderRadius.circular(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Verdict + meta row
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: verdictColor.withOpacity(0.15),
+                  border: Border.all(color: verdictColor.withOpacity(0.4)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800)),
               ),
-              child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: 10),
-            if (resp.attackingTeam != null) _Chip('🔵 Attacking: ${resp.attackingTeam}', seedColor, mode),
-            if (resp.attackDirection != null) Padding(padding: const EdgeInsets.only(left: 8.0), child: _Chip('➡️ Dir: ${resp.attackDirection}', seedColor, mode)),
-            if (resp.offsidesCount > 0) Padding(padding: const EdgeInsets.only(left: 8.0), child: _Chip('🚩 Offsides: ${resp.offsidesCount}', seedColor, mode)),
+              if (widget.resp.attackingTeam != null)
+                _Chip('🔵 Attacking: ${widget.resp.attackingTeam}', widget.seedColor, widget.mode),
+              if (widget.resp.attackDirection != null)
+                _Chip('➡️ Dir: ${widget.resp.attackDirection}', widget.seedColor, widget.mode),
+              if ((widget.resp.offsidesCount ?? 0) > 0) _Chip('🚩 Offsides: ${widget.resp.offsidesCount}', widget.seedColor, widget.mode),
+              if (numPlayers > 0) _Chip('👥 Players: $numPlayers', widget.seedColor, widget.mode),
+            ],
+          ),
+
+          if ((widget.resp.secondLastDefenderProjection ?? double.nan).isFinite) ...[
+            const SizedBox(height: 10),
+            _Chip('🛡️ 2nd Last Defender Proj: ${widget.resp.secondLastDefenderProjection!.toStringAsFixed(2)}', widget.seedColor, widget.mode),
           ],
-        ),
-        if (resp.secondLastDefenderProjection != null) ...[
-          const SizedBox(height: 8),
-          _Chip('🛡️ 2nd Last Defender Proj: ${resp.secondLastDefenderProjection!.toStringAsFixed(2)}', seedColor, mode),
-        ],
-        if (resp.reason != null && resp.reason!.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text('Reason: ${resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic)),
-          ),
-        ],
-        if (resp.players != null && resp.players!.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('👥 Players Detected: ${resp.players!.length}', style: GoogleFonts.roboto(fontWeight: FontWeight.w600)),
-        ],
-        const SizedBox(height: 12),
-        if (picked != null) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Picked Image 📷', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
-              IconButton(onPressed: () => onSaveFile(picked!), icon: const Icon(Icons.download, color: Colors.green)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => onOpenImage((picked, null)),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(picked!, height: 200, width: double.infinity, fit: BoxFit.cover),
+
+          if ((widget.resp.reason ?? '').isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Text('Reason: ${widget.resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic)),
             ),
-          ),
+          ],
+
           const SizedBox(height: 12),
-        ],
-        if (resp.annotatedImageUrl != null) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Annotated Image 🎯', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
-              IconButton(onPressed: () => onSaveImage(resp.annotatedImageUrl!), icon: const Icon(Icons.download, color: Colors.green)),
-            ],
+
+          if (has2D || has3D) ...[
+            _ViewModeSwitcher(globalViewMode: widget.globalViewMode, enable2D: has2D, enable3D: has3D),
+            const SizedBox(height: 10),
+          ],
+
+          ValueListenableBuilder<int>(
+            valueListenable: widget.globalViewMode,
+            builder: (_, view, __) {
+              String? currentUrl;
+              String currentLabel = '';
+              if (view == 0) {
+                currentUrl = widget.resp.fileUrl;
+                currentLabel = 'Annotated Image 🎯';
+              } else if (view == 1) {
+                currentUrl = widget.resp.image2DUrl;
+                currentLabel = '2D Tactical View 🎯';
+              } else if (view == 2) {
+                currentUrl = widget.resp.image3DUrl;
+                currentLabel = '3D Tactical View 🎯';
+              }
+              final viewName = view == 0 ? 'Original' : (view == 1 ? '2D' : '3D');
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (view == 0 && widget.picked != null) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Picked Image 📷', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                        IconButton(onPressed: () => widget.onSaveFile(widget.picked!), icon: const Icon(Icons.download, color: Colors.green)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => widget.onOpenImage((widget.picked, null)),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(widget.picked!, height: 200, width: double.infinity, fit: BoxFit.cover),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  if (currentUrl != null) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(currentLabel, style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                        IconButton(onPressed: () => widget.onSaveImage(currentUrl!), icon: const Icon(Icons.download, color: Colors.green)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Pretty preview
+                    GestureDetector(
+                      onTap: () => widget.onOpenImage((null, currentUrl)),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [
+                              Colors.white.withOpacity(0.06),
+                              Colors.white.withOpacity(0.02),
+                            ]),
+                          ),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: Image.network(currentUrl, fit: BoxFit.cover),
+                                ),
+                                Positioned(
+                                  right: 10,
+                                  bottom: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text('Tap to zoom • $viewName', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 220,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.25),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text('No $viewName image available from backend', style: const TextStyle(color: Colors.white54), textAlign: TextAlign.center),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => onOpenImage((null, resp.annotatedImageUrl)),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(resp.annotatedImageUrl!, height: 220, width: double.infinity, fit: BoxFit.cover),
-            ),
-          ),
         ],
-      ]),
+      ),
     );
   }
 }
 
-class _VideoResultCard extends StatelessWidget {
+// =======================================================
+// ===================== RESULT: Video ===================
+// =======================================================
+
+class _VideoResultCard extends StatefulWidget {
   final OffsideVideoResponse resp;
   final VideoPlayerController? controller;
   final int mode;
   final Color seedColor;
   final void Function(String url) onOpenVideo;
   final VoidCallback onSaveVideo;
+  final ValueListenable<int> globalViewMode;
 
   const _VideoResultCard({
     required this.resp,
@@ -900,18 +1193,51 @@ class _VideoResultCard extends StatelessWidget {
     required this.seedColor,
     required this.onOpenVideo,
     required this.onSaveVideo,
+    required this.globalViewMode,
   });
 
   @override
+  State<_VideoResultCard> createState() => _VideoResultCardState();
+}
+
+class _VideoResultCardState extends State<_VideoResultCard> {
+  bool _hasMeaningfulData(dynamic m) {
+    if (m is Field2DModel) {
+      return m.pitch != null || (m.frameSize['w'] ?? 0) > 0 || m.offsideLine != null || m.players.isNotEmpty;
+    }
+    if (m is Field3DModel) {
+      return m.pitch != null || (m.fieldSizeM['length'] ?? 0) > 0 || m.homographyAvailable || m.offsideLine != null || m.players.isNotEmpty;
+    }
+    return false;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isOff = resp.offsideResolved;
+    bool isOff = widget.resp.offsideResolved;
+    if (widget.resp.offsideLine != null) {
+      isOff = true;
+    } else {
+      final offsideEnable = widget.resp.meta?['offside_enable'] == true;
+      isOff = offsideEnable ? true : false;
+    }
+
     final String verdictText = isOff ? 'OFFSIDE 🚩' : 'ONSIDE ⚽';
     final Color verdictColor = isOff ? Colors.redAccent : Colors.lightGreenAccent;
 
+    final has2D = widget.resp.field2D != null && _hasMeaningfulData(widget.resp.field2D!);
+    final has3D = widget.resp.field3D != null && _hasMeaningfulData(widget.resp.field3D!);
+
+    final numPlayers = (widget.resp.meta?['meta']?['num_players'] as num?)?.toInt() ?? 0;
+
     return _GlassCard(
+      seedColor: widget.seedColor,
+      mode: widget.mode,
       radius: 18,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -922,77 +1248,207 @@ class _VideoResultCard extends StatelessWidget {
               ),
               child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800)),
             ),
-            const SizedBox(width: 10),
-            if (resp.attackingTeam != null) _Chip('🔵 Attacking: ${resp.attackingTeam}', seedColor, mode),
-            if (resp.attackDirection != null)
-              Padding(padding: const EdgeInsets.only(left: 8.0), child: _Chip('➡️ Dir: ${resp.attackDirection}', seedColor, mode)),
-            if (resp.offsidesCount > 0)
-              Padding(padding: const EdgeInsets.only(left: 8.0), child: _Chip('🚩 Offsides: ${resp.offsidesCount}', seedColor, mode)),
+            if (widget.resp.attackingTeam != null) _Chip('🔵 Attacking: ${widget.resp.attackingTeam}', widget.seedColor, widget.mode),
+            if (widget.resp.attackDirection != null) _Chip('➡️ Dir: ${widget.resp.attackDirection}', widget.seedColor, widget.mode),
+            if ((widget.resp.offsidesCount ?? 0) > 0) _Chip('🚩 Offsides: ${widget.resp.offsidesCount}', widget.seedColor, widget.mode),
+            if (numPlayers > 0) _Chip('👥 Players: $numPlayers', widget.seedColor, widget.mode),
           ],
         ),
-        if (resp.secondLastDefenderProjection != null) ...[
-          const SizedBox(height: 8),
-          _Chip('🛡️ 2nd Last Defender Proj: ${resp.secondLastDefenderProjection!.toStringAsFixed(2)}', seedColor, mode),
-        ],
-        if (resp.reason != null && resp.reason!.isNotEmpty) ...[
+
+        if ((widget.resp.reason ?? '').isNotEmpty) ...[
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text('Reason: ${resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic)),
+            child: Text('Reason: ${widget.resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic)),
           ),
         ],
-        if (resp.players != null && resp.players!.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('👥 Players Detected: ${resp.players!.length}', style: GoogleFonts.roboto(fontWeight: FontWeight.w600)),
-        ],
+
         const SizedBox(height: 12),
-        if (resp.annotatedVideoUrl != null) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Annotated Video 🎥', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
-              IconButton(onPressed: onSaveVideo, icon: const Icon(Icons.download, color: Colors.green)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => onOpenVideo(resp.annotatedVideoUrl!),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: (controller != null && controller!.value.isInitialized) ? controller!.value.aspectRatio : 16 / 9,
-                child: (controller != null && controller!.value.isInitialized)
-                    ? Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          VideoPlayer(controller!),
-                          VideoProgressIndicator(controller!, allowScrubbing: true),
-                          Positioned(
-                            right: 8,
-                            bottom: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
-                              child: const Text('Tap for Fullscreen + Controls (Rewind/Play/Forward) 🎞️', style: TextStyle(color: Colors.white, fontSize: 11)),
-                            ),
-                          ),
-                        ],
-                      )
-                    : Container(
-                        height: 200,
-                        color: Colors.black12,
-                        alignment: Alignment.center,
-                        child: const CircularProgressIndicator(),
-                      ),
-              ),
-            ),
-          ),
+
+        if (has2D || has3D) ...[
+          // ✅ fix: activer vraiment le switch 2D/3D si disponibles côté vidéo
+          _ViewModeSwitcher(globalViewMode: widget.globalViewMode, enable2D: has2D, enable3D: has3D),
+          const SizedBox(height: 10),
         ],
+
+        ValueListenableBuilder<int>(
+          valueListenable: widget.globalViewMode,
+          builder: (_, view, __) {
+            if (view == 0) {
+              return Column(
+                children: [
+                  if (widget.resp.fileUrl != null) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Annotated Video 🎥', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                        IconButton(onPressed: widget.onSaveVideo, icon: const Icon(Icons.download, color: Colors.green)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => widget.onOpenVideo(widget.resp.fileUrl!),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: AspectRatio(
+                          aspectRatio: (widget.controller != null && widget.controller!.value.isInitialized)
+                              ? widget.controller!.value.aspectRatio
+                              : 16 / 9,
+                          child: (widget.controller != null && widget.controller!.value.isInitialized)
+                              ? Stack(
+                                  alignment: Alignment.bottomCenter,
+                                  children: [
+                                    VideoPlayer(widget.controller!),
+                                    VideoProgressIndicator(widget.controller!, allowScrubbing: true),
+                                    Positioned(
+                                      right: 8,
+                                      bottom: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(8)),
+                                        child: const Text('Tap for Fullscreen + Controls 🎞️', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Container(
+                                  height: 200,
+                                  color: Colors.black12,
+                                  alignment: Alignment.center,
+                                  child: const CircularProgressIndicator(),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            } else {
+              final viewName = view == 1 ? '2D' : '3D';
+              // Placeholder premium tant que le backend ne renvoie pas un média vidéo pour 2D/3D
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$viewName Tactical View for Video', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 220,
+                    decoration: BoxDecoration(color: Colors.grey.withOpacity(0.25), borderRadius: BorderRadius.circular(12)),
+                    child: const Center(
+                      child: Text('Tactical view for video coming soon', style: TextStyle(color: Colors.white54), textAlign: TextAlign.center),
+                    ),
+                  ),
+                ],
+              );
+            }
+          },
+        ),
       ]),
     );
   }
 }
+
+// =======================================================
+// =================== VIEW SWITCHER (global) ============
+// =======================================================
+
+class _ViewModeSwitcher extends StatelessWidget {
+  final ValueListenable<int> globalViewMode;
+  final bool enable2D;
+  final bool enable3D;
+  const _ViewModeSwitcher({required this.globalViewMode, required this.enable2D, required this.enable3D});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: globalViewMode,
+      builder: (_, v, __) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                _ViewPill(label: 'Original', isActive: v == 0, onTap: () => (globalViewMode as ValueNotifier<int>).value = 0),
+                _ViewPill(
+                  label: '2D',
+                  isActive: v == 1,
+                  disabled: !enable2D,
+                  onTap: () {
+                    if (enable2D) (globalViewMode as ValueNotifier<int>).value = 1;
+                  },
+                ),
+                _ViewPill(
+                  label: '3D',
+                  isActive: v == 2,
+                  disabled: !enable3D,
+                  onTap: () {
+                    if (enable3D) (globalViewMode as ValueNotifier<int>).value = 2;
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ViewPill extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool disabled;
+  final VoidCallback onTap;
+  const _ViewPill({required this.label, required this.isActive, this.disabled = false, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final base = disabled ? 0.35 : 1.0;
+    return AnimatedOpacity(
+      opacity: base,
+      duration: const Duration(milliseconds: 200),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: disabled ? null : onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: isActive
+                  ? const LinearGradient(colors: [Color(0xFF5AE6FF), Color(0xFF5A8BFF)])
+                  : null,
+              color: isActive ? null : Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white.withOpacity(isActive ? 0.0 : 0.12)),
+              boxShadow: isActive
+                  ? const [
+                      BoxShadow(color: Color(0x885AE6FF), blurRadius: 20, spreadRadius: 1, offset: Offset(0, 6)),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              label,
+              style: GoogleFonts.manrope(fontWeight: FontWeight.w800, color: Colors.white),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =======================================================
+// ===================== LOADING OVERLAY =================
+// =======================================================
 
 class _LoadingOverlay extends StatelessWidget {
   final Color seedColor;
@@ -1039,6 +1495,8 @@ class _LoadingOverlay extends StatelessWidget {
                   children: [
                     const SizedBox(height: 12),
                     _GlassCard(
+                      seedColor: seedColor,
+                      mode: mode,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                       child: Row(
                         children: [
@@ -1050,7 +1508,7 @@ class _LoadingOverlay extends StatelessWidget {
                                 Text('Génération en cours…', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800)),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Veuillez patienter, nous analysons votre vidéo et traçons les lignes offside.',
+                                  'Veuillez patienter, nous analysons votre média et traçons les lignes offside.',
                                   style: GoogleFonts.manrope(fontSize: 13, color: Colors.white70),
                                 ),
                               ],
@@ -1062,7 +1520,9 @@ class _LoadingOverlay extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.12),
-                                border: Border.all(color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.35)),
+                                border: Border.all(
+                                  color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.35),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(_fmt(s), style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
@@ -1073,6 +1533,8 @@ class _LoadingOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     _GlassCard(
+                      seedColor: seedColor,
+                      mode: mode,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1084,13 +1546,13 @@ class _LoadingOverlay extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: _GlassCard(
+                      child: Center(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('Mini-jeu : Keepy-Up ⚽', style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 8),
-                            Expanded(child: _KeepyUpGame(seedColor: seedColor, mode: mode)),
+                            CircularProgressIndicator(color: AppColors.getTertiaryColor(seedColor, mode)),
+                            const SizedBox(height: 16),
+                            Text('Analyse en cours...', style: GoogleFonts.manrope(fontSize: 16, color: Colors.white70)),
                           ],
                         ),
                       ),
@@ -1106,409 +1568,17 @@ class _LoadingOverlay extends StatelessWidget {
   }
 }
 
-/// Mini-jeu V2: أسرع، حركة أفقية، شرارات، هابتيك، و restart سريع.
-class _KeepyUpGame extends StatefulWidget {
-  final Color seedColor;
-  final int mode;
-  const _KeepyUpGame({required this.seedColor, required this.mode});
-  @override
-  State<_KeepyUpGame> createState() => _KeepyUpGameState();
-}
+// =======================================================
+// ======================== BG GRID ======================
+// =======================================================
 
-class _KeepyUpGameState extends State<_KeepyUpGame> with SingleTickerProviderStateMixin {
-  late Ticker _ticker;
-
-  // وضعية الكورة (0..1 نسبية للمساحة)
-  double x = 0.5;
-  double y = 0.5;
-
-  // السرعات
-  double vx = 0.0;
-  double vy = 0.0;
-
-  // دوران
-  double rotation = 0.0;
-  double rotSpeed = 0.0;
-
-  // صعوبة/جاذبية
-  double gravityBase = 2.1;   // جاذبية أساسية أعلى → نزول أسرع
-  double gravityBoost = 2.0;  // جاذبية إضافية تزيد كلما الكورة طالعة
-
-  // أرضية/جدران
-  final double ground = 0.92;
-  final double wallLeft = 0.08;
-  final double wallRight = 0.92;
-
-  // سكور/كومبو/سرعة
-  int score = 0;
-  int combo = 0;
-  double speedMultiplier = 1.0;
-  double timeSinceStart = 0.0;
-
-  // حالة اللعبة
-  bool gameOver = false;
-  Timer? _resetTimer;
-
-  // Particles
-  final List<_Particle> particles = [];
-  final Random _rand = Random();
-
-  @override
-  void initState() {
-    super.initState();
-    _resetGame();
-    _ticker = createTicker(_tick)..start();
-  }
-
-  void _resetGame() {
-    x = 0.5; y = 0.55;
-    vx = 0; vy = 0;
-    rotation = 0; rotSpeed = 0;
-    score = 0; combo = 0;
-    speedMultiplier = 1.0;
-    timeSinceStart = 0.0;
-    gameOver = false;
-    particles.clear();
-    _resetTimer?.cancel();
-    setState(() {});
-  }
-
-  void _scheduleFastRestart() {
-    _resetTimer?.cancel();
-    _resetTimer = Timer(const Duration(milliseconds: 700), () {
-      if (mounted) _resetGame();
-    });
-  }
-
-  void _spawnBurst({required double px, required double py, int count = 14, double power = 1.0}) {
-    for (int i = 0; i < count; i++) {
-      final a = _rand.nextDouble() * pi * 2;
-      final r = (_rand.nextDouble() * 0.012 + 0.006) * power;
-      particles.add(_Particle(
-        x: px,
-        y: py,
-        vx: cos(a) * r,
-        vy: sin(a) * r,
-        life: 0.7 + _rand.nextDouble() * 0.4,
-      ));
-    }
-  }
-
-  void _tick(Duration d) {
-    if (gameOver) return;
-
-    const dt = 1 / 60.0;
-    timeSinceStart += dt;
-
-    speedMultiplier = 1.0 + min(0.5, timeSinceStart * 0.03) + min(0.4, combo * 0.03);
-
-    final dynG = (gravityBase + gravityBoost * (1 - y).clamp(0, 1)) * speedMultiplier;
-    vy += dynG * dt;
-
-    x += vx * dt;
-    y += vy * dt;
-
-    rotation += rotSpeed * dt;
-    rotSpeed *= 0.985; 
-    vx *= 0.996;      
-
-    if (x <= wallLeft) {
-      x = wallLeft;
-      vx = -vx * 0.85;
-      rotSpeed = -rotSpeed * 0.9;
-      HapticFeedback.lightImpact();
-      _spawnBurst(px: x, py: y, count: 10, power: 0.9);
-    } else if (x >= wallRight) {
-      x = wallRight;
-      vx = -vx * 0.85;
-      rotSpeed = -rotSpeed * 0.9;
-      HapticFeedback.lightImpact();
-      _spawnBurst(px: x, py: y, count: 10, power: 0.9);
-    }
-
-    if (y >= ground) {
-      y = ground;
-      vy = -vy * 0.92;            
-      rotSpeed = -rotSpeed * 0.9;
-      HapticFeedback.mediumImpact();
-      _spawnBurst(px: x, py: y, count: 18, power: 1.2);
-
-      if (vy.abs() < 0.6) {
-        gameOver = true;
-        combo = 0;
-        _scheduleFastRestart();
-      }
-    }
-
-    for (int i = particles.length - 1; i >= 0; i--) {
-      final p = particles[i];
-      p.life -= dt;
-      if (p.life <= 0) {
-        particles.removeAt(i);
-      } else {
-        p.vy += (dynG * 0.15) * dt;
-        p.x += p.vx;
-        p.y += p.vy;
-      }
-    }
-
-    if (mounted) setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    _resetTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (d) {
-        if (gameOver) {
-          _resetGame();
-          return;
-        }
-        final size = context.size ?? const Size(1, 1);
-        final tapX = (d.localPosition.dx / size.width).clamp(0.0, 1.0);
-        final tapY = (d.localPosition.dy / size.height).clamp(0.0, 1.0);
-
-        final dx = tapX - x;
-        final dy = tapY - y;
-        final dist = sqrt(dx * dx + dy * dy);
-
-        const r = 0.11;
-
-        if (dist < r) {
-          final underBall = tapY > y; 
-          final perfect = underBall && (tapY - y) < 0.06 && dx.abs() < 0.05;
-
-          final baseUp = 3.8 + (combo * 0.12);
-          vy = -baseUp * (perfect ? 1.15 : 1.0) * speedMultiplier;
-
-          final horiz = (x - tapX) * (perfect ? 9.0 : 6.0) * (1 + combo * 0.05);
-          vx += horiz * speedMultiplier;
-
-          rotSpeed += vx * 3.8;
-
-          if (perfect) {
-            combo += 3;
-            score += 3;
-            HapticFeedback.heavyImpact();
-            _spawnBurst(px: x, py: y, count: 24, power: 1.6);
-          } else {
-            combo += 1;
-            score += 1;
-            HapticFeedback.selectionClick();
-            _spawnBurst(px: x, py: y, count: 14, power: 1.2);
-          }
-        } else {
-          vy = -2.6 * speedMultiplier;
-          vx += (x - tapX) * 4.5 * speedMultiplier;
-          combo = max(0, combo - 1);
-          rotSpeed += vx * 2.2;
-          HapticFeedback.lightImpact();
-          _spawnBurst(px: tapX, py: tapY, count: 8, power: 0.8);
-        }
-      },
-      child: LayoutBuilder(builder: (ctx, c) {
-        final w = c.maxWidth;
-        final h = c.maxHeight;
-        final ballPx = Offset(x * w, y * h);
-
-        return Stack(
-          children: [
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.getSurfaceColor(widget.mode).withOpacity(0.25),
-                      Colors.green.withOpacity(0.15),
-                      Colors.black.withOpacity(0.2),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.7, 1.0],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: CustomPaint(painter: _GrassPainter()),
-              ),
-            ),
-
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _WallsPainter(
-                    leftX: wallLeft * w,
-                    rightX: wallRight * w,
-                    groundY: ground * h,
-                    color: AppColors.getTextColor(widget.mode).withOpacity(0.08),
-                  ),
-                ),
-              ),
-            ),
-
-            
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _ParticlesPainter(particles: particles, color: AppColors.getTertiaryColor(widget.seedColor, widget.mode)),
-                ),
-              ),
-            ),
-
-            Positioned(
-              left: ballPx.dx - 24,
-              top:  ballPx.dy - 24,
-              child: Transform.rotate(
-                angle: rotation,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [Colors.white.withOpacity(0.9), AppColors.getTertiaryColor(widget.seedColor, widget.mode)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.getTertiaryColor(widget.seedColor, widget.mode).withOpacity(0.6),
-                        blurRadius: 18,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Center(child: Text('⚽', style: TextStyle(fontSize: 20))),
-                ),
-              ),
-            ),
-
-            Positioned(
-              top: 8,
-              right: 12,
-              child: _GlassCard(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text('Score: $score', style: GoogleFonts.manrope(fontWeight: FontWeight.w800, fontSize: 12)),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: combo >= 10 ? Colors.red : (combo >= 5 ? Colors.orange : Colors.blue),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text('x$combo', style: GoogleFonts.manrope(color: Colors.white, fontSize: 10)),
-                      ),
-                    ]),
-                    if (speedMultiplier > 1.0)
-                      Text('Speed: ${(speedMultiplier * 100).round()}%', style: GoogleFonts.manrope(fontSize: 9, color: Colors.yellow)),
-                  ],
-                ),
-              ),
-            ),
-
-            if (gameOver)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.35),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.sports_soccer, size: 64, color: Colors.white54),
-                      Text('Game Over! Score: $score', style: GoogleFonts.manrope(color: Colors.white, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 6),
-                      Text('Tap to restart ⚡', style: GoogleFonts.manrope(color: Colors.white70, fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        );
-      }),
-    );
-  }
-}
-
-class _Particle {
-  double x, y, vx, vy, life;
-  _Particle({required this.x, required this.y, required this.vx, required this.vy, required this.life});
-}
-
-class _ParticlesPainter extends CustomPainter {
-  final List<_Particle> particles;
-  final Color color;
-  _ParticlesPainter({required this.particles, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()..style = PaintingStyle.fill;
-    for (final part in particles) {
-      final t = part.life.clamp(0.0, 1.0);
-      p.color = color.withOpacity(0.2 + 0.6 * t);
-      final r = 3.0 * t + 1.0;
-      canvas.drawCircle(Offset(part.x * size.width, part.y * size.height), r, p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _ParticlesPainter oldDelegate) => true;
-}
-
-class _WallsPainter extends CustomPainter {
-  final double leftX, rightX, groundY;
-  final Color color;
-  _WallsPainter({required this.leftX, required this.rightX, required this.groundY, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 2;
-    // حيطان خفيفة
-    canvas.drawLine(Offset(leftX, 0), Offset(leftX, size.height), paint);
-    canvas.drawLine(Offset(rightX, 0), Offset(rightX, size.height), paint);
-    // الأرضية
-    canvas.drawLine(Offset(0, groundY), Offset(size.width, groundY), paint..strokeWidth = 1.5);
-  }
-
-  @override
-  bool shouldRepaint(covariant _WallsPainter oldDelegate) => false;
-}
-
-// Painter simple pour herbe au sol
-class _GrassPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.green.withOpacity(0.3)
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 2.0;
-    final groundY = size.height * 0.92;
-    final rand = Random(42);
-    for (int i = 0; i < size.width / 6; i++) { // plus d'herbe pour densité
-      final x = i * 6.0 + rand.nextDouble() * 3;
-      canvas.drawLine(Offset(x, groundY), Offset(x + rand.nextDouble() * 3 - 1.5, groundY - 25), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-// Updated _FootballGridPainter with subtler opacities for a fuller yet less intense background
 class _FootballGridPainter extends CustomPainter {
   final int mode;
   _FootballGridPainter(this.mode);
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.03)  // Reduced from 0.06 for subtler grid
+      ..color = AppColors.getTextColor(mode).withOpacity(0.03)
       ..strokeWidth = 0.5;
     const step = 50.0;
     for (double x = 0; x <= size.width; x += step) {
@@ -1518,7 +1588,7 @@ class _FootballGridPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
     final fieldPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.06)  // Reduced from 0.12 for softer field outline
+      ..color = AppColors.getTextColor(mode).withOpacity(0.06)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     final inset = 40.0;

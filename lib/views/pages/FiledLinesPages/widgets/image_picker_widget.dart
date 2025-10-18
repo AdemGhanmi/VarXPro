@@ -1,4 +1,3 @@
-// lib/views/pages/BallGoalPage/widgets/image_picker_widget.dart
 // Updated ImagePickerWidget to support enabled parameter
 import 'dart:io';
 import 'package:VarXPro/provider/langageprovider.dart';
@@ -21,7 +20,7 @@ class ImagePickerWidget extends StatelessWidget {
     super.key,
     required this.onImagePicked,
     this.buttonText = 'Pick Image',
-    this.isVideo = false,
+    this.isVideo = true,
     this.isCalibration = false,
     required this.mode,
     required this.seedColor,

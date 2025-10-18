@@ -1,54 +1,132 @@
-import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+// File: lib/services/offside_service.dart (assuming path based on imports)
+import 'dart:io'; 
 import 'dart:convert';
+import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
-import '../model/offside_model.dart';
 
 class OffsideService {
   late Dio _dio;
 
- OffsideService() {
-  debugPrint('=== OffsideService constructor started ===');
-  const baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://offsidev3.varxpro.com',  
-  );
-  debugPrint('=== Raw baseUrl before trim: "${baseUrl}" (length: ${baseUrl.length}) ===');  
-  final trimmedBaseUrl = baseUrl.trim();  
-  debugPrint('=== Trimmed baseUrl: "${trimmedBaseUrl}" (length: ${trimmedBaseUrl.length}) ===');
-  
-  _dio = Dio(
-    BaseOptions(
-      baseUrl: trimmedBaseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(minutes: 30),
-      headers: {'Accept': 'application/json'},
-    ),
-  );
-  debugPrint('=== OffsideService constructor completed, Dio baseUrl: ${trimmedBaseUrl} ===');
-}
-  Future<PingResponse> ping() async {
-    debugPrint('=== Ping started ===');
-    try {
-      final resp = await _dio.get('/health',
-          options: Options(receiveTimeout: const Duration(seconds: 10)));
-      debugPrint('=== Ping response status: ${resp.statusCode}, data: ${resp.data} ===');
-      if (resp.data is Map<String, dynamic>) {
-        final result = PingResponse.fromJson(resp.data as Map<String, dynamic>);
-        debugPrint('=== Ping result: ok=${result.ok}, model=${result.model}, opencv=${result.opencv} ===');
-        return result;
-      }
-      final result = PingResponse(ok: false, model: '', opencv: '');
-      debugPrint('=== Ping fallback result: $result ===');
-      return result;
-    } on DioException catch (e) {
-      debugPrint('=== Ping DioException: type=${e.type}, message=${e.message}, response=${e.response?.data} ===');
-      throw Exception('Ping failed: ${e.message}');
-    } catch (e) {
-      debugPrint('=== Ping general error: $e ===');
-      rethrow;
+  OffsideService() {
+    debugPrint('=== OffsideService ctor ===');
+    const baseUrl = String.fromEnvironment(
+      'API_BASE_URL',
+      defaultValue: 'https://offsidev3.varxpro.com',
+    );
+    final trimmedBaseUrl = baseUrl.trim();
+    final normalizedBase = trimmedBaseUrl.endsWith('/') ? trimmedBaseUrl : '$trimmedBaseUrl/';
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: normalizedBase,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(minutes: 30),
+        headers: {'Accept': 'application/json'},
+      ),
+    );
+    debugPrint('=== Dio baseUrl: ${_dio.options.baseUrl} ===');
+  }
+
+  String _toAbsoluteUrl(String? pathOrUrl) {
+    if (pathOrUrl == null || pathOrUrl.trim().isEmpty) return '';
+    final s = pathOrUrl.trim();
+    final parsed = Uri.tryParse(s);
+    if (parsed != null && parsed.hasScheme) return s;
+    String p = s;
+    if (p.startsWith('./')) p = p.substring(2);
+    if (p.startsWith('/')) p = p.substring(1);
+    final base = Uri.parse(_dio.options.baseUrl);
+    final resolved = base.resolve(p);
+    return resolved.toString();
+  }
+
+  String _dioErrorToString(DioException e) {
+    final sc = e.response?.statusCode;
+    final sm = e.response?.statusMessage;
+    final data = e.response?.data;
+    final t = e.type;
+    final msg = [
+      if (sc != null) 'HTTP $sc',
+      if (sm != null && sm.isNotEmpty) sm,
+      t.name,
+      if (data != null) 'body=${data is String ? data : jsonEncode(data)}',
+    ].join(' | ');
+    return msg.isEmpty ? e.toString() : msg;
+  }
+
+  bool _hasMeaningfulModels(Map<String, dynamic> data) {
+    final models = (data['models'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final f2d = (models['field_2d'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final f3d = (models['field_3d'] as Map?)?.cast<String, dynamic>() ?? const {};
+
+    bool has2d = false;
+    if (f2d.isNotEmpty) {
+      final players = (f2d['players'] as List?) ?? const [];
+      final ball = f2d['ball'];
+      final line = f2d['offside_line'];
+      final pitch = (f2d['pitch'] as Map?)?['corners'] as List?;
+      has2d = players.isNotEmpty || ball != null || line != null || (pitch != null && pitch.isNotEmpty);
     }
+
+    bool has3d = false;
+    if (f3d.isNotEmpty) {
+      final players = (f3d['players'] as List?) ?? const [];
+      final ball = f3d['ball'];
+      final line = f3d['offside_line'];
+      final pitch = (f3d['pitch'] as Map?)?['corners'] as List?;
+      final hom = f3d['homography_available'] == true;
+      has3d = players.isNotEmpty || ball != null || line != null || (pitch != null && pitch.isNotEmpty) || hom;
+    }
+
+    return has2d || has3d;
+  }
+
+  void _logModelSummary(String endpoint, Map<String, dynamic> data) {
+    final models = (data['models'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final f2d = (models['field_2d'] as Map?)?.cast<String, dynamic>() ?? const {};
+    final players = (f2d['players'] as List?) ?? const [];
+    final ball = f2d['ball'] != null;
+    final line = f2d['offside_line'] != null;
+    debugPrint('→ Endpoint: $endpoint | Players: ${players.length} | Ball: $ball | Line: $line');
+  }
+
+  Future<PingResponse> ping() async {
+    debugPrint('=== PING: GET /health ===');
+    try {
+      final resp = await _dio.get(
+        '/health',
+        options: Options(receiveTimeout: const Duration(seconds: 10)),
+      );
+      debugPrint('→ Status: ${resp.statusCode}');
+      debugPrint('→ Response: ${resp.data}');
+      if (resp.data is Map<String, dynamic>) {
+        return PingResponse.fromJson(resp.data as Map<String, dynamic>);
+      }
+      return PingResponse(ok: false, model: '', opencv: '');
+    } on DioException catch (e) {
+      debugPrint('❌ Ping failed: ${_dioErrorToString(e)}');
+      throw Exception('Ping failed: ${_dioErrorToString(e)}');
+    }
+  }
+
+  Future<OffsideFrameResponse> _parseFrameResponse({
+    required Map<String, dynamic> json,
+    required Map<String, dynamic> metaMerge,
+  }) async {
+    final serverMeta = (json['meta'] as Map<String, dynamic>? ?? const {});
+    final mergedMeta = {...serverMeta, ...metaMerge};
+    final models = (json['models'] as Map<String, dynamic>? ?? const {});
+    final fileUrl = _toAbsoluteUrl(json['file_url'] as String?);
+    final image2DUrl = _toAbsoluteUrl(json['image_2d_url'] as String?);
+    final image3DUrl = _toAbsoluteUrl(json['image_3d_url'] as String?);
+    return OffsideFrameResponse.fromJson(
+      mergedMeta,
+      models: models,
+      fileUrl: fileUrl,
+      image2DUrl: image2DUrl,
+      image3DUrl: image3DUrl,
+    );
   }
 
   Future<OffsideFrameResponse> detectOffsideSingle({
@@ -57,78 +135,131 @@ class OffsideService {
     List<int>? lineStart,
     List<int>? lineEnd,
     bool returnFile = false,
+    String? viewMode,
     CancelToken? cancelToken,
     void Function(int, int)? onSendProgress,
     void Function(int, int)? onReceiveProgress,
   }) async {
-    debugPrint('=== detectOffsideSingle started: image=${image.path}, attackDirection=$attackDirection, lineStart=$lineStart, lineEnd=$lineEnd, returnFile=$returnFile ===');
-    final offsideParams = <String, dynamic>{
-      'enable': true,
-      'use_ball_for_line': true,
-      'enforce_active_play': false,
-      'active_play_speed_thresh': 15,
-      'frame_line_mode': 'perspective',
-      'line_color': '#FF3030',
-      'direction': attackDirection,
-    };
+    debugPrint('=== detectOffsideSingle ===');
+    debugPrint('→ Uploading image: ${image.path}');
+    debugPrint('→ returnFile: $returnFile');
+    debugPrint('→ viewMode: $viewMode');
 
-    if (lineStart != null && lineEnd != null) {
-      offsideParams['line_mode'] = 'fixed';
-      offsideParams['line_start_x'] = lineStart[0];
-      offsideParams['line_start_y'] = lineStart[1];
-      offsideParams['line_end_x'] = lineEnd[0];
-      offsideParams['line_end_y'] = lineEnd[1];
-      debugPrint('=== Fixed line params added: $offsideParams ===');
-    }
+    final offsideParams = <String, dynamic>{
+      'offside_enable': true,
+      'use_ball_for_line': true,
+      'player_conf': 0.20,
+      'keypt_conf': 0.40,
+      if (viewMode != null) 'view_mode': viewMode,
+    };
 
     final paramsMap = <String, dynamic>{
-      'auto_team_colors': true,
-      'offside': offsideParams,
-      'player_conf': 0.30,
-      'save_output': true,
-      'return_file': returnFile,
-      'include_map': false,
+      'return_model': true,
+      'return_file': false,
+      'return_images': true,
+      ...offsideParams,
     };
-    debugPrint('=== Full params map: $paramsMap ===');
 
     final formData = FormData.fromMap({
       'image': await MultipartFile.fromFile(image.path, filename: 'frame.jpg'),
       'params': jsonEncode(paramsMap),
     });
-    debugPrint('=== FormData prepared, sending POST to /predict/image ===');
 
-    final resp = await _dio.post(
-      '/predict/image',
-      data: formData,
-      options: Options(
-        contentType: 'multipart/form-data',
-        receiveTimeout: const Duration(minutes: 5),
-        responseType: returnFile ? ResponseType.bytes : ResponseType.json,
-      ),
-      cancelToken: cancelToken,
-      onSendProgress: (sent, total) {
-        debugPrint('=== Image upload progress: $sent / $total ===');
-        onSendProgress?.call(sent, total);
-      },
-      onReceiveProgress: (received, total) {
-        debugPrint('=== Image download progress: $received / $total ===');
-        onReceiveProgress?.call(received, total);
-      },
-    );
+    final clientMeta = {
+      'offside_enable': offsideParams['offside_enable'],
+      if (attackDirection.isNotEmpty) 'attack_direction': attackDirection,
+      if (lineStart != null && lineStart.length == 2)
+        'fixed_line_start': lineStart,
+      if (lineEnd != null && lineEnd.length == 2)
+        'fixed_line_end': lineEnd,
+    };
 
-    debugPrint('=== Image response status: ${resp.statusCode}, data type: ${resp.data.runtimeType}, data: ${resp.data} ===');
-    if (resp.data is! Map<String, dynamic>) {
-      debugPrint('=== Unexpected image response type: ${resp.data.runtimeType} ===');
-      throw Exception('Unexpected image response type: ${resp.data.runtimeType}');
+    debugPrint('=== Trying endpoint: /predict/image_model ===');
+    try {
+      final resp = await _dio.post(
+        '/predict/image',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          receiveTimeout: const Duration(minutes: 5),
+          responseType: ResponseType.json,
+        ),
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+
+      if (resp.data is! Map<String, dynamic>) {
+        throw Exception('Unexpected image_model response type: ${resp.data.runtimeType}');
+      }
+
+      final data = Map<String, dynamic>.from(resp.data as Map);
+      _logModelSummary('/predict/image', data);
+
+      if (_hasMeaningfulModels(data)) {
+        debugPrint('✔ /predict/image_model returned meaningful models');
+        return _parseFrameResponse(json: data, metaMerge: clientMeta);
+      } else {
+        debugPrint('!  /predict/image_model returned empty models, trying next...');
+      }
+    } on DioException catch (e) {
+      debugPrint('❌ /predict/image_model failed: ${_dioErrorToString(e)}');
+      // fallthrough to legacy
     }
-    final data = resp.data as Map<String, dynamic>;
-    final outputPath = (data['output_path'] ?? '') as String;
-    final meta = (data['meta'] ?? {}) as Map<String, dynamic>;
-    final String fullImageUrl = _dio.options.baseUrl + outputPath.substring(1);
-    debugPrint('=== Image outputPath: $outputPath, fullUrl: $fullImageUrl, meta: $meta ===');
-    final result = OffsideFrameResponse.fromJson(meta, annotatedImageUrl: fullImageUrl);
-    debugPrint('=== Image detection result: $result ===');
-    return result;
+
+    // 2) Try legacy /predict/image (JSON path)
+    debugPrint('=== Trying endpoint: /predict/image ===');
+    try {
+      final resp = await _dio.post(
+        '/predict/image',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          receiveTimeout: const Duration(minutes: 5),
+          responseType: ResponseType.json, // IMPORTANT: expect JSON
+        ),
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+
+      if (resp.data is! Map<String, dynamic>) {
+        throw Exception('Unexpected image response type: ${resp.data.runtimeType}');
+      }
+
+      final data = Map<String, dynamic>.from(resp.data as Map);
+      _logModelSummary('/predict/image', data);
+
+      if (_hasMeaningfulModels(data)) {
+        debugPrint('✔ /predict/image returned meaningful models');
+      } else {
+        debugPrint('!  /predict/image returned empty models too (will still parse & let UI fallback/dummy if enabled)');
+      }
+
+      return _parseFrameResponse(json: data, metaMerge: clientMeta);
+    } on DioException catch (e) {
+      debugPrint('❌ /predict/image failed: ${_dioErrorToString(e)}');
+      throw Exception('/predict/image failed: ${_dioErrorToString(e)}');
+    }
+  }
+
+  Future<OffsideVideoResponse> _parseVideoResponse({
+    required Map<String, dynamic> json,
+    required Map<String, dynamic> metaMerge,
+  }) async {
+    final serverMeta = (json['meta'] as Map<String, dynamic>? ?? const {});
+    final mergedMeta = {...serverMeta, ...metaMerge};
+    final models = (json['models'] as Map<String, dynamic>? ?? const {});
+    final fileUrl = _toAbsoluteUrl(json['file_url'] as String?);
+    final image2DUrl = _toAbsoluteUrl(json['image_2d_url'] as String?);
+    final image3DUrl = _toAbsoluteUrl(json['image_3d_url'] as String?);
+    return OffsideVideoResponse.fromJson(
+      mergedMeta,
+      models: models,
+      fileUrl: fileUrl,
+      image2DUrl: image2DUrl,
+      image3DUrl: image3DUrl,
+    );
   }
 
   Future<OffsideVideoResponse> detectOffsideVideo({
@@ -137,76 +268,97 @@ class OffsideService {
     List<int>? lineStart,
     List<int>? lineEnd,
     bool returnFile = false,
+    String? viewMode,
     CancelToken? cancelToken,
     void Function(int, int)? onSendProgress,
     void Function(int, int)? onReceiveProgress,
   }) async {
-    debugPrint('=== detectOffsideVideo started: video=${video.path}, attackDirection=$attackDirection, lineStart=$lineStart, lineEnd=$lineEnd, returnFile=$returnFile ===');
-    final offsideParams = <String, dynamic>{
-      'enable': true,
-      'use_ball_for_line': true,
-      'enforce_active_play': false,
-      'active_play_speed_thresh': 15,
-      'frame_line_mode': 'perspective',
-      'direction': attackDirection,
-    };
+    debugPrint('=== detectOffsideVideo ===');
+    debugPrint('→ Uploading video: ${video.path}');
+    debugPrint('→ returnFile: $returnFile');
+    debugPrint('→ viewMode: $viewMode');
 
-    if (lineStart != null && lineEnd != null) {
-      offsideParams['line_mode'] = 'fixed';
-      offsideParams['line_start_x'] = lineStart[0];
-      offsideParams['line_start_y'] = lineStart[1];
-      offsideParams['line_end_x'] = lineEnd[0];
-      offsideParams['line_end_y'] = lineEnd[1];
-      debugPrint('=== Fixed line params added: $offsideParams ===');
-    }
+    final offsideParams = <String, dynamic>{
+      'offside_enable': true,
+      'use_ball_for_line': true,
+      'player_conf': 0.30,
+      if (viewMode != null) 'view_mode': viewMode,
+    };
 
     final paramsMap = <String, dynamic>{
-      'auto_team_colors': true,
-      'offside': offsideParams,
-      'player_conf': 0.30,
-      'return_file': returnFile,
-      'include_map': false,
-      'save_output': true,
+      'return_model': true,
+      'return_file': false,
+      'return_images': true,
+      ...offsideParams,
     };
-    debugPrint('=== Full params map: $paramsMap ===');
 
     final formData = FormData.fromMap({
       'video': await MultipartFile.fromFile(video.path, filename: 'video.mp4'),
       'params': jsonEncode(paramsMap),
     });
-    debugPrint('=== FormData prepared, sending POST to /predict/video ===');
 
-    final resp = await _dio.post(
-      '/predict/video',
-      data: formData,
-      options: Options(
-        contentType: 'multipart/form-data',
-        receiveTimeout: const Duration(minutes: 30),
-        responseType: returnFile ? ResponseType.bytes : ResponseType.json,
-      ),
-      cancelToken: cancelToken,
-      onSendProgress: (sent, total) {
-        debugPrint('=== Video upload progress: $sent / $total ===');
-        onSendProgress?.call(sent, total);
-      },
-      onReceiveProgress: (received, total) {
-        debugPrint('=== Video download progress: $received / $total ===');
-        onReceiveProgress?.call(received, total);
-      },
-    );
+    final clientMeta = {
+      'offside_enable': offsideParams['offside_enable'],
+      if (attackDirection.isNotEmpty) 'attack_direction': attackDirection,
+      if (lineStart != null && lineStart.length == 2)
+        'fixed_line_start': lineStart,
+      if (lineEnd != null && lineEnd.length == 2)
+        'fixed_line_end': lineEnd,
+    };
 
-    debugPrint('=== Video response status: ${resp.statusCode}, data type: ${resp.data.runtimeType}, data: ${resp.data} ===');
-    if (resp.data is! Map<String, dynamic>) {
-      debugPrint('=== Unexpected video response type: ${resp.data.runtimeType} ===');
-      throw Exception('Unexpected video response type: ${resp.data.runtimeType}');
+    // 1) /predict/video_model
+    debugPrint('=== Trying endpoint: /predict/video_model ===');
+    try {
+      final resp = await _dio.post(
+        '/predict/video_model',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          receiveTimeout: const Duration(minutes: 30),
+          responseType: ResponseType.json,
+        ),
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+
+      if (resp.data is! Map<String, dynamic>) {
+        throw Exception('Unexpected video_model response type: ${resp.data.runtimeType}');
+      }
+
+      final data = Map<String, dynamic>.from(resp.data as Map);
+      debugPrint('→ Endpoint: /predict/video_model | ok=200');
+      return _parseVideoResponse(json: data, metaMerge: clientMeta);
+    } on DioException catch (e) {
+      debugPrint('❌ /predict/video_model failed: ${_dioErrorToString(e)}');
+      // fallthrough
     }
-    final data = resp.data as Map<String, dynamic>;
-    final outputPath = (data['output_path'] ?? '') as String;
-    final meta = (data['meta'] ?? {}) as Map<String, dynamic>;
-    final String fullVideoUrl = _dio.options.baseUrl + outputPath.substring(1);
-    debugPrint('=== Video outputPath: $outputPath, fullUrl: $fullVideoUrl, meta: $meta ===');
-    final result = OffsideVideoResponse.fromJson(meta, annotatedVideoUrl: fullVideoUrl);
-    debugPrint('=== Video detection result: $result ===');
-    return result;
+
+    // 2) Legacy /predict/video
+    debugPrint('=== Trying endpoint: /predict/video ===');
+    try {
+      final resp = await _dio.post(
+        '/predict/video',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+          receiveTimeout: const Duration(minutes: 30),
+          responseType: ResponseType.json,
+        ),
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
+      );
+
+      if (resp.data is! Map<String, dynamic>) {
+        throw Exception('Unexpected video response type: ${resp.data.runtimeType}');
+      }
+      final data = Map<String, dynamic>.from(resp.data as Map);
+      debugPrint('→ Endpoint: /predict/video | ok=200');
+      return _parseVideoResponse(json: data, metaMerge: clientMeta);
+    } on DioException catch (e) {
+      debugPrint('❌ /predict/video failed: ${_dioErrorToString(e)}');
+      throw Exception('/predict/video failed: ${_dioErrorToString(e)}');
+    }
   }
 }
