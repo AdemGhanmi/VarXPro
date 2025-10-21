@@ -1144,7 +1144,7 @@ class _EnhancedSoccerPlayerTrackingAndGoalAnalysisPageState
     int mode,
     Color seedColor,
   ) {
-    final baseUrl = "https://tracking.varxpro.com";
+    final baseUrl = "http://192.168.1.20:8002";
     final goalAnalysis =
         response.summary['goal_analysis'] as List<dynamic>? ?? [];
     final offsideFrames = response.summary['offside_frames']?.toString() ?? '0';

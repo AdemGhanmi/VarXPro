@@ -1,6 +1,6 @@
 import 'dart:ui' show ImageFilter;
-import 'package:VarXPro/views/pages/FiledLinesPages/service/ballgoal_service.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/view/ball_goal_page.dart';
+import 'package:VarXPro/views/pages/BallGoalPage/service/ballgoal_service.dart';
+import 'package:VarXPro/views/pages/BallGoalPage/view/ball_goal_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -21,8 +21,6 @@ import 'package:VarXPro/views/connexion/view/login_page.dart';
 
 import 'package:VarXPro/views/pages/FauteDetectiong/service/FoulDetectionService.dart';
 import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
-
-
 
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/view/offside_page.dart';
@@ -56,16 +54,35 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     // 6 pages (authenticated)
     _pages = [
       const HomePage(), // 0
-      RepositoryProvider(create: (_) => FoulDetectionService(), child: const FoulDetectionPage()), // 1
-      RepositoryProvider(create: (_) => BallGoalService(), child: const BallGoalPage()), // 2
-      RepositoryProvider(create: (_) => OffsideService(), child: const OffsidePage()), // 3
-      RepositoryProvider(create: (_) => TrackingService(), child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage()), // 4
-      RepositoryProvider(create: (_) => LiveStreamController(), child: const LiveStreamDashboard()), // 5
+      RepositoryProvider(
+        create: (_) => FoulDetectionService(),
+        child: const FoulDetectionPage(),
+      ), // 1
+      RepositoryProvider(
+        create: (_) => BallGoalService(),
+        child: const BallGoalPage(),
+      ), // 2
+      RepositoryProvider(
+        create: (_) => OffsideService(),
+        child: const OffsidePage(),
+      ), // 3
+      RepositoryProvider(
+        create: (_) => TrackingService(),
+        child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage(),
+      ), // 4
+      RepositoryProvider(
+        create: (_) => LiveStreamController(),
+        child: const LiveStreamDashboard(),
+      ), // 5
     ];
 
-    _pillController = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
-    _pillScale = Tween<double>(begin: .92, end: 1.0)
-        .animate(CurvedAnimation(parent: _pillController, curve: Curves.easeOutBack));
+    _pillController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    _pillScale = Tween<double>(begin: .92, end: 1.0).animate(
+      CurvedAnimation(parent: _pillController, curve: Curves.easeOutBack),
+    );
     _pillController.forward();
   }
 
@@ -92,14 +109,34 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          currentLang == 'en' ? 'Exit App?' : (currentLang == 'fr' ? 'Quitter l\'app ?' : 'خروج من التطبيق؟'),
+          currentLang == 'en'
+              ? 'Exit App?'
+              : (currentLang == 'fr' ? 'Quitter l\'app ?' : 'خروج من التطبيق؟'),
         ),
         content: Text(
-          currentLang == 'en' ? 'Are you sure you want to exit VAR X PRO?' : (currentLang == 'fr' ? 'Voulez-vous quitter VAR X PRO ?' : 'هل تريد الخروج من VAR X PRO؟'),
+          currentLang == 'en'
+              ? 'Are you sure you want to exit VAR X PRO?'
+              : (currentLang == 'fr'
+                    ? 'Voulez-vous quitter VAR X PRO ?'
+                    : 'هل تريد الخروج من VAR X PRO؟'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(currentLang == 'en' ? 'Stay' : (currentLang == 'fr' ? 'Rester' : 'البقاء'))),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(currentLang == 'en' ? 'Exit' : (currentLang == 'fr' ? 'Quitter' : 'خروج'))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              currentLang == 'en'
+                  ? 'Stay'
+                  : (currentLang == 'fr' ? 'Rester' : 'البقاء'),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              currentLang == 'en'
+                  ? 'Exit'
+                  : (currentLang == 'fr' ? 'Quitter' : 'خروج'),
+            ),
+          ),
         ],
       ),
     );
@@ -111,7 +148,8 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
 
   Future<bool> _onWillPop() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
+    final isVisitor =
+        !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
     if (isVisitor) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const LoginPage()),
@@ -152,18 +190,19 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
     final authProvider = Provider.of<AuthProvider>(context);
 
     final currentLang = (langProvider.currentLanguage);
-    final seed = AppColors.seedColors[modeProvider.currentMode] ?? AppColors.seedColors[1]!;
+    final seed =
+        AppColors.seedColors[modeProvider.currentMode] ??
+        AppColors.seedColors[1]!;
     final w = MediaQuery.sizeOf(context).width;
     final isCompact = w < 360;
 
     final title = _titleForIndex(_selectedIndex, currentLang);
     final emoji = _emojiForIndex(_selectedIndex);
 
-    final isVisitor = !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
+    final isVisitor =
+        !authProvider.isAuthenticated || authProvider.user?.role == 'visitor';
     _navItems = isVisitor
-        ? const [
-            _NavItem(emoji: '🏠', pageIndex: 0),
-          ]
+        ? const [_NavItem(emoji: '🏠', pageIndex: 0)]
         : const [
             _NavItem(emoji: '🏠', pageIndex: 0),
             _NavItem(emoji: '🚨', pageIndex: 1),
@@ -183,12 +222,23 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(72),
           child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(24),
+            ),
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Container(decoration: BoxDecoration(gradient: AppColors.getAppBarGradient(modeProvider.currentMode))),
-                BackdropFilter(filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4), child: Container(color: Colors.transparent)),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: AppColors.getAppBarGradient(
+                      modeProvider.currentMode,
+                    ),
+                  ),
+                ),
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Container(color: Colors.transparent),
+                ),
                 AppBar(
                   elevation: 0,
                   centerTitle: true,
@@ -196,10 +246,15 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                   automaticallyImplyLeading: false,
                   leading: isVisitor
                       ? IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
                           onPressed: () {
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
                             );
                           },
                         )
@@ -210,7 +265,10 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                       key: ValueKey<String>(title),
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(emoji, style: TextStyle(fontSize: isCompact ? 18 : 22)),
+                        Text(
+                          emoji,
+                          style: TextStyle(fontSize: isCompact ? 18 : 22),
+                        ),
                         const SizedBox(width: 8),
                         Flexible(
                           child: Text(
@@ -233,7 +291,13 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
                       padding: const EdgeInsets.only(right: 6),
                       child: IconButton(
                         tooltip: 'Settings',
-                        icon: Text('⚙️', style: TextStyle(fontSize: isCompact ? 18 : 22, color: Colors.white)),
+                        icon: Text(
+                          '⚙️',
+                          style: TextStyle(
+                            fontSize: isCompact ? 18 : 22,
+                            color: Colors.white,
+                          ),
+                        ),
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -258,13 +322,23 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           transitionBuilder: (child, anim) {
-            final slide = Tween<Offset>(begin: const Offset(.04, 0), end: Offset.zero)
-                .animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
-            return FadeTransition(opacity: anim, child: SlideTransition(position: slide, child: child));
+            final slide =
+                Tween<Offset>(
+                  begin: const Offset(.04, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+                );
+            return FadeTransition(
+              opacity: anim,
+              child: SlideTransition(position: slide, child: child),
+            );
           },
           child: Container(
             key: ValueKey<int>(_selectedIndex),
-            decoration: BoxDecoration(gradient: AppColors.getBodyGradient(modeProvider.currentMode)),
+            decoration: BoxDecoration(
+              gradient: AppColors.getBodyGradient(modeProvider.currentMode),
+            ),
             child: _pages[_selectedIndex],
           ),
         ),
@@ -276,7 +350,9 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
             child: MediaQuery(
               // prevent system's text scaling from enlarging emojis here
-              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.0)),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(1.0)),
               child: _EmojiOnlyNavBar(
                 items: _navItems,
                 seedColor: seed,
@@ -334,13 +410,25 @@ class _EmojiOnlyNavBar extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 56, maxHeight: 64), // stable height
-          padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
+          constraints: const BoxConstraints(
+            minHeight: 56,
+            maxHeight: 64,
+          ), // stable height
+          padding: EdgeInsets.symmetric(
+            horizontal: isCompact ? 6 : 10,
+            vertical: isCompact ? 8 : 12,
+          ),
           decoration: BoxDecoration(
             color: AppColors.getSurfaceColor(mode).withOpacity(.74),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: Colors.white.withOpacity(.08), width: 1),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(.12), blurRadius: 22, offset: const Offset(0, 10))],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(.12),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: items.length == 1
               ? Center(
@@ -359,22 +447,36 @@ class _EmojiOnlyNavBar extends StatelessWidget {
 
                     return Expanded(
                       child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: isCompact ? 2 : 4),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompact ? 2 : 4,
+                        ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () => onTapItem(i),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
-                            padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isCompact ? 6 : 10,
+                              vertical: isCompact ? 8 : 12,
+                            ),
                             decoration: BoxDecoration(
                               color: selected ? pill : Colors.transparent,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: selected
-                                  ? [BoxShadow(color: glow, blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 3))]
+                                  ? [
+                                      BoxShadow(
+                                        color: glow,
+                                        blurRadius: 14,
+                                        spreadRadius: 1,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
                                   : [],
                             ),
                             child: ScaleTransition(
-                              scale: selected ? pillScale : const AlwaysStoppedAnimation(1.0),
+                              scale: selected
+                                  ? pillScale
+                                  : const AlwaysStoppedAnimation(1.0),
                               child: SizedBox(
                                 height: isCompact ? 24 : 28,
                                 child: FittedBox(
@@ -382,11 +484,15 @@ class _EmojiOnlyNavBar extends StatelessWidget {
                                   child: Text(
                                     it.emoji,
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: isCompact ? 20 : 22, height: 1.0),
-                                    textHeightBehavior: const TextHeightBehavior(
-                                      applyHeightToFirstAscent: false,
-                                      applyHeightToLastDescent: false,
+                                    style: TextStyle(
+                                      fontSize: isCompact ? 20 : 22,
+                                      height: 1.0,
                                     ),
+                                    textHeightBehavior:
+                                        const TextHeightBehavior(
+                                          applyHeightToFirstAscent: false,
+                                          applyHeightToLastDescent: false,
+                                        ),
                                     softWrap: false,
                                   ),
                                 ),
@@ -429,11 +535,21 @@ class _SingleNavItem extends StatelessWidget {
       onTap: () {}, // single item (visitor)
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.symmetric(horizontal: isCompact ? 6 : 10, vertical: isCompact ? 8 : 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCompact ? 6 : 10,
+          vertical: isCompact ? 8 : 12,
+        ),
         decoration: BoxDecoration(
           color: pill,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: glow, blurRadius: 14, spreadRadius: 1, offset: const Offset(0, 3))],
+          boxShadow: [
+            BoxShadow(
+              color: glow,
+              blurRadius: 14,
+              spreadRadius: 1,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: ScaleTransition(
           scale: pillScale,

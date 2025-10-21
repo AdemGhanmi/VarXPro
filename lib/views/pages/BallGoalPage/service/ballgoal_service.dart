@@ -1,6 +1,6 @@
 // lib/views/pages/BallGoalPage/service/ballgoal_service.dart
 import 'dart:io';
-import 'package:VarXPro/views/pages/FiledLinesPages/model/ballgoal_model.dart';
+import 'package:VarXPro/views/pages/BallGoalPage/model/ballgoal_model.dart';
 import 'package:dio/dio.dart';
 
 class BallGoalService {

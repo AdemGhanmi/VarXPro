@@ -7,23 +7,19 @@ class FoulDetectionController extends ChangeNotifier {
   final FoulDetectionService _service = FoulDetectionService();
 
   AnalysisResult? _result;
-  List<Run> _runs = [];
+  String? _version;
   bool _isLoading = false;
   String? _error;
-  List<List<dynamic>>? _csvData;
-  String? _videoUrl;
-  String? _pdfPath; // local path
-  File? _cachedVideoFile;
+  String? _imageUrl;
+  File? _inputVideoFile;
 
   // getters
   AnalysisResult? get result => _result;
-  List<Run> get runs => _runs;
+  String? get version => _version;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  List<List<dynamic>>? get csvData => _csvData;
-  String? get videoUrl => _videoUrl;
-  String? get pdfPath => _pdfPath;
-  File? get cachedVideoFile => _cachedVideoFile;
+  String? get imageUrl => _imageUrl;
+  File? get inputVideoFile => _inputVideoFile;
 
   Future<void> pingServer() async {
     _isLoading = true;
@@ -40,42 +36,37 @@ class FoulDetectionController extends ChangeNotifier {
     }
   }
 
-  Future<void> analyzeVideo({File? videoFile, String? videoPath}) async {
+  Future<void> fetchVersion() async {
+    try {
+      final response = await _service.getVersion();
+      _version = response['version']?.toString();
+      notifyListeners();
+    } catch (e) {
+      // Silent fail
+    }
+  }
+
+  Future<void> analyzeVideo({File? videoFile, String? videoPath, String? refereeDecision}) async {
     _isLoading = true;
     _error = null;
     _result = null;
-    _csvData = null;
-    _videoUrl = null;
-    _pdfPath = null;
-    _cachedVideoFile = null;
+    _imageUrl = null;
+    _inputVideoFile = videoFile;
     notifyListeners();
 
     try {
       _result = await _service.analyzeVideo(
         videoFile: videoFile,
         videoPath: videoPath,
-        saveVideo: true,
-        maxFrames: 300,
+        refereeDecision: refereeDecision,
       );
 
       if (!(_result?.ok ?? false)) {
         _error = _result?.error ?? 'Unknown error occurred';
       } else {
-        // video
-        _videoUrl = _result!.annotatedVideoUrl;
-        if (_videoUrl != null) {
-          _cachedVideoFile = await _service.downloadFile(_videoUrl!, 'annotated_video.mp4');
-        }
-
-        // csv
-        if (_result!.eventsCsvUrl != null) {
-          _csvData = await _service.loadCsvData(_result!.eventsCsvUrl!);
-        }
-
-        // pdf
-        if (_result!.reportPdfUrl != null) {
-          final file = await _service.downloadFile(_result!.reportPdfUrl!, 'report.pdf');
-          _pdfPath = file.path;
+        // Snapshot image URL (prepend base if relative)
+        if (_result!.inference?.snapshotPath != null) {
+          _imageUrl = 'https://offsidev4.varxpro.com${_result!.inference!.snapshotPath}';
         }
       }
     } catch (e) {
@@ -86,75 +77,9 @@ class FoulDetectionController extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchRuns() async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      _runs = await _service.listRuns();
-    } catch (e) {
-      _error = 'Failed to fetch runs: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Load previous run by its folder name (from /api/runs).
-  Future<void> loadPreviousRun(String runFolder) async {
-    _isLoading = true;
-    _error = null;
-    _result = null;
-    _csvData = null;
-    _videoUrl = null;
-    _pdfPath = null;
-    _cachedVideoFile = null;
-    notifyListeners();
-
-    try {
-      final summary = await _service.getRunSummary(runFolder);
-
-      // Build file URLs from summary.json (server returns absolute paths; we rebuild /api/files/<rel>)
-      final files = _service.buildRunFileUrlsFromSummary(runFolder, summary);
-
-      // Video
-      if (files.videoUrl != null) {
-        _videoUrl = files.videoUrl;
-        _cachedVideoFile = await _service.downloadFile(_videoUrl!, 'annotated_video_prev.mp4');
-      }
-      // CSV
-      if (files.csvUrl != null) {
-        _csvData = await _service.loadCsvData(files.csvUrl!);
-      }
-      // PDF
-      if (files.pdfUrl != null) {
-        final file = await _service.downloadFile(files.pdfUrl!, 'report_prev.pdf');
-        _pdfPath = file.path;
-      }
-
-      // also expose minimal summary counts if available
-      _result = AnalysisResult(
-        ok: true,
-        summary: summary.toSummary(),
-        annotatedVideoUrl: files.videoUrl,
-        eventsCsvUrl: files.csvUrl,
-        reportPdfUrl: files.pdfUrl,
-        snapshotsDir: summary.snapshotsDirRel,
-        runDir: runFolder,
-      );
-    } catch (e) {
-      _error = 'Failed to load previous run: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   void clearData() {
-    _csvData = null;
-    _videoUrl = null;
-    _pdfPath = null;
-    _cachedVideoFile = null;
+    _imageUrl = null;
+    _inputVideoFile = null;
     notifyListeners();
   }
 }

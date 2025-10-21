@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/model/analysis_result.dart'; 
 
 class TrackingService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: 'https://tracking.varxpro.com')); 
+  final Dio _dio = Dio(BaseOptions(baseUrl: 'http://192.168.1.15:8002')); 
 
   Future<HealthResponse> checkHealth() async {
     try {

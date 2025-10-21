@@ -1,7 +1,7 @@
 // lib/views/pages/BallGoalPage/controller/ballgoal_bloc.dart
 import 'dart:io';
-import 'package:VarXPro/views/pages/FiledLinesPages/model/ballgoal_model.dart';
-import 'package:VarXPro/views/pages/FiledLinesPages/service/ballgoal_service.dart';
+import 'package:VarXPro/views/pages/BallGoalPage/model/ballgoal_model.dart';
+import 'package:VarXPro/views/pages/BallGoalPage/service/ballgoal_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 

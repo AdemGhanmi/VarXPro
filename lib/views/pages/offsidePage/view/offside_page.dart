@@ -26,11 +26,8 @@ class OffsidePage extends StatefulWidget {
   State<OffsidePage> createState() => _OffsidePageState();
 }
 
-class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin {
+class _OffsidePageState extends State<OffsidePage> {
   bool _showSplash = true;
-
-  late AnimationController _glowController;
-  late Animation<double> _glowAnimation;
 
   VideoPlayerController? _videoController;
   String? _lastVideoUrl;
@@ -50,15 +47,6 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
 
     _bloc = OffsideBloc(OffsideService())..add(PingEvent());
 
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-
-    _glowAnimation = Tween(begin: 0.94, end: 1.06).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) setState(() => _showSplash = false);
     });
@@ -74,7 +62,6 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
   void dispose() {
     _waitTicker?.cancel();
     _waitSeconds.dispose();
-    _glowController.dispose();
     _videoController?.dispose();
     _globalViewMode.dispose();
     _bloc.close();
@@ -215,25 +202,20 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
     final currentLang = langProvider.currentLanguage;
     final mode = modeProvider.currentMode;
     final seedColor = AppColors.seedColors[mode] ?? AppColors.seedColors[1]!;
+    final textPrimary = AppColors.getTextColor(mode);
+    final textSecondary = textPrimary.withOpacity(0.7);
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
 
     if (_showSplash) {
       return Scaffold(
         backgroundColor: AppColors.getBackgroundColor(mode),
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _FootballGridPainter(mode),
-                child: Container(decoration: BoxDecoration(gradient: AppColors.getBodyGradient(mode))),
-              ),
-            ),
-            Center(
-              child: ScaleTransition(
-                scale: _glowAnimation,
-                child: Lottie.asset('assets/lotties/offside.json', width: MediaQuery.of(context).size.width * 0.7),
-              ),
-            ),
-          ],
+        body: Center(
+          child: Lottie.asset(
+            'assets/lotties/offside.json',
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.5,
+            fit: BoxFit.contain,
+          ),
         ),
       );
     }
@@ -267,13 +249,8 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                         r.field2D!.offsideLine != null ||
                         r.field2D!.players.isNotEmpty);
 
-                if (has3D) {
-                  _globalViewMode.value = 2;
-                } else if (has2D) {
-                  _globalViewMode.value = 1;
-                } else {
-                  _globalViewMode.value = 0;
-                }
+                // Default to original
+                _globalViewMode.value = 0;
               }
 
               if (state.error != null && state.error!.isNotEmpty) {
@@ -285,121 +262,147 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
                 backgroundColor: AppColors.getBackgroundColor(mode),
                 body: Stack(
                   children: [
+                    // Fond animé + grille terrain
                     Positioned.fill(
-                      child: CustomPaint(
-                        painter: _FootballGridPainter(mode),
-                        child: Container(
-                          decoration: BoxDecoration(gradient: AppColors.getBodyGradient(mode)),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.getBodyGradient(mode),
+                        ),
+                        child: CustomPaint(
+                          painter: _FootballGridPainter(mode),
                         ),
                       ),
                     ),
 
                     // =============== CONTENT ===============
                     SafeArea(
-                      child: LayoutBuilder(builder: (context, constraints) {
-                        final hPad = constraints.maxWidth * 0.04;
-                        return SingleChildScrollView(
-                          padding: EdgeInsets.fromLTRB(
-                            hPad,
-                            hPad,
-                            hPad,
-                            kBottomNavigationBarHeight + constraints.maxWidth * 0.06,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Top header neon
-
-                              const SizedBox(height: 16),
-
-                              _SectionHeader('Single Frame Detection 📸', mode, seedColor),
-                              const SizedBox(height: 8),
-                              _GlassCard(
-                                seedColor: seedColor,
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(16, isPortrait ? 12 : 8, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Erreur
+                            if (state.error != null)
+                              GlassCard(
                                 mode: mode,
-                                child: OffsideForm(
-                                  constraints: constraints,
-                                  currentLang: currentLang,
-                                  mode: mode,
-                                  seedColor: seedColor,
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.error_outline, color: Colors.redAccent),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        state.error!,
+                                        style: GoogleFonts.roboto(
+                                          color: Colors.redAccent,
+                                          fontSize: isPortrait ? 15 : 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
 
-                              if (state.isLoading) ...[
-                                const SizedBox(height: 18),
-                                _ProgressCard(
-                                  upload: state.uploadProgress,
-                                  download: state.downloadProgress,
-                                  cancellable: state.cancellable,
-                                  onCancel: () {
-                                    final bloc = context.read<OffsideBloc>();
-                                    if (!bloc.isClosed) {
-                                      bloc.add(CancelCurrentRequestEvent());
-                                    }
-                                  },
+                            // Single Frame Detection
+                            _SectionHeader(
+                              icon: Icons.photo_camera,
+                              title: 'Single Frame Detection',
+                              mode: mode,
+                            ),
+                            const SizedBox(height: 10),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                return GlassCard(
                                   mode: mode,
-                                  seedColor: seedColor,
-                                ),
-                              ],
+                                  child: OffsideForm(
+                                    constraints: constraints,
+                                    currentLang: currentLang,
+                                    mode: mode,
+                                    seedColor: seedColor,
+                                  ),
+                                );
+                              },
+                            ),
 
-                              if (state.offsideFrameResponse != null) ...[
-                                const SizedBox(height: 20),
-                                _FrameResultCard(
-                                  resp: state.offsideFrameResponse!,
-                                  picked: state.pickedImage,
-                                  mode: mode,
-                                  seedColor: seedColor,
-                                  globalViewMode: _globalViewMode,
-                                  onOpenImage: (fileOrUrl) => _openImageFullscreen(file: fileOrUrl.$1, url: fileOrUrl.$2),
-                                  onSaveImage: (url) => _saveToDownloads(context, url),
-                                  onSaveFile: (file) async {
-                                    if (_mediaStore == null || !Platform.isAndroid) {
-                                      _toastError(context, 'Sauvegarde non supportée sur cette plateforme ❌');
-                                      return;
-                                    }
-                                    try {
-                                      final tempDir = await getTemporaryDirectory();
-                                      final tempPath = '${tempDir.path}/temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-                                      await file.copy(tempPath);
-                                      final success = await _mediaStore!.saveFile(
-                                        tempFilePath: tempPath,
-                                        dirType: DirType.download,
-                                        dirName: DirName.download,
-                                      );
-                                      if (success != null) {
-                                        _toastSuccess(context, 'Image enregistrée dans Téléchargements 📸');
-                                      } else {
-                                        _toastError(context, 'Échec de l’enregistrement ❌');
-                                      }
-                                    } catch (e) {
-                                      _toastError(context, 'Erreur: $e ❌');
-                                    }
-                                  },
-                                ),
-                              ],
-
-                              const SizedBox(height: 20),
-
-                              if (state.videoResponse != null) ...[
-                                _SectionHeader('Video Analysis 🎥', mode, seedColor),
-                                const SizedBox(height: 12),
-                                _VideoResultCard(
-                                  resp: state.videoResponse!,
-                                  controller: _videoController,
-                                  mode: mode,
-                                  seedColor: seedColor,
-                                  globalViewMode: _globalViewMode,
-                                  onOpenVideo: (url) => _openVideoFullscreen(url),
-                                  onSaveVideo: () {
-                                    final u = state.videoResponse!.fileUrl;
-                                    if (u != null) _saveToDownloads(context, u, isVideo: true);
-                                  },
-                                ),
-                              ],
+                            if (state.isLoading) ...[
+                              const SizedBox(height: 18),
+                              _ProgressCard(
+                                upload: state.uploadProgress,
+                                download: state.downloadProgress,
+                                cancellable: state.cancellable,
+                                onCancel: () {
+                                  final bloc = context.read<OffsideBloc>();
+                                  if (!bloc.isClosed) {
+                                    bloc.add(CancelCurrentRequestEvent());
+                                  }
+                                },
+                                mode: mode,
+                                seedColor: seedColor,
+                              ),
                             ],
-                          ),
-                        );
-                      }),
+
+                            if (state.offsideFrameResponse != null) ...[
+                              const SizedBox(height: 20),
+                              _FrameResultCard(
+                                resp: state.offsideFrameResponse!,
+                                picked: state.pickedImage,
+                                mode: mode,
+                                seedColor: seedColor,
+                                globalViewMode: _globalViewMode,
+                                onOpenImage: (fileOrUrl) => _openImageFullscreen(file: fileOrUrl.$1, url: fileOrUrl.$2),
+                                onSaveImage: (url) => _saveToDownloads(context, url),
+                                onSaveFile: (file) async {
+                                  if (_mediaStore == null || !Platform.isAndroid) {
+                                    _toastError(context, 'Sauvegarde non supportée sur cette plateforme ❌');
+                                    return;
+                                  }
+                                  try {
+                                    final tempDir = await getTemporaryDirectory();
+                                    final tempPath = '${tempDir.path}/temp_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+                                    await file.copy(tempPath);
+                                    final success = await _mediaStore!.saveFile(
+                                      tempFilePath: tempPath,
+                                      dirType: DirType.download,
+                                      dirName: DirName.download,
+                                    );
+                                    if (success != null) {
+                                      _toastSuccess(context, 'Image enregistrée dans Téléchargements 📸');
+                                    } else {
+                                      _toastError(context, 'Échec de l’enregistrement ❌');
+                                    }
+                                  } catch (e) {
+                                    _toastError(context, 'Erreur: $e ❌');
+                                  }
+                                },
+                              ),
+                            ],
+
+                            const SizedBox(height: 20),
+
+                            if (state.videoResponse != null) ...[
+                              _SectionHeader(
+                                icon: Icons.play_circle_outline,
+                                title: 'Video Analysis',
+                                mode: mode,
+                              ),
+                              const SizedBox(height: 10),
+                              _VideoResultCard(
+                                resp: state.videoResponse!,
+                                controller: _videoController,
+                                mode: mode,
+                                seedColor: seedColor,
+                                globalViewMode: _globalViewMode,
+                                onOpenVideo: (url) => _openVideoFullscreen(url),
+                                onSaveVideo: () {
+                                  final u = state.videoResponse!.fileUrl;
+                                  if (u != null) _saveToDownloads(context, u, isVideo: true);
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
 
                     if (state.isLoading)
@@ -621,155 +624,6 @@ class _OffsidePageState extends State<OffsidePage> with TickerProviderStateMixin
 // =================== Styled components =================
 // =======================================================
 
-
-
-class _GlowDot extends StatefulWidget {
-  const _GlowDot();
-  @override
-  State<_GlowDot> createState() => _GlowDotState();
-}
-
-class _GlowDotState extends State<_GlowDot> with SingleTickerProviderStateMixin {
-  late AnimationController _c;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: Tween<double>(begin: 0.9, end: 1.15).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut)),
-      child: Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-          color: Colors.greenAccent.withOpacity(0.85),
-          shape: BoxShape.circle,
-          boxShadow: const [BoxShadow(color: Colors.greenAccent, blurRadius: 18, spreadRadius: 2)],
-        ),
-      ),
-    );
-  }
-}
-
-class _GlassCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  final double radius;
-  final Color? overrideBorderColor;
-  final Color seedColor;
-  final int mode;
-
-  const _GlassCard({
-    super.key,
-    required this.child,
-    required this.seedColor,
-    required this.mode,
-    this.padding = const EdgeInsets.all(16),
-    this.radius = 16,
-    this.overrideBorderColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final borderC = overrideBorderColor ?? AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.22);
-    final glow = AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.12);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.06),
-                Colors.white.withOpacity(0.02),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: borderC),
-            boxShadow: [
-              BoxShadow(color: glow, blurRadius: 26, spreadRadius: 1, offset: const Offset(0, 10)),
-              BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 18, spreadRadius: 2, offset: const Offset(0, 8)),
-            ],
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String text;
-  final Color seedColor;
-  final int mode;
-  const _Chip(this.text, this.seedColor, this.mode, {super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
-        border: Border.all(color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.35)),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Text(text, style: GoogleFonts.roboto(fontSize: 12)),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final int mode;
-  final Color seedColor;
-  const _SectionHeader(this.title, this.mode, this.seedColor, {super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(width: 4, height: 24, color: AppColors.getTertiaryColor(seedColor, mode)),
-        const SizedBox(width: 10),
-        _GradientText(
-          title,
-          gradient: LinearGradient(
-            colors: [
-              AppColors.getTertiaryColor(seedColor, mode),
-              AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.6),
-            ],
-          ),
-          style: GoogleFonts.roboto(fontSize: 20, fontWeight: FontWeight.w800),
-        ),
-      ],
-    );
-  }
-}
-
-class _GradientText extends StatelessWidget {
-  final String text;
-  final TextStyle style;
-  final Gradient gradient;
-  const _GradientText(this.text, {required this.style, required this.gradient, super.key});
-  @override
-  Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (bounds) => gradient.createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
-      child: Text(text, style: style.copyWith(color: Colors.white)),
-    );
-  }
-}
-
 class _HoloIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -785,9 +639,9 @@ class _HoloIconButton extends StatelessWidget {
           color: Colors.white.withOpacity(0.08),
           child: InkWell(
             onTap: onTap,
-            child: const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Icon(Icons.close, size: 26, color: Colors.white),
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Icon(icon, size: 26, color: Colors.white),
             ),
           ),
         ),
@@ -877,8 +731,7 @@ class _ProgressCardState extends State<_ProgressCard> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    return _GlassCard(
-      seedColor: widget.seedColor,
+    return GlassCard(
       mode: widget.mode,
       child: Column(
         children: [
@@ -929,13 +782,14 @@ class _LabeledBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = (value * 100).clamp(0, 100).toStringAsFixed(0);
+    final txt = AppColors.getTextColor(mode);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Text(label, style: GoogleFonts.roboto(fontWeight: FontWeight.w600)),
+          Text(label, style: GoogleFonts.roboto(fontWeight: FontWeight.w600, color: txt)),
           const Spacer(),
-          Text('$pct%'),
+          Text('$pct%', style: GoogleFonts.roboto(fontWeight: FontWeight.w800, color: txt)),
         ]),
         const SizedBox(height: 6),
         ClipRRect(
@@ -1011,10 +865,8 @@ class _FrameResultCardState extends State<_FrameResultCard> {
 
     final numPlayers = (widget.resp.meta?['meta']?['num_players'] as num?)?.toInt() ?? 0;
 
-    return _GlassCard(
-      seedColor: widget.seedColor,
+    return GlassCard(
       mode: widget.mode,
-      radius: 18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1031,7 +883,7 @@ class _FrameResultCardState extends State<_FrameResultCard> {
                   border: Border.all(color: verdictColor.withOpacity(0.4)),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800)),
+                child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800, color: AppColors.getTextColor(widget.mode))),
               ),
               if (widget.resp.attackingTeam != null)
                 _Chip('🔵 Attacking: ${widget.resp.attackingTeam}', widget.seedColor, widget.mode),
@@ -1053,7 +905,7 @@ class _FrameResultCardState extends State<_FrameResultCard> {
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-              child: Text('Reason: ${widget.resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic)),
+              child: Text('Reason: ${widget.resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic, color: AppColors.getTextColor(widget.mode))),
             ),
           ],
 
@@ -1088,7 +940,7 @@ class _FrameResultCardState extends State<_FrameResultCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Picked Image 📷', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                        Text('Picked Image 📷', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: AppColors.getTextColor(widget.mode))),
                         IconButton(onPressed: () => widget.onSaveFile(widget.picked!), icon: const Icon(Icons.download, color: Colors.green)),
                       ],
                     ),
@@ -1107,7 +959,7 @@ class _FrameResultCardState extends State<_FrameResultCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(currentLabel, style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                        Text(currentLabel, style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: AppColors.getTextColor(widget.mode))),
                         IconButton(onPressed: () => widget.onSaveImage(currentUrl!), icon: const Icon(Icons.download, color: Colors.green)),
                       ],
                     ),
@@ -1159,7 +1011,7 @@ class _FrameResultCardState extends State<_FrameResultCard> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
-                        child: Text('No $viewName image available from backend', style: const TextStyle(color: Colors.white54), textAlign: TextAlign.center),
+                        child: Text('No $viewName image available from backend', style: GoogleFonts.roboto(color: AppColors.getTextColor(widget.mode).withOpacity(0.7)), textAlign: TextAlign.center),
                       ),
                     ),
                   ],
@@ -1229,10 +1081,8 @@ class _VideoResultCardState extends State<_VideoResultCard> {
 
     final numPlayers = (widget.resp.meta?['meta']?['num_players'] as num?)?.toInt() ?? 0;
 
-    return _GlassCard(
-      seedColor: widget.seedColor,
+    return GlassCard(
       mode: widget.mode,
-      radius: 18,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Wrap(
           spacing: 8,
@@ -1246,7 +1096,7 @@ class _VideoResultCardState extends State<_VideoResultCard> {
                 border: Border.all(color: verdictColor.withOpacity(0.4)),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800)),
+              child: Text(verdictText, style: GoogleFonts.roboto(fontWeight: FontWeight.w800, color: AppColors.getTextColor(widget.mode))),
             ),
             if (widget.resp.attackingTeam != null) _Chip('🔵 Attacking: ${widget.resp.attackingTeam}', widget.seedColor, widget.mode),
             if (widget.resp.attackDirection != null) _Chip('➡️ Dir: ${widget.resp.attackDirection}', widget.seedColor, widget.mode),
@@ -1260,7 +1110,7 @@ class _VideoResultCardState extends State<_VideoResultCard> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text('Reason: ${widget.resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic)),
+            child: Text('Reason: ${widget.resp.reason}', style: GoogleFonts.roboto(fontSize: 14, fontStyle: FontStyle.italic, color: AppColors.getTextColor(widget.mode))),
           ),
         ],
 
@@ -1282,7 +1132,7 @@ class _VideoResultCardState extends State<_VideoResultCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Annotated Video 🎥', style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                        Text('Annotated Video 🎥', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: AppColors.getTextColor(widget.mode))),
                         IconButton(onPressed: widget.onSaveVideo, icon: const Icon(Icons.download, color: Colors.green)),
                       ],
                     ),
@@ -1330,7 +1180,7 @@ class _VideoResultCardState extends State<_VideoResultCard> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$viewName Tactical View for Video', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, fontSize: 16)),
+                  Text('$viewName Tactical View for Video', style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: AppColors.getTextColor(widget.mode), fontSize: 16)),
                   const SizedBox(height: 8),
                   Container(
                     height: 220,
@@ -1446,6 +1296,26 @@ class _ViewPill extends StatelessWidget {
   }
 }
 
+class _Chip extends StatelessWidget {
+  final String text;
+  final Color seedColor;
+  final int mode;
+  const _Chip(this.text, this.seedColor, this.mode, {super.key});
+  @override
+  Widget build(BuildContext context) {
+    final txt = AppColors.getTextColor(mode);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.15),
+        border: Border.all(color: AppColors.getTertiaryColor(seedColor, mode).withOpacity(0.35)),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Text(text, style: GoogleFonts.roboto(fontSize: 12, color: txt)),
+    );
+  }
+}
+
 // =======================================================
 // ===================== LOADING OVERLAY =================
 // =======================================================
@@ -1494,8 +1364,7 @@ class _LoadingOverlay extends StatelessWidget {
                 child: Column(
                   children: [
                     const SizedBox(height: 12),
-                    _GlassCard(
-                      seedColor: seedColor,
+                    GlassCard(
                       mode: mode,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                       child: Row(
@@ -1505,11 +1374,11 @@ class _LoadingOverlay extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Génération en cours…', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800)),
+                                Text('Génération en cours…', style: GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.getTextColor(mode))),
                                 const SizedBox(height: 4),
                                 Text(
                                   'Veuillez patienter, nous analysons votre média et traçons les lignes offside.',
-                                  style: GoogleFonts.manrope(fontSize: 13, color: Colors.white70),
+                                  style: GoogleFonts.manrope(fontSize: 13, color: AppColors.getTextColor(mode).withOpacity(0.7)),
                                 ),
                               ],
                             ),
@@ -1525,15 +1394,14 @@ class _LoadingOverlay extends StatelessWidget {
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(_fmt(s), style: GoogleFonts.roboto(fontWeight: FontWeight.w700)),
+                              child: Text(_fmt(s), style: GoogleFonts.roboto(fontWeight: FontWeight.w700, color: AppColors.getTextColor(mode))),
                             ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _GlassCard(
-                      seedColor: seedColor,
+                    GlassCard(
                       mode: mode,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1552,7 +1420,7 @@ class _LoadingOverlay extends StatelessWidget {
                           children: [
                             CircularProgressIndicator(color: AppColors.getTertiaryColor(seedColor, mode)),
                             const SizedBox(height: 16),
-                            Text('Analyse en cours...', style: GoogleFonts.manrope(fontSize: 16, color: Colors.white70)),
+                            Text('Analyse en cours...', style: GoogleFonts.manrope(fontSize: 16, color: AppColors.getTextColor(mode).withOpacity(0.7))),
                           ],
                         ),
                       ),
@@ -1568,31 +1436,128 @@ class _LoadingOverlay extends StatelessWidget {
   }
 }
 
-// =======================================================
-// ======================== BG GRID ======================
-// =======================================================
+// ======== Sub-Widgets design ========
+
+class GlassCard extends StatelessWidget {
+  final Widget? child;
+  final EdgeInsetsGeometry? padding;
+  final double? height;
+  final int mode;
+
+  const GlassCard({
+    super.key,
+    required this.mode,
+    this.child,
+    this.padding,
+    this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = AppColors.getSurfaceColor(mode).withOpacity(0.5);
+    return Container(
+      height: height,
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [bg, bg.withOpacity(0.7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(color: AppColors.getTextColor(mode).withOpacity(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.02),
+            blurRadius: 2,
+            spreadRadius: -1,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.all(16),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final int mode;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    required this.mode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final txt = AppColors.getTextColor(mode);
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: AppColors.getSecondaryColor(AppColors.seedColors[1]!, 1).withOpacity(0.85),
+          size: 26,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: GoogleFonts.roboto(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: txt,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ======== Background painter ========
 
 class _FootballGridPainter extends CustomPainter {
   final int mode;
+
   _FootballGridPainter(this.mode);
+
   @override
   void paint(Canvas canvas, Size size) {
     final gridPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.03)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.045)
       ..strokeWidth = 0.5;
-    const step = 50.0;
+
+    const step = 48.0;
     for (double x = 0; x <= size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
     for (double y = 0; y <= size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
+
     final fieldPaint = Paint()
-      ..color = AppColors.getTextColor(mode).withOpacity(0.06)
+      ..color = AppColors.getTextColor(mode).withOpacity(0.085)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final inset = 40.0;
+      ..strokeWidth = 1.0;
+
+    const inset = 40.0;
     final rect = Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
+
+    // Terrain central + cercle
     canvas.drawRect(rect, fieldPaint);
     final midY = rect.center.dy;
     canvas.drawLine(
