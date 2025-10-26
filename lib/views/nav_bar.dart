@@ -25,8 +25,6 @@ import 'package:VarXPro/views/pages/FauteDetectiong/faute_detection_page.dart';
 import 'package:VarXPro/views/pages/offsidePage/service/offside_service.dart';
 import 'package:VarXPro/views/pages/offsidePage/view/offside_page.dart';
 
-import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/service/tracking_service.dart';
-import 'package:VarXPro/views/pages/TrackingAndGoalAnalysis/view/tracking_page.dart';
 
 import 'package:VarXPro/views/pages/LiveStream/controller/live_stream_controller.dart';
 import 'package:VarXPro/views/pages/LiveStream/views/live_stream_dashboard.dart';
@@ -66,14 +64,14 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         create: (_) => OffsideService(),
         child: const OffsidePage(),
       ), // 3
-      RepositoryProvider(
-        create: (_) => TrackingService(),
-        child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage(),
-      ), // 4
+      //RepositoryProvider(
+        //create: (_) => TrackingService(),
+        //child: const EnhancedSoccerPlayerTrackingAndGoalAnalysisPage(),
+      //), // 4
       RepositoryProvider(
         create: (_) => LiveStreamController(),
         child: const LiveStreamDashboard(),
-      ), // 5
+      ), // 4
     ];
 
     _pillController = AnimationController(
@@ -174,9 +172,9 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
         return '⚽'; // Ball IN/OUT
       case 3:
         return '🚩'; // Offside
+    //  case 4:
+      //  return '📊'; // Tracking
       case 4:
-        return '📊'; // Tracking
-      case 5:
         return '📡'; // Live stream
       default:
         return '⚽';
@@ -208,8 +206,8 @@ class _NavPageState extends State<NavPage> with TickerProviderStateMixin {
             _NavItem(emoji: '🚨', pageIndex: 1),
             _NavItem(emoji: '⚽', pageIndex: 2),
             _NavItem(emoji: '🚩', pageIndex: 3),
-            _NavItem(emoji: '📊', pageIndex: 4),
-            _NavItem(emoji: '📡', pageIndex: 5),
+            //_NavItem(emoji: '📊', pageIndex: 4),
+            _NavItem(emoji: '📡', pageIndex: 4),
           ];
 
     return WillPopScope(

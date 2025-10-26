@@ -15,7 +15,7 @@ class PdfViewer extends StatefulWidget {
     required this.pdfPath,
     required this.mode,
     required this.seedColor,
-    required this.currentLang,
+    required this.currentLang, required Future<PdfDocument> document,
   });
 
   @override

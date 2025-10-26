@@ -101,7 +101,6 @@ class _CreateEvaluationPageState extends State<CreateEvaluationPage> with Ticker
           _refereeLoaded = true;
         });
         await _loadMeta();
-        _showSnackBar('Failed to load referee details: ${result['error']}', Colors.orange);
       }
     }
   }

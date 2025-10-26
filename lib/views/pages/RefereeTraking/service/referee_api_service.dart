@@ -2,10 +2,11 @@
 import 'dart:io';
 import 'package:VarXPro/views/pages/RefereeTraking/model/referee_analysis.dart';
 import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 
 class RefereeService {
   final Dio _dio = Dio(BaseOptions(
-    baseUrl: 'https://allvarx.varxpro.com',
+    baseUrl: 'https://evalrefereemax.varxpro.com',
     connectTimeout: const Duration(seconds: 30),
     sendTimeout: Duration.zero,
     receiveTimeout: Duration.zero,
@@ -48,21 +49,8 @@ class RefereeService {
     ));
   }
 
-  Future<HealthResponse> checkHealth() async {
-    try {
-      final response = await _dio.get('/health');
-      return HealthResponse.fromJson(response.data);
-    } catch (e) {
-      throw Exception('Failed to check health: $e');
-    }
-  }
-
   Future<AnalyzeResponse> analyzeVideo({
     required File video,
-    String attack = 'left',
-    String attacking_team = 'team1',
-    File? refLog,
-    String? decisionsJson,
   }) async {
     try {
       final Map<String, dynamic> formMap = {
@@ -70,27 +58,40 @@ class RefereeService {
           video.path,
           filename: 'match.mp4',
         ),
-        'attack': attack,
-        'attacking_team': attacking_team,
+        'players': 'true',
+        'goalkeepers': 'true',
+        'referees': 'true',
+        'ball': 'true',
+        'stats': 'true',
+        'ref_eval': 'true',
       };
-      if (refLog != null) {
-        formMap['ref_log'] = await MultipartFile.fromFile(
-          refLog.path,
-          filename: 'referee_log.json',
-        );
-      }
-      if (decisionsJson != null) {
-        formMap['decisions_json'] = decisionsJson;
-      }
       final formData = FormData.fromMap(formMap);
-      final response = await _dio.post('/api/decision/auto/video', data: formData);
+      final response = await _dio.post('/analyze', data: formData);
       final data = response.data;
-      if (data is Map<String, dynamic> && data.containsKey('error')) {
-        throw Exception(data['error']);
+      if (data is Map<String, dynamic> && !data['ok']) {
+        throw Exception(data['error'] ?? 'Analysis failed');
       }
       return AnalyzeResponse.fromJson(data);
     } catch (e) {
       throw Exception('analysis_failed: $e');
+    }
+  }
+
+  Future<String> downloadFile(String remotePath) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final fileName = remotePath.split('/').last;
+      final localPath = '${dir.path}/$fileName';
+      await _dio.download(remotePath, localPath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            print('Download progress: ${(received / total * 100).toStringAsFixed(0)}%');
+          }
+        },
+      );
+      return localPath;
+    } catch (e) {
+      throw Exception('Download failed: $e');
     }
   }
 }

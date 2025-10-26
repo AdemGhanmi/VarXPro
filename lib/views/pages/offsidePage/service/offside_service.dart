@@ -1,4 +1,6 @@
-// File: lib/services/offside_service.dart (assuming path based on imports)
+// File: lib/views/pages/offsidePage/service/offside_service.dart
+// No changes needed - parsing is correct, events are handled in model
+
 import 'dart:io'; 
 import 'dart:convert';
 import 'package:VarXPro/views/pages/offsidePage/model/offside_model.dart';
@@ -28,7 +30,7 @@ class OffsideService {
     debugPrint('=== Dio baseUrl: ${_dio.options.baseUrl} ===');
   }
 
-  String _toAbsoluteUrl(String? pathOrUrl) {
+  String _toAbsoluteUrl(String? pathOrUrl, {String? baseUrl}) {
     if (pathOrUrl == null || pathOrUrl.trim().isEmpty) return '';
     final s = pathOrUrl.trim();
     final parsed = Uri.tryParse(s);
@@ -36,7 +38,7 @@ class OffsideService {
     String p = s;
     if (p.startsWith('./')) p = p.substring(2);
     if (p.startsWith('/')) p = p.substring(1);
-    final base = Uri.parse(_dio.options.baseUrl);
+    final base = Uri.parse(baseUrl ?? _dio.options.baseUrl);
     final resolved = base.resolve(p);
     return resolved.toString();
   }
@@ -246,19 +248,33 @@ class OffsideService {
   Future<OffsideVideoResponse> _parseVideoResponse({
     required Map<String, dynamic> json,
     required Map<String, dynamic> metaMerge,
+    required String videoBaseUrl,
   }) async {
     final serverMeta = (json['meta'] as Map<String, dynamic>? ?? const {});
     final mergedMeta = {...serverMeta, ...metaMerge};
     final models = (json['models'] as Map<String, dynamic>? ?? const {});
-    final fileUrl = _toAbsoluteUrl(json['file_url'] as String?);
-    final image2DUrl = _toAbsoluteUrl(json['image_2d_url'] as String?);
-    final image3DUrl = _toAbsoluteUrl(json['image_3d_url'] as String?);
+    final outputVideo = json['output_video'] as String?;
+    final fileUrl = outputVideo != null ? _toAbsoluteUrl(outputVideo, baseUrl: videoBaseUrl) : null;
+    
+    String? firstImageUrl;
+    final events = json['events'] as List?;
+    if (events != null && events.isNotEmpty) {
+      final firstEvent = events[0] as Map<String, dynamic>?;
+      if (firstEvent != null) {
+        final frameImg = firstEvent['frame_image'] as String?;
+        if (frameImg != null) {
+          firstImageUrl = _toAbsoluteUrl(frameImg, baseUrl: videoBaseUrl);
+        }
+      }
+    }
+    final image2DUrl = firstImageUrl;
+
     return OffsideVideoResponse.fromJson(
-      mergedMeta,
+      json, // Pass full json for new fields
       models: models,
       fileUrl: fileUrl,
       image2DUrl: image2DUrl,
-      image3DUrl: image3DUrl,
+      image3DUrl: null,
     );
   }
 
@@ -278,27 +294,22 @@ class OffsideService {
     debugPrint('→ returnFile: $returnFile');
     debugPrint('→ viewMode: $viewMode');
 
-    final offsideParams = <String, dynamic>{
-      'offside_enable': true,
-      'use_ball_for_line': true,
-      'player_conf': 0.30,
-      if (viewMode != null) 'view_mode': viewMode,
-    };
-
-    final paramsMap = <String, dynamic>{
-      'return_model': true,
-      'return_file': false,
-      'return_images': true,
-      ...offsideParams,
-    };
+    const videoBaseUrl = 'https://offsidevideo.varxpro.com';
+    final videoDio = Dio(
+      BaseOptions(
+        baseUrl: videoBaseUrl,
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(minutes: 30),
+        headers: {'Accept': 'application/json'},
+      ),
+    );
 
     final formData = FormData.fromMap({
-      'video': await MultipartFile.fromFile(video.path, filename: 'video.mp4'),
-      'params': jsonEncode(paramsMap),
+      'file': await MultipartFile.fromFile(video.path, filename: 'input_video.mp4'),
     });
 
     final clientMeta = {
-      'offside_enable': offsideParams['offside_enable'],
+      'offside_enable': true,
       if (attackDirection.isNotEmpty) 'attack_direction': attackDirection,
       if (lineStart != null && lineStart.length == 2)
         'fixed_line_start': lineStart,
@@ -306,39 +317,10 @@ class OffsideService {
         'fixed_line_end': lineEnd,
     };
 
-    // 1) /predict/video_model
-    debugPrint('=== Trying endpoint: /predict/video_model ===');
+    debugPrint('=== Trying endpoint: /offside/analyze ===');
     try {
-      final resp = await _dio.post(
-        '/predict/video_model',
-        data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-          receiveTimeout: const Duration(minutes: 30),
-          responseType: ResponseType.json,
-        ),
-        cancelToken: cancelToken,
-        onSendProgress: onSendProgress,
-        onReceiveProgress: onReceiveProgress,
-      );
-
-      if (resp.data is! Map<String, dynamic>) {
-        throw Exception('Unexpected video_model response type: ${resp.data.runtimeType}');
-      }
-
-      final data = Map<String, dynamic>.from(resp.data as Map);
-      debugPrint('→ Endpoint: /predict/video_model | ok=200');
-      return _parseVideoResponse(json: data, metaMerge: clientMeta);
-    } on DioException catch (e) {
-      debugPrint('❌ /predict/video_model failed: ${_dioErrorToString(e)}');
-      // fallthrough
-    }
-
-    // 2) Legacy /predict/video
-    debugPrint('=== Trying endpoint: /predict/video ===');
-    try {
-      final resp = await _dio.post(
-        '/predict/video',
+      final resp = await videoDio.post(
+        '/offside/analyze',
         data: formData,
         options: Options(
           contentType: 'multipart/form-data',
@@ -353,12 +335,18 @@ class OffsideService {
       if (resp.data is! Map<String, dynamic>) {
         throw Exception('Unexpected video response type: ${resp.data.runtimeType}');
       }
+
       final data = Map<String, dynamic>.from(resp.data as Map);
-      debugPrint('→ Endpoint: /predict/video | ok=200');
-      return _parseVideoResponse(json: data, metaMerge: clientMeta);
+      debugPrint('→ Video analysis: offside_found=${data['offside_found']} | frames=${(data['offside_frames'] as List?)?.length ?? 0}');
+
+      return _parseVideoResponse(
+        json: data,
+        metaMerge: clientMeta,
+        videoBaseUrl: videoBaseUrl,
+      );
     } on DioException catch (e) {
-      debugPrint('❌ /predict/video failed: ${_dioErrorToString(e)}');
-      throw Exception('/predict/video failed: ${_dioErrorToString(e)}');
+      debugPrint('❌ /offside/analyze failed: ${_dioErrorToString(e)}');
+      throw Exception('/offside/analyze failed: ${_dioErrorToString(e)}');
     }
   }
 }

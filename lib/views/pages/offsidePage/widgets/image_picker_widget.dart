@@ -120,3 +120,4 @@ class ImagePickerWidget extends StatelessWidget {
     );
   }
 }
+

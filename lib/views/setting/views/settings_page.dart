@@ -71,6 +71,7 @@ class _SettingsPageState extends State<SettingsPage>
     vsync: this,
     duration: const Duration(milliseconds: 800),
   )..forward();
+
   late final Animation<double> _fadeAnimation = CurvedAnimation(
     parent: _fadeController,
     curve: Curves.easeInOutQuart,
@@ -80,6 +81,7 @@ class _SettingsPageState extends State<SettingsPage>
     vsync: this,
     duration: const Duration(milliseconds: 700),
   )..forward();
+
   late final Animation<Offset> _slideAnimation =
       Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
         CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
@@ -89,6 +91,7 @@ class _SettingsPageState extends State<SettingsPage>
     vsync: this,
     duration: const Duration(milliseconds: 1500),
   )..repeat(reverse: true);
+
   late final Animation<double> _scaleAnimation =
       Tween<double>(begin: 0.98, end: 1.02).animate(
         CurvedAnimation(parent: _scaleController, curve: Curves.easeInOutSine),
@@ -130,7 +133,6 @@ class _SettingsPageState extends State<SettingsPage>
         margin: const EdgeInsets.all(16),
       ),
     );
-
     // إعادة إظهار النص (علشان نعدّل الـ content حسب الرسالة)
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -216,13 +218,12 @@ class _SettingsPageState extends State<SettingsPage>
                 child: const Icon(Icons.logout, color: Colors.red, size: 30),
               ),
               const SizedBox(height: 16),
-
               // Title
               Text(
                 Translations.getSettingsText(
-                      'logoutConfirmTitle',
-                      currentLang,
-                    ) ??
+                  'logoutConfirmTitle',
+                  currentLang,
+                ) ??
                     'Confirm Logout',
                 style: TextStyle(
                   fontSize: 20,
@@ -231,13 +232,12 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
               ),
               const SizedBox(height: 8),
-
               // Message
               Text(
                 Translations.getSettingsText(
-                      'logoutConfirmMessage',
-                      currentLang,
-                    ) ??
+                  'logoutConfirmMessage',
+                  currentLang,
+                ) ??
                     'Are you sure you want to logout?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -248,7 +248,6 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
               ),
               const SizedBox(height: 24),
-
               // Buttons
               Row(
                 children: [
@@ -295,9 +294,9 @@ class _SettingsPageState extends State<SettingsPage>
                           _showSuccessSnackbar(
                             context,
                             Translations.getSettingsText(
-                                  'logoutSuccess',
-                                  currentLang,
-                                ) ??
+                              'logoutSuccess',
+                              currentLang,
+                            ) ??
                                 'Logged out successfully',
                             modeProvider.currentMode,
                           );
@@ -340,7 +339,6 @@ class _SettingsPageState extends State<SettingsPage>
     final langProvider = Provider.of<LanguageProvider>(context, listen: true);
     final modeProvider = Provider.of<ModeProvider>(context, listen: true);
     final authProvider = Provider.of<AuthProvider>(context, listen: true);
-
     final currentLang = langProvider.currentLanguage;
     final seedColor =
         AppColors.seedColors[modeProvider.currentMode] ??
@@ -348,7 +346,6 @@ class _SettingsPageState extends State<SettingsPage>
     final size = MediaQuery.sizeOf(context);
     final isCompact = size.width < 360;
     final isTablet = size.width > 600;
-
     final textDirection =
         currentLang == 'ar' ? TextDirection.rtl : TextDirection.ltr;
 
@@ -379,10 +376,8 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
               ),
             ),
-
             // Animated Background Elements
             _AnimatedBackgroundElements(modeProvider: modeProvider),
-
             SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnimation,
@@ -394,7 +389,6 @@ class _SettingsPageState extends State<SettingsPage>
                       isCompact: isCompact,
                       onBack: () => Navigator.pop(context),
                     ),
-
                     // Title with Logo
                     Padding(
                       padding: EdgeInsets.symmetric(
@@ -406,9 +400,9 @@ class _SettingsPageState extends State<SettingsPage>
                           Expanded(
                             child: Text(
                               Translations.getSettingsText(
-                                    'settingsTitle',
-                                    currentLang,
-                                  ) ??
+                                'settingsTitle',
+                                currentLang,
+                              ) ??
                                   'Paramètres',
                               style: TextStyle(
                                 fontSize: isCompact ? 26 : 32,
@@ -467,7 +461,6 @@ class _SettingsPageState extends State<SettingsPage>
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     // Content
                     Expanded(
                       child: SlideTransition(
@@ -501,7 +494,7 @@ class _SettingsPageState extends State<SettingsPage>
 }
 
 /* =========================================================================
- *  Widget Components
+ * Widget Components
  * ========================================================================= */
 
 class _AnimatedBackgroundElements extends StatelessWidget {
@@ -535,7 +528,6 @@ class _BackgroundPainter extends CustomPainter {
       seedColor,
       modeProvider.currentMode,
     );
-
     final paint = Paint()
       ..color = primaryColor.withOpacity(0.05)
       ..style = PaintingStyle.fill;
@@ -592,7 +584,6 @@ class _SettingsHeader extends StatelessWidget {
               splashRadius: 20,
             ),
           ),
-
           const Spacer(),
         ],
       ),
@@ -646,7 +637,6 @@ class _SettingsContent extends StatelessWidget {
             ),
             const SizedBox(height: 20),
           ],
-
           // Language Section
           _SettingsSection(
             title:
@@ -656,7 +646,6 @@ class _SettingsContent extends StatelessWidget {
             modeProvider: modeProvider,
           ),
           const SizedBox(height: 8),
-
           _LanguageGrid(
             currentLang: currentLang,
             modeProvider: modeProvider,
@@ -665,9 +654,7 @@ class _SettingsContent extends StatelessWidget {
               onSuccessSnackbar(message);
             },
           ),
-
           const SizedBox(height: 20),
-
           // Mode Section
           _SettingsSection(
             title:
@@ -677,7 +664,6 @@ class _SettingsContent extends StatelessWidget {
             modeProvider: modeProvider,
           ),
           const SizedBox(height: 8),
-
           _ModeGrid(
             modes: modes,
             modeProvider: modeProvider,
@@ -687,9 +673,7 @@ class _SettingsContent extends StatelessWidget {
               onSuccessSnackbar('$modeName activated');
             },
           ),
-
           const SizedBox(height: 20),
-
           // Logout Button (only if authenticated, else hidden)
           if (isAuthenticated)
             _LogoutButton(
@@ -697,7 +681,6 @@ class _SettingsContent extends StatelessWidget {
               currentLang: currentLang,
               isTablet: isTablet,
             ),
-
           const SizedBox(height: 20),
         ],
       ),
@@ -976,15 +959,15 @@ class _LanguageCard extends StatelessWidget {
           color: isSelected
               ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
               : AppColors.getSurfaceColor(
-            modeProvider.currentMode,
-          ).withOpacity(0.8),
+                  modeProvider.currentMode,
+                ).withOpacity(0.8),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AppColors.getPrimaryColor(seedColor, modeProvider.currentMode)
                 : AppColors.getTextColor(
-              modeProvider.currentMode,
-            ).withOpacity(0.1),
+                    modeProvider.currentMode,
+                  ).withOpacity(0.1),
             width: 2,
           ),
           boxShadow: [
@@ -1052,13 +1035,13 @@ class _ModeGrid extends StatelessWidget {
         final mode = modes[index];
         final modeIndex = index + 1;
         final isSelected = modeProvider.currentMode == modeIndex;
-
         return _ModeCard(
           emoji: mode['emoji'] as String,
           name: mode['name'] as String,
           description: mode['desc'] as String,
           color: mode['color'] as Color,
           isSelected: isSelected,
+          modeProvider: modeProvider,
           onTap: () => onModeChanged(modeIndex, mode['name'] as String),
         );
       },
@@ -1072,6 +1055,7 @@ class _ModeCard extends StatelessWidget {
   final String description;
   final Color color;
   final bool isSelected;
+  final ModeProvider modeProvider;
   final VoidCallback onTap;
 
   const _ModeCard({
@@ -1080,11 +1064,14 @@ class _ModeCard extends StatelessWidget {
     required this.description,
     required this.color,
     required this.isSelected,
+    required this.modeProvider,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final textColor = AppColors.getTextColor(modeProvider.currentMode);
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -1099,18 +1086,18 @@ class _ModeCard extends StatelessWidget {
           ),
           gradient: isSelected
               ? LinearGradient(
-            colors: [color, color.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          )
+                  colors: [color, color.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
               : LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.1),
-              Colors.white.withOpacity(0.05),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+                  colors: [
+                    AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.1),
+                    AppColors.getSurfaceColor(modeProvider.currentMode).withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
           boxShadow: [
             if (isSelected)
               BoxShadow(
@@ -1122,11 +1109,6 @@ class _ModeCard extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            const Positioned(
-              top: 12,
-              left: 12,
-              child: Text(''),
-            ),
             Positioned(
               top: 12,
               left: 12,
@@ -1154,7 +1136,7 @@ class _ModeCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: isSelected ? Colors.white : Colors.black87,
+                        color: isSelected ? Colors.white : textColor,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 2,
@@ -1166,7 +1148,7 @@ class _ModeCard extends StatelessWidget {
                         fontSize: 10,
                         color: isSelected
                             ? Colors.white.withOpacity(0.8)
-                            : Colors.grey.shade600,
+                            : textColor.withOpacity(0.7),
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,

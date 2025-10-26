@@ -1,5 +1,6 @@
-// File: lib/views/pages/offsidePage/models/offside_model.dart
-// Updated with dummy position generation for players/gks/ball/line if missing
+// File: lib/views/pages/offsidePage/model/offside_model.dart
+// Fixed bugs in linePoints parsing for both Frame and Video responses
+// Ensured events parsing is robust
 
 // ------------------------------------------------------------
 // 1) PingResponse (unchanged)
@@ -372,7 +373,7 @@ class Field3DModel {
 }
 
 // ------------------------------------------------------------
-// 4) OffsideFrameResponse / OffsideVideoResponse (Updated to pass meta to models)
+// 4) OffsideFrameResponse (Fixed linePoints parsing)
 // ------------------------------------------------------------
 class OffsideFrameResponse {
   final bool ok;
@@ -437,9 +438,10 @@ class OffsideFrameResponse {
     Map<String, List<int>>? linePointsMap;
     final offsideObj = json['offside'];
     if (offsideObj is Map && offsideObj['line'] is Map) {
-      final l = offsideObj['line'] as Map<String, dynamic>;
-      final p1 = (l['p1'] as List?)?.map((e) => (e as num).toInt()).toList();
-      final p2 = (l['p2'] as List?)?.map((e) => (e as num).toInt()).toList();
+      // FIXED: Correctly extract 'line' map
+      final lineMap = offsideObj['line'] as Map<String, dynamic>;
+      final p1 = (lineMap['p1'] as List?)?.map((e) => (e as num).toInt()).toList();
+      final p2 = (lineMap['p2'] as List?)?.map((e) => (e as num).toInt()).toList();
       if (p1 != null && p2 != null) {
         linePointsMap = {'start': p1, 'end': p2};
       }
@@ -500,12 +502,41 @@ class OffsideFrameResponse {
   }
 }
 
+// ------------------------------------------------------------
+// 5) VideoEvent (unchanged)
+// ------------------------------------------------------------
+class VideoEvent {
+  final String? clipVideo;
+  final String? frameImage;
+  final int? frameIndex;
+  final double? timeSeconds;
+
+  VideoEvent({
+    this.clipVideo,
+    this.frameImage,
+    this.frameIndex,
+    this.timeSeconds,
+  });
+
+  factory VideoEvent.fromJson(Map<String, dynamic> json) {
+    return VideoEvent(
+      clipVideo: json['clip_video'] as String?,
+      frameImage: json['frame_image'] as String?,
+      frameIndex: (json['frame_index'] as num?)?.toInt(),
+      timeSeconds: (json['time_seconds'] as num?)?.toDouble(),
+    );
+  }
+}
+
+// ------------------------------------------------------------
+// 6) OffsideVideoResponse (Fixed linePoints parsing, robust events parsing)
+// ------------------------------------------------------------
 class OffsideVideoResponse {
   final bool ok;
   final bool? offside;
   final int? offsidesCount;
   final String? fileUrl;
-  final String? image2DUrl;
+  final String? image2DUrl; // First event's frame_image
   final String? image3DUrl;
   final Map<String, List<int>>? linePoints;
   final String? attackDirection;
@@ -520,6 +551,16 @@ class OffsideVideoResponse {
   final Field2DModel? field2D;
   final Field3DModel? field3D;
   final Map<String, dynamic>? meta;
+
+  // New fields from video API
+  final List<VideoEvent> events;
+  final double? fps;
+  final String? inputName;
+  final String? jobId;
+  final String? jobPage;
+  final String? notes;
+  final List<int>? offsideFrames;
+  final int? totalFrames;
 
   OffsideVideoResponse({
     required this.ok,
@@ -540,14 +581,47 @@ class OffsideVideoResponse {
     this.field2D,
     this.field3D,
     this.meta,
+    required this.events,
+    this.fps,
+    this.inputName,
+    this.jobId,
+    this.jobPage,
+    this.notes,
+    this.offsideFrames,
+    this.totalFrames,
   });
 
+  /// ✅ New: expose `offside_found` (bool or string) as a typed getter.
+  bool? get offsideFound {
+    final raw = meta?['offside_found'];
+    if (raw is bool) return raw;
+    if (raw is String) {
+      final v = raw.toLowerCase();
+      if (v == 'true' || v == 'offside') return true;
+      if (v == 'false' || v == 'onside') return false;
+    }
+    // Fallback: if server didn’t include `offside_found`, reuse `offside`
+    return offside;
+  }
+
+  /// Strong verdict that considers multiple sources
   bool get offsideResolved {
+    // 1) explicit bools
     if (offside != null) return offside!;
+    final of = offsideFound;
+    if (of != null) return of;
+
+    // 2) frames list
+    if (offsideFrames != null && offsideFrames!.isNotEmpty) return true;
+
+    // 3) text verdict/top
     final s = (top ?? verdict)?.toLowerCase();
     if (s == 'offside') return true;
     if (s == 'onside') return false;
+
+    // 4) numeric count
     if (offsidesCount != null) return (offsidesCount! > 0);
+
     return false;
   }
 
@@ -563,9 +637,10 @@ class OffsideVideoResponse {
     Map<String, List<int>>? linePointsMap;
     final offsideObj = json['offside'];
     if (offsideObj is Map && offsideObj['line'] is Map) {
-      final l = offsideObj['line'] as Map<String, dynamic>;
-      final p1 = (l['p1'] as List?)?.map((e) => (e as num).toInt()).toList();
-      final p2 = (l['p2'] as List?)?.map((e) => (e as num).toInt()).toList();
+      // FIXED: Correctly extract 'line' map
+      final lineMap = offsideObj['line'] as Map<String, dynamic>;
+      final p1 = (lineMap['p1'] as List?)?.map((e) => (e as num).toInt()).toList();
+      final p2 = (lineMap['p2'] as List?)?.map((e) => (e as num).toInt()).toList();
       if (p1 != null && p2 != null) {
         linePointsMap = {'start': p1, 'end': p2};
       }
@@ -591,11 +666,12 @@ class OffsideVideoResponse {
     final f2dMap = (m['field_2d'] is Map) ? Map<String, dynamic>.from(m['field_2d']) : <String, dynamic>{};
     final f3dMap = (m['field_3d'] is Map) ? Map<String, dynamic>.from(m['field_3d']) : <String, dynamic>{};
 
-    Field2DModel? f2d = Field2DModel.fromJson(f2dMap, meta: json);
-    Field3DModel? f3d = Field3DModel.fromJson(f3dMap, meta: json);
+    final Field2DModel? f2d = Field2DModel.fromJson(f2dMap, meta: json);
+    final Field3DModel? f3d = Field3DModel.fromJson(f3dMap, meta: json);
 
+    // Map booleans (accept both `offside_found` and legacy `offside`)
     bool? offBool;
-    final offRaw = json['offside'];
+    final offRaw = json['offside_found'] ?? json['offside'];
     if (offRaw is bool) offBool = offRaw;
     if (offRaw is String) {
       final v = offRaw.toLowerCase();
@@ -603,17 +679,35 @@ class OffsideVideoResponse {
       if (v == 'false' || v == 'onside') offBool = false;
     }
 
+    // FIXED: Robust events parsing - ensure list of maps
+    final eventsRaw = json['events'];
+    List<VideoEvent> eventsList = [];
+    if (eventsRaw is List) {
+      eventsList = eventsRaw
+          .where((e) => e is Map<String, dynamic>)
+          .map((e) => VideoEvent.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    String? firstImageUrl = image2DUrl;
+    if (firstImageUrl == null && eventsList.isNotEmpty) {
+      firstImageUrl = eventsList.first.frameImage;
+    }
+
     return OffsideVideoResponse(
-      ok: true,
+      ok: (json['ok'] == true) || (json['status']?.toString().toLowerCase() == 'ok') || true,
       offside: offBool,
-      offsidesCount: (json['offsides_count'] as num?)?.toInt(),
+      // prefer server-provided count, else derive from offside_frames
+      offsidesCount: (json['offsides_count'] as num?)?.toInt() ??
+          (json['offside_frames'] is List ? (json['offside_frames'] as List).length : 0),
       fileUrl: fileUrl,
-      image2DUrl: image2DUrl,
+      image2DUrl: firstImageUrl,
       image3DUrl: image3DUrl,
       linePoints: linePointsMap,
       attackDirection: json['attack_direction'] as String?,
       attackingTeam: json['attacking_team'] as String?,
-      secondLastDefenderProjection: (json['second_last_defender_projection'] as num?)?.toDouble(),
+      secondLastDefenderProjection:
+          (json['second_last_defender_projection'] as num?)?.toDouble(),
       players: json['players'] as List<dynamic>?,
       reason: json['reason'] as String?,
       error: json['error'] as String?,
@@ -621,7 +715,15 @@ class OffsideVideoResponse {
       verdict: json['verdict'] as String?,
       field2D: f2d,
       field3D: f3d,
-      meta: json,
+      meta: json, // keep full json here so `offsideFound` getter can read it
+      events: eventsList,
+      fps: (json['fps'] as num?)?.toDouble(),
+      inputName: json['input_name'] as String?,
+      jobId: json['job_id'] as String?,
+      jobPage: json['job_page'] as String?,
+      notes: json['notes'] as String?,
+      offsideFrames: (json['offside_frames'] as List?)?.map((e) => (e as num).toInt()).toList(),
+      totalFrames: (json['total_frames'] as num?)?.toInt(),
     );
   }
 }

@@ -1,130 +1,86 @@
 // views/pages/RefereeTraking/model/referee_analysis.dart
-
-class HealthResponse {
-  final String status;
-  final bool modelLoaded;
-  final Map<String, String>? classes;
-
-  HealthResponse({
-    required this.status,
-    required this.modelLoaded,
-    this.classes,
-  });
-
-  factory HealthResponse.fromJson(Map<String, dynamic> json) {
-    return HealthResponse(
-      status: (json['ok'] as bool?) ?? false ? 'ok' : 'error',
-      modelLoaded: (json['model_loaded'] as bool?) ?? true,
-      classes: json['classes'] != null
-          ? Map<String, String>.from(json['classes'])
-          : null,
-    );
-  }
-}
-
 class AnalyzeResponse {
-  final List<AiEvent> aiEvents;
-  final Evaluation? evaluation;
+  final bool ok;
+  final Map<String, dynamic> metrics;
+  final RefereeEvaluation? refereeEvaluation;
+  final Map<String, String> downloads;
+  final String reportUrl;
+  final String videoUrl;
 
   AnalyzeResponse({
-    required this.aiEvents,
-    this.evaluation,
+    required this.ok,
+    required this.metrics,
+    this.refereeEvaluation,
+    required this.downloads,
+    required this.reportUrl,
+    required this.videoUrl,
   });
 
   factory AnalyzeResponse.fromJson(Map<String, dynamic> json) {
-    List<AiEvent> aiEvents = (json['ai_events'] as List<dynamic>?)
-            ?.map((e) => AiEvent.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-        [];
-
-    // Handle fallback structure where evaluation is top-level
-    Evaluation? evaluation;
-    if (json['evaluation'] != null) {
-      evaluation = Evaluation.fromJson(json['evaluation'] as Map<String, dynamic>);
-    } else if (json['accuracy'] != null && json['incidents'] != null) {
-      evaluation = Evaluation(
-        accuracy: (json['accuracy'] as num).toDouble(),
-        correct: json['correct'] as int? ?? 0,
-        total: json['total'] as int? ?? 0,
-        perDecision: (json['incidents'] as List<dynamic>?)
-                ?.map((e) => PerDecision.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [],
-      );
-    }
-
     return AnalyzeResponse(
-      aiEvents: aiEvents,
-      evaluation: evaluation,
+      ok: json['ok'] ?? false,
+      metrics: json['metrics'] ?? {},
+      refereeEvaluation: json['referee_evaluation'] != null
+          ? RefereeEvaluation.fromJson(json['referee_evaluation'])
+          : null,
+      downloads: Map<String, String>.from(json['downloads'] ?? {}),
+      reportUrl: json['report_url'] ?? '',
+      videoUrl: json['video_url'] ?? '',
     );
   }
 }
 
-class AiEvent {
-  final double t;
-  final String type;
-  final Map<String, dynamic> details;
+class RefereeEvaluation {
+  final Map<String, dynamic> context;
+  final List<Criterion> criteria;
+  final String grade;
+  final Map<String, String> notes;
+  final double overallScore;
 
-  AiEvent({
-    required this.t,
-    required this.type,
-    required this.details,
+  RefereeEvaluation({
+    required this.context,
+    required this.criteria,
+    required this.grade,
+    required this.notes,
+    required this.overallScore,
   });
 
-  factory AiEvent.fromJson(Map<String, dynamic> json) {
-    return AiEvent(
-      t: (json['t'] as num).toDouble(),
-      type: json['type'] as String,
-      details: json['details'] as Map<String, dynamic>,
-    );
-  }
-}
-
-class Evaluation {
-  final double accuracy;
-  final int correct;
-  final int total;
-  final List<PerDecision> perDecision;
-
-  Evaluation({
-    required this.accuracy,
-    required this.correct,
-    required this.total,
-    required this.perDecision,
-  });
-
-  factory Evaluation.fromJson(Map<String, dynamic> json) {
-    return Evaluation(
-      accuracy: (json['accuracy'] as num).toDouble(),
-      correct: json['correct'] as int,
-      total: json['total'] as int,
-      perDecision: (json['per_decision'] as List<dynamic>?)
-              ?.map((e) => PerDecision.fromJson(e as Map<String, dynamic>))
+  factory RefereeEvaluation.fromJson(Map<String, dynamic> json) {
+    return RefereeEvaluation(
+      context: json['context'] ?? {},
+      criteria: (json['criteria'] as List<dynamic>?)
+              ?.map((e) => Criterion.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      grade: json['grade'] ?? '',
+      notes: Map<String, String>.from(json['notes'] ?? {}),
+      overallScore: (json['overall_score'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
 
-class PerDecision {
-  final double t;
-  final String type;
-  final String decision;
-  final bool match;
+class Criterion {
+  final String key;
+  final String label;
+  final dynamic rawValue;
+  final double? score;
+  final double weight;
 
-  PerDecision({
-    required this.t,
-    required this.type,
-    required this.decision,
-    required this.match,
+  Criterion({
+    required this.key,
+    required this.label,
+    required this.rawValue,
+    this.score,
+    required this.weight,
   });
 
-  factory PerDecision.fromJson(Map<String, dynamic> json) {
-    return PerDecision(
-      t: (json['t'] as num).toDouble(),
-      type: json['type'] as String,
-      decision: json['expected'] ?? json['decision'] as String,
-      match: json['match'] as bool,
+  factory Criterion.fromJson(Map<String, dynamic> json) {
+    return Criterion(
+      key: json['key'] ?? '',
+      label: json['label'] ?? '',
+      rawValue: json['raw_value'],
+      score: (json['score'] as num?)?.toDouble(),
+      weight: (json['weight'] as num).toDouble(),
     );
   }
 }

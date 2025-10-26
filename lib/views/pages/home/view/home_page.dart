@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // Temporary: Clear cache to force fresh load (remove after testing)
-    _clearCacheForTesting();
+    //_clearCacheForTesting();
     futureReferees = _loadReferees();
 
     _glowController = AnimationController(

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
 import 'package:VarXPro/provider/langageprovider.dart';
@@ -25,26 +24,22 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
     with TickerProviderStateMixin {
   final FoulDetectionController _controller = FoulDetectionController();
   final ScrollController _scrollController = ScrollController();
-
   bool _showSplash = true;
   String? _selectedRefereeDecision;
   List<File>? _videoFiles;
   bool _isMultiView = false;
-
   late final AnimationController _heroPulseCtrl;
   late final Animation<double> _heroPulse;
 
   @override
   void initState() {
     super.initState();
-
     _heroPulseCtrl =
         AnimationController(vsync: this, duration: const Duration(seconds: 2))
           ..repeat(reverse: true);
     _heroPulse = Tween<double>(begin: 0.25, end: 0.75).animate(
       CurvedAnimation(parent: _heroPulseCtrl, curve: Curves.easeInOut),
     );
-
     Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
       setState(() => _showSplash = false);
@@ -80,8 +75,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
           videoFile: videos.first,
           refereeDecision: _selectedRefereeDecision,
         );
-
-        // Log history si OK
         if (_controller.result != null && _controller.result!.ok) {
           final historyProvider =
               Provider.of<HistoryProvider>(context, listen: false);
@@ -110,11 +103,9 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
     final modeProvider = Provider.of<ModeProvider>(context);
     final langProvider = Provider.of<LanguageProvider>(context);
     final currentLang = langProvider.currentLanguage;
-
     final mode = modeProvider.currentMode;
     final seedColor =
-        AppColors.seedColors[mode] ?? AppColors.seedColors[1]!; // fallback
-
+        AppColors.seedColors[mode] ?? AppColors.seedColors[1]!;
     if (_showSplash) {
       return Scaffold(
         backgroundColor: AppColors.getBackgroundColor(mode),
@@ -128,12 +119,10 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
         ),
       );
     }
-
     return Scaffold(
       backgroundColor: AppColors.getBackgroundColor(mode),
       body: Stack(
         children: [
-          // Fond animé + grille terrain
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -144,15 +133,12 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
               ),
             ),
           ),
-
-          // Contenu
           SafeArea(
             child: AnimatedBuilder(
               animation: _controller,
               builder: (context, _) {
                 return Column(
                   children: [
-                    // Loader global ou contenu
                     Expanded(
                       child: _controller.isLoading
                           ? _GlobalLoader(
@@ -168,8 +154,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
                               currentLang: currentLang,
                             ),
                     ),
-
-                    // Barre d’action avec deux boutons
                     Padding(
                       padding:
                           const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -226,19 +210,13 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
     required String currentLang,
   }) {
     final textPrimary = AppColors.getTextColor(mode);
-    final textSecondary = textPrimary.withOpacity(0.7);
-    final cardColor = AppColors.getSurfaceColor(mode);
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
-
     final inference = _controller.result?.inference;
     final evaluation = _controller.result?.evaluation;
-
     final hasFoul = (inference != null) &&
         !inference.finalDecision.toLowerCase().contains('no');
-
     final eventsCount = hasFoul ? 1 : 0;
-
     return SingleChildScrollView(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(16, isPortrait ? 12 : 8, 16, 16),
@@ -265,7 +243,6 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Retry',
                     onPressed: () {
                       _controller.pingServer();
                       _controller.fetchVersion();
@@ -278,8 +255,7 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
                 ],
               ),
             ),
-
-          // Paramètres “Referee decision” (nullable fix)
+          // DROPDOWN - DÉCISION ARBITRE (INPUT)
           _SectionHeader(
             icon: Icons.sports,
             title: Translations.getFoulDetectionText('refereeDecisionOptional', currentLang),
@@ -292,32 +268,30 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
             child: DropdownButtonFormField<String?>(
               value: _selectedRefereeDecision,
               icon: const Icon(Icons.expand_more_rounded),
-              dropdownColor: cardColor,
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                border: _outline(textSecondary),
-                enabledBorder: _outline(textSecondary),
-                focusedBorder: _outline(
-                  AppColors.getPrimaryColor(seedColor, mode),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: textPrimary.withOpacity(0.35)),
                 ),
               ),
               items: [
                 DropdownMenuItem<String?>(
-                  value: null, 
+                  value: null,
                   child: Text(Translations.getFoulDetectionText('none', currentLang))
                 ),
                 DropdownMenuItem<String?>(
-                  value: 'No offence', 
+                  value: 'No offence',
                   child: Text(Translations.getFoulDetectionText('noOffence', currentLang))
                 ),
                 DropdownMenuItem<String?>(
-                  value: 'Yellow card', 
+                  value: 'Yellow card',
                   child: Text(Translations.getFoulDetectionText('yellowCard', currentLang))
                 ),
                 DropdownMenuItem<String?>(
-                  value: 'Red card', 
+                  value: 'Red card',
                   child: Text(Translations.getFoulDetectionText('redCard', currentLang))
                 ),
               ],
@@ -325,16 +299,14 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
             ),
           ),
           const SizedBox(height: 18),
-
-          // Résumé d’analyse
+          // RÉSUMÉ D'ANALYSE - TOUT COMME DEMANDÉ + ARBITRE + ÉVALUATION
           if (_controller.result != null && _controller.result!.ok && inference != null)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _SectionHeader(
                   icon: Icons.analytics_outlined,
-                  title:
-                      Translations.getFoulDetectionText('analysisSummary', currentLang),
+                  title: Translations.getFoulDetectionText('analysisSummary', currentLang),
                   mode: mode,
                 ),
                 const SizedBox(height: 10),
@@ -343,135 +315,66 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                   child: Column(
                     children: [
-                      _SummaryItem(
-                        icon: Icons.flag,
-                        label: Translations.getFoulDetectionText(
-                            'eventsDetected', currentLang),
+                      // 1. FAUTE DÉTECTÉE
+                      _SimpleSummaryItem(
+                        label: eventsCount == 1 
+                            ? Translations.getFoulDetectionText('foulsDetectedSingular', currentLang) 
+                            : Translations.getFoulDetectionText('foulsDetectedPlural', currentLang),
                         value: eventsCount.toString(),
                         mode: mode,
                         seedColor: seedColor,
                       ),
-                      const SizedBox(height: 8),
-                      _DecisionBanner(
+                      const SizedBox(height: 12),
+                      // 2. DÉCISION FINALE
+                      _SimpleSummaryItem(
+                        label: Translations.getFoulDetectionText('finalDecision', currentLang),
+                        value: inference.finalDecision,
                         mode: mode,
-                        decision: inference.finalDecision,
-                        color: _getDecisionColor(inference.finalDecision, mode),
-                        currentLang: currentLang,
+                        seedColor: seedColor,
+                        isDecision: true,
                       ),
-                      const SizedBox(height: 8),
-                      _SummaryItem(
-                        icon: Icons.sports_soccer,
-                        label: Translations.getFoulDetectionText('topAction', currentLang),
-                        value:
-                            '${inference.actionTopLabel} (${(inference.actionTopProb * 100).toStringAsFixed(1)}%)',
+                      const SizedBox(height: 12),
+                      // 3. ACTION PRINCIPALE (SANS %)
+                      _SimpleSummaryItem(
+                        label: Translations.getFoulDetectionText('mainAction', currentLang),
+                        value: inference.actionTopLabel,
                         mode: mode,
                         seedColor: seedColor,
                       ),
-                      const SizedBox(height: 8),
-                      _SummaryItem(
-                        icon: Icons.sports_soccer_outlined,
-                        label: Translations.getFoulDetectionText('secondAction', currentLang),
-                        value:
-                            '${inference.actionTop2Label} (${(inference.actionTop2Prob * 100).toStringAsFixed(1)}%)',
+                      const SizedBox(height: 12),
+                      // 4. ACTION SECONDAIRE (SANS %)
+                      _SimpleSummaryItem(
+                        label: Translations.getFoulDetectionText('secondaryAction', currentLang),
+                        value: inference.actionTop2Label,
                         mode: mode,
                         seedColor: seedColor,
                       ),
-                      const SizedBox(height: 8),
-
-                      // Chips des probabilités
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _probChip(
-                              mode,
-                              currentLang,
-                              Translations.getFoulDetectionText('noOffence', currentLang),
-                              '${(inference.severityMap['no']! * 100).toStringAsFixed(1)}%',
-                              Colors.green,
-                            ),
-                            _probChip(
-                              mode,
-                              currentLang,
-                              Translations.getFoulDetectionText('yellow', currentLang),
-                              '${(inference.severityMap['yellow']! * 100).toStringAsFixed(1)}%',
-                              Colors.amber,
-                            ),
-                            _probChip(
-                              mode,
-                              currentLang,
-                              Translations.getFoulDetectionText('red', currentLang),
-                              '${(inference.severityMap['red']! * 100).toStringAsFixed(1)}%',
-                              Colors.redAccent,
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Version
-                      if (_controller.version != null) ...[
-                        const SizedBox(height: 8),
-                        _SummaryItem(
-                          icon: Icons.info_outline,
-                          label: Translations.getFoulDetectionText('version', currentLang),
-                          value: _controller.version!,
-                          mode: mode,
-                          seedColor: seedColor,
-                        ),
-                      ],
-
-                      // Evaluation vs referee
-                      if (evaluation != null) ...[
-                        const SizedBox(height: 10),
-                        _SummaryItem(
-                          icon: Icons.person,
+                      const SizedBox(height: 12),
+                      // 5. DÉCISION ARBITRE (OUTPUT)
+                      if (evaluation != null && evaluation['referee'] != null)
+                        _SimpleSummaryItem(
                           label: Translations.getFoulDetectionText('refereeDecision', currentLang),
-                          value: evaluation['referee'] ?? 'N/A',
+                          value: evaluation['referee'],
                           mode: mode,
                           seedColor: seedColor,
+                          isDecision: true,
                         ),
-                        const SizedBox(height: 8),
-                        _EvaluationBadge(
-                          outcome: '${evaluation['outcome']}',
-                          currentLang: currentLang,
-                        ),
-                      ],
-
-                      // Notes
-                      if (inference.notes.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        _NotesBlock(
+                      const SizedBox(height: 12),
+                      // 6. ÉVALUATION
+                      if (evaluation != null && evaluation['outcome'] != null)
+                        _SimpleSummaryItem(
+                          label: Translations.getFoulDetectionText('evaluation', currentLang),
+                          value: evaluation['outcome'].toString().toUpperCase(),
                           mode: mode,
-                          notes: inference.notes.cast<String>(),
-                          currentLang: currentLang,
+                          seedColor: seedColor,
+                          isEvaluation: true,
                         ),
-                      ],
                     ],
                   ),
                 ),
               ],
-            )
-          else if (_controller.result != null && !_controller.result!.ok)
-            GlassCard(
-              mode: mode,
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                _controller.result!.error ??
-                    Translations.getFoulDetectionText(
-                        'summaryNotAvailable', currentLang),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.roboto(
-                  color: textSecondary,
-                  fontSize: isPortrait ? 16 : 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
             ),
-
           const SizedBox(height: 20),
-
           // Video viewer
           _SectionHeader(
             icon: Icons.play_circle_outline,
@@ -542,14 +445,11 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
                   )
                 : _EmptyState(
                     icon: Icons.video_file_outlined,
-                    text:
-                        Translations.getFoulDetectionText('noVideoAvailable', currentLang),
+                    text: Translations.getFoulDetectionText('noVideoAvailable', currentLang),
                     mode: mode,
                   ),
           ),
-
           const SizedBox(height: 20),
-
           // Snapshot annoté
           _SectionHeader(
             icon: Icons.image_outlined,
@@ -591,49 +491,78 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
       ),
     );
   }
+}
 
-  static OutlineInputBorder _outline(Color color) => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: color.withOpacity(0.35), width: 1.2),
-      );
+// ======== WIDGET SIMPLE MODIFIÉ POUR ARBITRE + ÉVALUATION ========
+class _SimpleSummaryItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final int mode;
+  final Color seedColor;
+  final bool isDecision;
+  final bool isEvaluation;
+  const _SimpleSummaryItem({
+    required this.label,
+    required this.value,
+    required this.mode,
+    required this.seedColor,
+    this.isDecision = false,
+    this.isEvaluation = false,
+  });
 
-  static Widget _probChip(
-      int mode, String currentLang, String label, String value, Color accent) {
+  @override
+  Widget build(BuildContext context) {
     final txt = AppColors.getTextColor(mode);
+    Color valueColor = txt;
+   
+    // Couleur pour Décision finale / Arbitre
+    if (isDecision) {
+      final d = value.toLowerCase();
+      if (d.contains('no')) valueColor = Colors.green;
+      else if (d.contains('yellow')) valueColor = Colors.amber;
+      else if (d.contains('red')) valueColor = Colors.red;
+    }
+   
+    // Couleur pour Évaluation
+    if (isEvaluation) {
+      final e = value.toLowerCase();
+      valueColor = e == 'correct' ? Colors.green : Colors.red;
+    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        color: accent.withOpacity(0.08),
-        border: Border.all(color: accent.withOpacity(0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withOpacity(0.18),
-            blurRadius: 12,
-            spreadRadius: 0.5,
-          ),
-        ],
+        color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.2),
+        ),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bubble_chart, size: 16, color: accent),
-          const SizedBox(width: 6),
-          Text(
-            '$label: ',
-            style: GoogleFonts.roboto(
-              color: txt.withOpacity(0.7),
-              fontWeight: FontWeight.w600,
-              fontSize: 12.5,
+          // Label à gauche
+          Expanded(
+            flex: 1,
+            child: Text(
+              label,
+              style: GoogleFonts.roboto(
+                color: txt.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
             ),
           ),
-          Text(
-            value,
-            style: GoogleFonts.roboto(
-              color: accent,
-              fontWeight: FontWeight.w800,
-              fontSize: 12.5,
-              letterSpacing: 0.2,
+          const SizedBox(width: 12),
+          // Value à droite
+          Expanded(
+            flex: 1,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: GoogleFonts.roboto(
+                color: valueColor,
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
             ),
           ),
         ],
@@ -642,12 +571,10 @@ class _FoulDetectionPageState extends State<FoulDetectionPage>
   }
 }
 
-// ======== Full Screen Image Viewer ========
-
+// ======== TOUS LES AUTRES WIDGETS (INCHANGÉS) ========
 class FullScreenImageViewer extends StatelessWidget {
   final String imageUrl;
   final int mode;
-
   const FullScreenImageViewer({
     super.key,
     required this.imageUrl,
@@ -693,14 +620,11 @@ class FullScreenImageViewer extends StatelessWidget {
   }
 }
 
-// ======== Sub-Widgets design ========
-
 class GlassCard extends StatelessWidget {
   final Widget? child;
   final EdgeInsetsGeometry? padding;
   final double? height;
   final int mode;
-
   const GlassCard({
     super.key,
     required this.mode,
@@ -722,8 +646,7 @@ class GlassCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border:
-            Border.all(color: AppColors.getTextColor(mode).withOpacity(0.08)),
+        border: Border.all(color: AppColors.getTextColor(mode).withOpacity(0.08)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.18),
@@ -752,7 +675,6 @@ class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
   final int mode;
-
   const _SectionHeader({
     required this.icon,
     required this.title,
@@ -766,9 +688,7 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color: AppColors
-              .getSecondaryColor(AppColors.seedColors[1]!, 1)
-              .withOpacity(0.85),
+          color: AppColors.getSecondaryColor(AppColors.seedColors[1]!, 1).withOpacity(0.85),
           size: 26,
         ),
         const SizedBox(width: 10),
@@ -786,237 +706,10 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _SummaryItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final int mode;
-  final Color seedColor;
-
-  const _SummaryItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.mode,
-    required this.seedColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final txt = AppColors.getTextColor(mode);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.getPrimaryColor(seedColor, mode).withOpacity(0.055),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon,
-              color: AppColors
-                  .getPrimaryColor(seedColor, mode)
-                  .withOpacity(0.75)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.roboto(
-                    color: txt.withOpacity(0.7),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: GoogleFonts.roboto(
-                    color: txt,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15.5,
-                  ),
-                ),
-              ],
-            ),
-          )
-        ],
-      ),
-    );
-  }
-}
-
-class _DecisionBanner extends StatelessWidget {
-  final int mode;
-  final String decision;
-  final Color color;
-  final String currentLang;
-
-  const _DecisionBanner({
-    required this.mode,
-    required this.decision,
-    required this.color,
-    required this.currentLang,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final txt = AppColors.getTextColor(mode);
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.35), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.18),
-            blurRadius: 16,
-            spreadRadius: 0.5,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: color),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  Translations.getFoulDetectionText('finalDecision', currentLang),
-                  style: GoogleFonts.roboto(
-                    color: txt.withOpacity(0.7),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12.8,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  decision,
-                  style: GoogleFonts.roboto(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 17,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EvaluationBadge extends StatelessWidget {
-  final String outcome; // 'correct' / 'incorrect' etc.
-  final String currentLang;
-
-  const _EvaluationBadge({
-    required this.outcome,
-    required this.currentLang,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isCorrect = outcome.toLowerCase() == 'correct';
-    final color = isCorrect ? Colors.green : Colors.redAccent;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.35)),
-      ),
-      child: Row(
-        children: [
-          Icon(isCorrect ? Icons.check_circle : Icons.cancel, color: color),
-          const SizedBox(width: 8),
-          Text(
-            '${Translations.getFoulDetectionText('evaluation', currentLang)}: ${outcome.toUpperCase()}',
-            style: GoogleFonts.roboto(
-              color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: 14.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotesBlock extends StatelessWidget {
-  final int mode;
-  final List<String> notes;
-  final String currentLang;
-
-  const _NotesBlock({
-    required this.mode, 
-    required this.notes,
-    required this.currentLang,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final txt = AppColors.getTextColor(mode);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: txt.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${Translations.getFoulDetectionText('notes', currentLang)}:',
-            style: GoogleFonts.roboto(
-              fontWeight: FontWeight.w900,
-              color: txt,
-              fontSize: 15.5,
-            ),
-          ),
-          const SizedBox(height: 6),
-          ...notes.map(
-            (n) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('• ',
-                      style: GoogleFonts.roboto(
-                        color: txt.withOpacity(0.75),
-                        fontSize: 14,
-                      )),
-                  Expanded(
-                    child: Text(
-                      n,
-                      style: GoogleFonts.roboto(
-                        color: txt.withOpacity(0.75),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _EmptyState extends StatelessWidget {
   final IconData icon;
   final String text;
   final int mode;
-
   const _EmptyState({
     required this.icon,
     required this.text,
@@ -1050,7 +743,6 @@ class _GlobalLoader extends StatelessWidget {
   final int mode;
   final Color seedColor;
   final String text;
-
   const _GlobalLoader({
     required this.mode,
     required this.seedColor,
@@ -1091,7 +783,6 @@ class _ModeButton extends StatelessWidget {
   final VoidCallback onTap;
   final int mode;
   final Color seedColor;
-
   const _ModeButton({
     required this.label,
     required this.isSelected,
@@ -1146,7 +837,6 @@ class _NetworkImageWithSkeleton extends StatefulWidget {
   final String url;
   final int mode;
   final String currentLang;
-
   const _NetworkImageWithSkeleton({
     required this.url,
     required this.mode,
@@ -1234,11 +924,8 @@ class _NetworkImageWithSkeletonState extends State<_NetworkImageWithSkeleton>
   }
 }
 
-// ======== Background painter ========
-
 class _FootballGridPainter extends CustomPainter {
   final int mode;
-
   _FootballGridPainter(this.mode);
 
   @override
@@ -1246,7 +933,6 @@ class _FootballGridPainter extends CustomPainter {
     final gridPaint = Paint()
       ..color = AppColors.getTextColor(mode).withOpacity(0.045)
       ..strokeWidth = 0.5;
-
     const step = 48.0;
     for (double x = 0; x <= size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
@@ -1254,17 +940,13 @@ class _FootballGridPainter extends CustomPainter {
     for (double y = 0; y <= size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
-
     final fieldPaint = Paint()
       ..color = AppColors.getTextColor(mode).withOpacity(0.085)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
-
     const inset = 40.0;
-    final rect =
-        Rect.fromLTWH(inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
-
-    // Terrain central + cercle
+    final rect = Rect.fromLTWH(
+        inset, inset * 2, size.width - inset * 2, size.height - inset * 4);
     canvas.drawRect(rect, fieldPaint);
     final midY = rect.center.dy;
     canvas.drawLine(
@@ -1278,3 +960,5 @@ class _FootballGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+///////////

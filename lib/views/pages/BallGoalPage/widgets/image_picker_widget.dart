@@ -1,4 +1,4 @@
-// Updated ImagePickerWidget to support enabled parameter
+// ImagePickerWidget remains unchanged
 import 'dart:io';
 import 'package:VarXPro/provider/langageprovider.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:VarXPro/lang/translation.dart';
 import 'package:VarXPro/model/appcolor.dart';
+
 class ImagePickerWidget extends StatelessWidget {
   final Function(File) onImagePicked;
   final String buttonText;
@@ -16,6 +17,7 @@ class ImagePickerWidget extends StatelessWidget {
   final int mode;
   final Color seedColor;
   final bool enabled;
+
   const ImagePickerWidget({
     super.key,
     required this.onImagePicked,
@@ -26,6 +28,7 @@ class ImagePickerWidget extends StatelessWidget {
     required this.seedColor,
     this.enabled = true,
   });
+
   Future<void> _pickFile(BuildContext context) async {
     PermissionStatus status;
     if (Platform.isAndroid) {
@@ -161,6 +164,7 @@ class ImagePickerWidget extends StatelessWidget {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
@@ -185,3 +189,4 @@ class ImagePickerWidget extends StatelessWidget {
     );
   }
 }
+

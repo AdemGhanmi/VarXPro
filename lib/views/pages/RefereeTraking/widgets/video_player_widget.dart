@@ -1,4 +1,5 @@
 // views/pages/RefereeTraking/widgets/video_player_widget.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:VarXPro/model/appcolor.dart';
@@ -6,9 +7,14 @@ import 'package:VarXPro/provider/modeprovider.dart';
 import 'package:provider/provider.dart';
 
 class VideoPlayerWidget extends StatefulWidget {
-  final String videoUrl;
+  final String videoSource;
+  final bool isNetwork;
 
-  const VideoPlayerWidget({super.key, required this.videoUrl});
+  const VideoPlayerWidget({
+    super.key,
+    required this.videoSource,
+    this.isNetwork = false,
+  });
 
   @override
   _VideoPlayerWidgetState createState() => _VideoPlayerWidgetState();
@@ -22,21 +28,44 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() {
-            _isInitialized = true;
-          });
-          _controller.setLooping(true);
-        }
-      }).catchError((e) {
-        if (mounted) {
-          setState(() {
-            _error = 'Failed to load video: $e';
-          });
-        }
-      });
+    _initializeController();
+  }
+
+  void _initializeController() {
+    if (widget.isNetwork) {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoSource))
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() {
+              _isInitialized = true;
+            });
+            _controller.setLooping(true);
+            _controller.play();
+          }
+        }).catchError((e) {
+          if (mounted) {
+            setState(() {
+              _error = 'Failed to load video: $e';
+            });
+          }
+        });
+    } else {
+      _controller = VideoPlayerController.file(File(widget.videoSource))
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() {
+              _isInitialized = true;
+            });
+            _controller.setLooping(true);
+          }
+        }).catchError((e) {
+          if (mounted) {
+            setState(() {
+              _error = 'Failed to load video: $e';
+            });
+          }
+        });
+    }
   }
 
   @override
@@ -75,6 +104,11 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         AspectRatio(
           aspectRatio: _controller.value.aspectRatio,
           child: VideoPlayer(_controller),
+        ),
+        VideoProgressIndicator(
+          _controller,
+          allowScrubbing: true,
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
         ),
         const SizedBox(height: 8),
         Row(
